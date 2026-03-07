@@ -32,11 +32,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. The same project builds and runs as a Facebook Instant Games HTML5 bundle without errors.
   3. The project uses Cocos Creator's Asset Bundle system; the initial payload bundle measures under 5 MB.
   4. All external SDK calls (FB Instant, AdMob, Firebase) are routed through platform adapter stub classes — no direct SDK imports exist in any game logic file.
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Project scaffold, TypeScript config, folder structure, and build pipeline for all three targets
-- [ ] 01-02: Asset Bundle architecture, payload budget enforcement, and platform adapter shell
+- [ ] 01-01-PLAN.md — Project scaffold: Cocos Creator project creation, folder hierarchy, TypeScript config, Boot/GameManager/EventBus scripts, and validate-build.sh
+- [ ] 01-02-PLAN.md — Platform adapter layer (IPlatformAdapter, NullPlatformAdapter, FBInstantAdapter, PlatformDetector), Boot.ts wiring, FB Instant Games build, and payload measurement
 
 ### Phase 2: Save & Timing Infrastructure
 **Goal**: A wall-clock millisecond timing system exists and a unified save abstraction works across native localStorage and FB Instant's async data API.
