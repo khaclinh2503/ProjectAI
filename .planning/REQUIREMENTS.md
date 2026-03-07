@@ -94,10 +94,29 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| CORE-01 → CORE-04 | Phase TBD | — |
-| SCORE-01 → SCORE-05 | Phase TBD | — |
-| FLORA-01 → FLORA-03 | Phase TBD | — |
-| JUICE-01 → JUICE-04 | Phase TBD | — |
-| LEVEL-01 → LEVEL-03 | Phase TBD | — |
-| TUT-01 → TUT-02 | Phase TBD | — |
-| TECH-01 → TECH-05 | Phase TBD | — |
+| TECH-01 | Phase 1 — Project Foundation | Pending |
+| TECH-02 | Phase 1 — Project Foundation | Pending |
+| TECH-04 | Phase 1 — Project Foundation | Pending |
+| TECH-03 | Phase 2 — Save & Timing Infrastructure | Pending |
+| TECH-05 | Phase 2 — Save & Timing Infrastructure | Pending |
+| CORE-01 | Phase 3 — Flower Lifecycle System | Pending |
+| CORE-02 | Phase 3 — Flower Lifecycle System | Pending |
+| CORE-03 | Phase 3 — Flower Lifecycle System | Pending |
+| CORE-04 | Phase 3 — Flower Lifecycle System | Pending |
+| FLORA-01 | Phase 4 — Flower Species Content | Pending |
+| FLORA-02 | Phase 4 — Flower Species Content | Pending |
+| FLORA-03 | Phase 4 — Flower Species Content | Pending |
+| SCORE-01 | Phase 5 — Tap Detection & Scoring | Pending |
+| SCORE-02 | Phase 5 — Tap Detection & Scoring | Pending |
+| SCORE-03 | Phase 5 — Tap Detection & Scoring | Pending |
+| SCORE-04 | Phase 5 — Tap Detection & Scoring | Pending |
+| JUICE-01 | Phase 6 — Juice & Feedback | Pending |
+| JUICE-02 | Phase 6 — Juice & Feedback | Pending |
+| JUICE-03 | Phase 6 — Juice & Feedback | Pending |
+| JUICE-04 | Phase 6 — Juice & Feedback | Pending |
+| LEVEL-01 | Phase 7 — Level & Garden Shell | Pending |
+| LEVEL-02 | Phase 7 — Level & Garden Shell | Pending |
+| LEVEL-03 | Phase 7 — Level & Garden Shell | Pending |
+| SCORE-05 | Phase 7 — Level & Garden Shell | Pending |
+| TUT-01 | Phase 8 — Tutorial | Pending |
+| TUT-02 | Phase 8 — Tutorial | Pending |
