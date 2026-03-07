@@ -62,7 +62,7 @@ created: 2026-03-07
 |----------|-------------|------------|-------------------|
 | Blank scene deploys to iOS/Android device | TECH-01 | Requires physical device or simulator | Build from Creator → deploy via Xcode/Android Studio → confirm blank scene renders |
 | FB Instant Games bundle runs in browser | TECH-02 | Requires FB developer portal upload or local mock | Build fb-instant-games target → serve locally → confirm initializeAsync resolves |
-| Initial payload < 5 MB | TECH-04 | Size measurement after build | Run `du -sh build/fb-instant-games/assets/main.zip` or equivalent |
+| Initial payload < 5 MB | TECH-04 | Size measurement after build | Run `bash scripts/validate-build.sh --bundle-size` after FB Instant Games build |
 
 ---
 
