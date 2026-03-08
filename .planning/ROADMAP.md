@@ -47,11 +47,12 @@ Plans:
   2. Game state saved on the native build persists across app restarts using localStorage.
   3. Game state saved on the FB Instant build persists across sessions using FBInstant.player.setDataAsync.
   4. Both save paths share one abstract SaveSystem interface; swapping backends requires changing zero gameplay scripts.
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: FlowerDatabase JSON config loader and wall-clock timing system (TECH-03)
-- [ ] 02-02: SaveSystem abstract interface with native and FB Instant backends (TECH-05)
+- [ ] 02-00-PLAN.md — Jest test infrastructure: install jest/ts-jest, write failing test stubs for TimingService and SaveSystem (Wave 0 — must run first)
+- [ ] 02-01-PLAN.md — TimingService: Date.now() wrapper with bloom-window query helpers (TECH-03)
+- [ ] 02-02-PLAN.md — SaveSystem: SaveData types, ISaveBackend interface, LocalStorageSaveBackend, FBInstantSaveBackend, retry logic, createSaveBackend factory (TECH-05)
 
 ### Phase 3: Flower Lifecycle System
 **Goal**: A single flower on screen moves through Bud → Bloom → Wilt states with visually distinct animations, each state timed by the wall-clock system, and a configurable bloom window per species.
@@ -152,7 +153,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation | 0/2 | Not started | - |
-| 2. Save & Timing Infrastructure | 0/2 | Not started | - |
+| 2. Save & Timing Infrastructure | 0/3 | Not started | - |
 | 3. Flower Lifecycle System | 0/2 | Not started | - |
 | 4. Flower Species Content | 0/2 | Not started | - |
 | 5. Tap Detection & Scoring | 0/2 | Not started | - |
