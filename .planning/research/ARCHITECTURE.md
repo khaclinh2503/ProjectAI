@@ -1,490 +1,465 @@
-# Architecture Patterns — Bloom Harvest
+# Architecture Research
 
-**Domain:** Casual mobile flower timing game (Cocos Creator)
-**Researched:** 2026-03-07
-**Confidence:** MEDIUM — Based on Cocos Creator documentation knowledge through August 2025 and established casual game architecture patterns. WebSearch and WebFetch were unavailable for verification. Core patterns are stable and well-established.
+**Domain:** HTML5 Casual Grid-Based Tapping Game (Bloom Tap)
+**Researched:** 2026-03-13
+**Confidence:** MEDIUM (training knowledge; WebSearch unavailable for verification — patterns are well-established in HTML5 game dev community)
 
----
+## Standard Architecture
 
-## Recommended Architecture
-
-Bloom Harvest follows a **layered Manager architecture** common to Cocos Creator casual games:
+### System Overview
 
 ```
-┌──────────────────────────────────────────────────┐
-│                  UI / Scene Layer                │
-│  (MainMenu, Gameplay, Collection, Garden, Shop)  │
-└────────────────────┬─────────────────────────────┘
-                     │ events / callbacks
-┌────────────────────▼─────────────────────────────┐
-│              Game Manager Layer                  │
-│  GameManager · FlowerManager · ScoreManager      │
-│  QuestManager · LeaderboardManager               │
-│  MonetizationManager · SaveManager               │
-└────────────────────┬─────────────────────────────┘
-                     │ reads / writes
-┌────────────────────▼─────────────────────────────┐
-│               Data / State Layer                 │
-│  PlayerData · FlowerDatabase · LevelConfig       │
-│  CollectionData · UpgradeData · ShopCatalog      │
-└────────────────────┬─────────────────────────────┘
-                     │ persistence
-┌────────────────────▼─────────────────────────────┐
-│            Platform Adapter Layer                │
-│  SaveAdapter (LocalStorage / CloudSave)          │
-│  AdsAdapter · IAPAdapter · FBInstantAdapter      │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        Presentation Layer                        │
+├───────────────┬──────────────────┬───────────────────────────────┤
+│  Renderer     │   UI Overlay     │   Animation System            │
+│  (Canvas 2D)  │   (DOM/Canvas)   │   (requestAnimationFrame)     │
+└───────┬───────┴────────┬─────────┴───────────────┬───────────────┘
+        │                │                         │
+┌───────┴────────────────┴─────────────────────────┴───────────────┐
+│                          Game Loop                               │
+│   update(dt) → processInput → updateState → render              │
+└───────┬──────────────────┬──────────────────────────────────────┘
+        │                  │
+┌───────┴───────┐  ┌───────┴─────────────────────────────────────┐
+│ Input Handler │  │               Game State                    │
+│ (Touch/Mouse) │  ├──────────────┬──────────────┬───────────────┤
+└───────────────┘  │  Grid State  │ Session State│  Flower FSMs  │
+                   │  (64 cells)  │ (score,timer,│  (per cell)   │
+                   │              │  phase,combo)│               │
+                   └──────────────┴──────────────┴───────────────┘
 ```
 
-All Managers are **persistent singleton nodes** that survive scene transitions (attached to a root node with `cc.game.addPersistRootNode()`). Scenes are thin: they wire up UI to manager APIs and react to events.
+### Component Responsibilities
+
+| Component | Responsibility | Typical Implementation |
+|-----------|----------------|------------------------|
+| Game Loop | Drive updates at fixed logical rate; decouple update from render | `requestAnimationFrame` with delta-time accumulator |
+| Renderer | Draw grid, flowers, UI elements each frame from current state | Canvas 2D API; clear → draw background → draw cells → draw UI |
+| Input Handler | Capture touch/click events, translate pixel coords to grid coords | `touchstart` + `mousedown` listeners on canvas; debounce |
+| Grid State | Store which cell holds which flower (or is empty) | Flat array `cells[64]` or `cells[row][col]` |
+| Flower FSM | Manage individual flower lifecycle (5 states + timers) | Per-cell object with `state`, `timer`, `flowerType` |
+| Session State | Track score, combo, elapsed time, current difficulty phase | Plain object; updated by game logic each tick |
+| Spawn Manager | Schedule and place new flowers based on difficulty phase | Rate tables per phase; picks empty cells at random |
+| Combo System | Track consecutive correct taps; apply multiplier | Counter + timeout reset; multiplier lookup table |
+| Animation System | Play visual feedback (bloom burst, wilt, score popup) | Particle array or tween list; independent of game state |
 
 ---
 
-## Component Boundaries
+## Recommended Project Structure
 
-### 1. Core Gameplay Loop
-
-**Responsibility:** Drive the per-session flower lifecycle, timing windows, scoring events, and round state (start → playing → end).
-
-**Owns:**
-- Round state machine (`Idle | Countdown | Playing | RoundOver`)
-- Active flower slot references for the current level
-- Tap validation logic (is the flower in the bloom window?)
-- Combo tracking within a round
-
-**Communicates with:**
-- `FlowerLifecycleSystem` — to spawn and tick flower states
-- `ScoreSystem` — to emit scoring events on valid/invalid taps
-- `QuestSystem` — to emit gameplay events (perfect tap, combo reached)
-- `GameManager` — to report round outcomes
-
-**Does NOT own:** Persistent player data, ads, save logic.
-
----
-
-### 2. Flower Lifecycle System
-
-**Responsibility:** Manage the state machine for each flower instance on the board: `Bud → Bloom → Wilt`. Expose the "perfect bloom window" timing.
-
-**Owns:**
-- Per-flower timer (driven by flower rarity and upgrade multipliers)
-- State transitions and animation triggers
-- Bloom window definition (start time, duration, end time)
-- Visual feedback (particle burst on perfect tap, droop on wilt)
-
-**Communicates with:**
-- `FlowerDatabase` — reads base growth speed per flower species
-- `UpgradeSystem` — reads speed/window multipliers for the player's upgrades
-- `CoreGameplayLoop` — notifies when a flower wilts without being tapped
-
-**Data input:** `FlowerConfig { id, rarity, baseBloomDuration, bloomWindowFraction, animationKey }`
-
----
-
-### 3. Scoring System
-
-**Responsibility:** Calculate and accumulate score for the current session. Issue point awards and penalties.
-
-**Owns:**
-- Session score accumulator
-- Rarity multiplier lookup
-- Timing quality bands (Perfect / Good / Miss)
-- Combo multiplier state
-
-**Communicates with:**
-- `CoreGameplayLoop` — receives tap result events
-- `FlowerDatabase` — reads rarity base points
-- `UpgradeSystem` — reads score boost upgrades
-- `LeaderboardSystem` — pushes final score on session end
-- `QuestSystem` — emits "score X in one round" events
-
-**Data output:** `ScoreEvent { flowerID, quality, pointsAwarded, comboMultiplier, sessionTotal }`
-
----
-
-### 4. Collection / Gacha System
-
-**Responsibility:** Track which flower species the player has unlocked. Handle gacha pulls (currency-based random unlock) and gameplay-gated unlocks.
-
-**Owns:**
-- Unlocked species registry
-- Gacha probability table per rarity tier (Common/Rare/Epic/Legendary)
-- Gacha pull execution and result display
-- Seasonal flower pool toggling (event on/off)
-
-**Communicates with:**
-- `PlayerData` — reads/writes owned species list
-- `CurrencySystem` (inside MonetizationSystem) — deducts premium currency for pulls
-- `QuestSystem` — notifies on new species unlock
-- `FlowerDatabase` — reads full species catalog
-
-**Does NOT own:** Currency balance (lives in MonetizationSystem), flower stats (lives in FlowerDatabase).
-
----
-
-### 5. Upgrade System
-
-**Responsibility:** Allow players to spend resources to improve flower growth speed, bloom window duration, and score multipliers per species.
-
-**Owns:**
-- Upgrade tree definition per flower species
-- Current upgrade level per player per species
-- Resource cost calculation
-- Stat export interface (used by FlowerLifecycle and Scoring)
-
-**Communicates with:**
-- `PlayerData` — reads/writes upgrade levels
-- `CurrencySystem` — deducts soft currency (coins)
-- `FlowerLifecycleSystem` — provides computed speed/window multipliers
-- `ScoreSystem` — provides computed score boost multipliers
-
-**Data contract:**
-```typescript
-interface UpgradeStats {
-  growthSpeedMultiplier: number;   // 1.0 = base
-  bloomWindowMultiplier: number;   // 1.0 = base
-  scoreBoostMultiplier: number;    // 1.0 = base
-}
-getUpgradeStats(flowerID: string): UpgradeStats
+```
+src/
+├── core/                   # Platform-independent game logic
+│   ├── GameLoop.js         # requestAnimationFrame driver with delta-time
+│   ├── GameState.js        # Session state (score, timer, phase, combo)
+│   ├── Grid.js             # 8x8 cell array; cell access helpers
+│   ├── FlowerFSM.js        # Flower state machine class
+│   ├── SpawnManager.js     # Wave/difficulty logic; places flowers on grid
+│   └── ComboSystem.js      # Consecutive-tap tracking, multiplier calc
+├── input/
+│   └── InputHandler.js     # Touch + mouse unification; grid hit-test
+├── render/
+│   ├── Renderer.js         # Main draw pass: grid, flowers, UI
+│   ├── AnimationSystem.js  # Short-lived effects: burst, wilt, score popup
+│   └── SpriteSheet.js      # Asset loader; frame map for flower states
+├── data/
+│   ├── flowerTypes.js      # Config: cycle speed, score values per type
+│   └── difficultyPhases.js # Spawn rates, intervals for each 40s phase
+├── scenes/
+│   ├── GameScene.js        # Wires core + input + render; owns game loop
+│   └── ResultScene.js      # End-of-game screen: score, highscore display
+├── utils/
+│   ├── storage.js          # localStorage wrapper for highscore
+│   └── math.js             # Grid-coord helpers, random empty cell picker
+└── main.js                 # Entry point; canvas setup; scene bootstrap
 ```
 
----
+### Structure Rationale
 
-### 6. Garden Decoration System
-
-**Responsibility:** Manage the persistent garden view (background scene between gameplay sessions). Allow players to place, move, and remove decorative items.
-
-**Owns:**
-- Garden layout state (which items placed, positions)
-- Decoration catalog (items, prices, categories)
-- Garden scene rendering logic (separate from gameplay scene)
-
-**Communicates with:**
-- `PlayerData` — saves/loads garden layout
-- `CurrencySystem` — deducts soft or premium currency for items
-- `CollectionSystem` — some decorations unlock with flower collections
-
-**Note:** This is a meta-layer feature. It shares no runtime coupling with the CoreGameplayLoop — data flows only through PlayerData at session boundaries.
+- **core/:** Contains all game logic with zero DOM/Canvas dependency. Makes unit-testing flower FSM and combo logic trivial without a browser.
+- **input/:** Isolated translation layer. Changing from raw canvas touch to a framework (Phaser, etc.) only touches this folder.
+- **render/:** All drawing knowledge lives here. The rest of the codebase never calls Canvas API directly.
+- **data/:** Declarative config files. Tuning spawn rates or flower scores never touches logic code.
+- **scenes/:** Scene objects own the lifecycle (init / update / destroy). Switching from game to result screen is a scene swap.
 
 ---
 
-### 7. Quest / Achievement System
+## Architectural Patterns
 
-**Responsibility:** Track progress on daily quests and permanent achievements. Distribute rewards on completion.
+### Pattern 1: Fixed-Rate Update with Variable Render (delta-time game loop)
 
-**Owns:**
-- Active quest state (progress counters, completion flags)
-- Achievement registry and unlock state
-- Daily reset timer logic
-- Reward distribution (calls CurrencySystem / CollectionSystem)
+**What:** Accumulate real elapsed time; run logic updates in fixed steps; render as fast as the display allows.
 
-**Communicates with (event listeners):**
-- `CoreGameplayLoop` — listens for round_end, perfect_tap, combo events
-- `ScoreSystem` — listens for score milestones
-- `CollectionSystem` — listens for species_unlocked events
-- `CurrencySystem` — pushes rewards on quest completion
-- `SaveSystem` — persists progress
+**When to use:** Always. This is the standard HTML5 game loop. It decouples flower FSM timer accuracy from frame rate drops on low-end mobile.
 
-**Pattern:** QuestSystem subscribes to a central EventBus. Other systems emit events; QuestSystem reacts. This keeps emitters decoupled from quest logic.
+**Trade-offs:** Slight implementation complexity over a naive `setInterval`; prevents timer drift and ensures consistent difficulty regardless of device speed.
 
----
+**Example:**
+```javascript
+// GameLoop.js
+let accumulator = 0;
+const FIXED_STEP = 1000 / 60; // ms — 60 logic ticks/sec
 
-### 8. Leaderboard System
+function tick(timestamp) {
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+  accumulator += Math.min(dt, 200); // cap spiral-of-death
 
-**Responsibility:** Submit scores to FB Instant Games leaderboard API and fetch friend/global rankings for display.
+  while (accumulator >= FIXED_STEP) {
+    update(FIXED_STEP);   // deterministic, always 16.67ms
+    accumulator -= FIXED_STEP;
+  }
 
-**Owns:**
-- Score submission queue (with retry on network failure)
-- Cached leaderboard data (friend scores, global top)
-- Score sharing payload construction
-
-**Communicates with:**
-- `FBInstantAdapter` — platform API calls
-- `ScoreSystem` — receives final session score
-- `PlayerData` — reads player display name/avatar
-
-**Isolation:** All FB Instant Games API calls are wrapped in `FBInstantAdapter`. If the platform is native mobile (not FB), the adapter no-ops gracefully. Leaderboard UI shows a "not available" state.
-
----
-
-### 9. Monetization System (Ads + IAP)
-
-**Responsibility:** Manage ad lifecycle (rewarded, interstitial) and IAP purchase flow. Acts as single entry point for all revenue operations.
-
-**Owns:**
-- Ad readiness state (is rewarded ad loaded?)
-- Ad frequency cap / cooldown logic
-- IAP product catalog and purchase validation
-- Currency grant after successful reward/purchase
-
-**Sub-components:**
-- `AdsAdapter` — wraps Cocos Creator AdMob/Unity Ads SDK
-- `IAPAdapter` — wraps platform IAP (Apple StoreKit, Google Play Billing)
-- `FBInstantAdapter` — wraps FB Instant payments API
-- `CurrencySystem` — soft currency (coins) and premium currency (gems) ledger
-
-**Communicates with:**
-- `QuestSystem` — rewarded ads offered as quest reward shortcuts
-- `CollectionSystem` — IAP bundles unlock species
-- `SaveSystem` — persists currency balances
-- Platform adapters — all external SDK calls isolated here
-
-**Policy:** No direct SDK calls from gameplay or UI scripts. All monetization flows go through `MonetizationSystem` interface.
-
----
-
-### 10. Save / Persistence System
-
-**Responsibility:** Serialize and deserialize all player state. Abstract storage backend (local vs. cloud).
-
-**Owns:**
-- Save schema versioning and migration
-- Serialization of: PlayerData, CollectionData, UpgradeData, GardenLayout, QuestProgress, CurrencyBalances
-- Auto-save trigger (on scene transition, app pause, round end)
-- Conflict resolution (local vs. cloud — last-write-wins for casual game)
-
-**Communicates with:**
-- All stateful systems — reads their data on load, writes on save
-- `FBInstantAdapter` — cloud save via FB Player.setDataAsync (FB platform)
-- `cc.sys.localStorage` — local fallback
-
-**Data shape:**
-```typescript
-interface SaveBundle {
-  version: number;
-  playerID: string;
-  currency: { coins: number; gems: number };
-  collection: { unlockedIDs: string[]; upgradelevels: Record<string, number> };
-  garden: { layout: PlacedItem[] };
-  quests: { daily: QuestState[]; achievements: AchievementState[] };
-  meta: { lastSaved: number; totalSessions: number };
+  render();
+  requestAnimationFrame(tick);
 }
 ```
 
----
+### Pattern 2: Flower Finite State Machine (FSM) per Cell
 
-### 11. FB Instant Games Integration
+**What:** Each occupied grid cell runs an independent FSM. State transitions are time-driven (timer expires) except `DEAD` which can also be triggered by a wrong tap.
 
-**Responsibility:** Isolate all Facebook Instant Games SDK calls behind a platform adapter. All other systems call this adapter; none import the FB SDK directly.
+**When to use:** Any entity with a defined lifecycle. Centralises transition logic; prevents scattered `if (state === 'blooming')` checks across the codebase.
 
-**Owns:**
-- SDK initialization sequence (`FBInstant.initializeAsync → startGameAsync`)
-- Player identity (getID, getName, getPhoto)
-- Leaderboard API (getLeaderboardAsync, setScoreAsync, getConnectedPlayersEntriesAsync)
-- Cloud save (getDataAsync, setDataAsync)
-- Payments API (getPurchasesAsync, purchaseAsync)
-- Share / context switching (shareAsync, chooseContextAsync)
+**Trade-offs:** 64 FSM instances is trivial overhead. The benefit is testability and clarity.
 
-**Platform detection pattern:**
-```typescript
-// PlatformAdapter selects implementation at startup
-const adapter = cc.sys.isBrowser && typeof FBInstant !== 'undefined'
-  ? new FBInstantAdapter()
-  : new NullPlatformAdapter(); // no-ops for native
+**State diagram:**
+```
+EMPTY → SPROUT → BUDDING → BLOOMING → WILTING → DEAD → EMPTY
+           ↑          |         |
+       (spawn)    [tap OK]  [tap OK]    → harvest + score
+                                ↓
+                          [tap wrong] → penalty + skip to DEAD
+```
+
+**Example:**
+```javascript
+// FlowerFSM.js
+class FlowerFSM {
+  constructor(type) {
+    this.type = type;   // references flowerTypes config
+    this.state = 'SPROUT';
+    this.timer = 0;
+  }
+
+  update(dt) {
+    this.timer += dt;
+    const cfg = flowerTypes[this.type];
+    if (this.timer >= cfg.durations[this.state]) {
+      this.timer = 0;
+      this.state = NEXT_STATE[this.state]; // transition table
+    }
+  }
+
+  tap() {
+    if (this.state === 'BUDDING' || this.state === 'BLOOMING') {
+      return { result: 'harvest', points: flowerTypes[this.type].points[this.state] };
+    }
+    return { result: 'penalty', points: -flowerTypes[this.type].penaltyPoints };
+  }
+}
+
+const NEXT_STATE = {
+  SPROUT: 'BUDDING', BUDDING: 'BLOOMING',
+  BLOOMING: 'WILTING', WILTING: 'DEAD', DEAD: null
+};
+```
+
+### Pattern 3: Event-Driven Score Pipeline (tap → score)
+
+**What:** Input events emit a discrete `TapEvent` object. Game logic processes it synchronously: hit-test grid → query FSM → update score/combo → trigger animation. No side effects outside this pipeline.
+
+**When to use:** Keeps the data flow explicit and testable. Avoids tightly coupling the input handler to scoring rules.
+
+**Trade-offs:** One extra indirection. Worthwhile for this complexity level.
+
+**Data flow:**
+```
+touchstart (canvas pixel x,y)
+    ↓
+InputHandler.pixelToCell(x, y) → (row, col)
+    ↓
+Grid.getCell(row, col) → FlowerFSM instance (or null)
+    ↓
+FlowerFSM.tap() → { result, points }
+    ↓
+ComboSystem.record(result) → multiplier
+    ↓
+GameState.applyScore(points * multiplier)
+    ↓
+AnimationSystem.spawn(type, x, y)   // visual feedback, non-blocking
+```
+
+### Pattern 4: Phase-Based Spawn Controller
+
+**What:** A single elapsed-time value drives which of three difficulty configs is active. Spawn decisions are made by a rate timer, not frame-by-frame logic.
+
+**When to use:** When difficulty progression is time-based without discrete level transitions.
+
+**Example:**
+```javascript
+// SpawnManager.js
+const PHASES = [
+  { start: 0,   end: 40000,  spawnInterval: 2000 },  // 0-40s slow
+  { start: 40000, end: 80000, spawnInterval: 1200 },  // 40-80s medium
+  { start: 80000, end: 120000, spawnInterval: 600 },  // 80-120s fast
+];
+
+update(dt, elapsed, grid) {
+  const phase = PHASES.find(p => elapsed >= p.start && elapsed < p.end);
+  this.spawnTimer += dt;
+  if (this.spawnTimer >= phase.spawnInterval) {
+    this.spawnTimer = 0;
+    const cell = grid.randomEmptyCell();
+    if (cell) grid.spawn(cell, randomFlowerType());
+  }
+}
 ```
 
 ---
 
 ## Data Flow
 
-### Session Start Flow
+### Tap Event Flow (full pipeline)
 
 ```
-GameManager.startRound(levelConfig)
-  → FlowerManager.spawnFlowers(levelConfig.flowerSlots)
-      → FlowerDatabase.getConfig(flowerID)
-      → UpgradeSystem.getUpgradeStats(flowerID)
-      → FlowerLifecycle.startTimer(config, stats)
-  → ScoreSystem.resetSession()
-  → QuestSystem.onRoundStart()
+User finger / mouse
+    ↓
+touchstart / mousedown on <canvas>
+    ↓
+InputHandler
+  - preventDefault() to block scroll
+  - Translate clientX/Y → canvas-relative coords
+  - Divide by cellSize → (col, row)
+  - Emit TapEvent { row, col, timestamp }
+    ↓
+GameScene.handleTap(event)
+  - Grid.getFlower(row, col) → flower | null
+  - flower.tap() → { result, points }
+  - ComboSystem.record(result) → comboMultiplier
+  - GameState.score += points * comboMultiplier
+  - if result === 'harvest': Grid.clear(row, col)
+  - AnimationSystem.addEffect(result, canvasX, canvasY, points * multiplier)
+    ↓
+Next render frame: Renderer draws updated state
 ```
 
-### Tap Event Flow
+### State Update Flow (each logic tick)
 
 ```
-User tap on flower node
-  → FlowerLifecycle.onTapped()
-      → evaluates bloom window → returns TapResult { quality, flowerID }
-  → ScoreSystem.onTapResult(TapResult)
-      → calculates points → emits ScoreEvent
-  → QuestSystem.onTapEvent(TapResult)       [via EventBus]
-  → UIManager.updateScoreDisplay(ScoreEvent)
+GameLoop.update(dt)
+    ↓
+GameState.update(dt)
+  - elapsed += dt
+  - timeRemaining -= dt
+  - if timeRemaining <= 0 → scene transition to ResultScene
+    ↓
+SpawnManager.update(dt, elapsed, grid)
+  - may call grid.spawn(cell, type)
+    ↓
+for each occupied cell: FlowerFSM.update(dt)
+  - state transitions on timer expiry
+  - if transition to DEAD: Grid.clear(cell)
+    ↓
+ComboSystem.update(dt)
+  - reset combo if tap gap timeout exceeded
+    ↓
+AnimationSystem.update(dt)
+  - advance all active effects, remove expired ones
 ```
 
-### Round End Flow
+### Combo System State
 
 ```
-CoreGameplayLoop.onRoundEnd()
-  → ScoreSystem.getFinalScore() → sessionScore
-  → LeaderboardSystem.submitScore(sessionScore)
-  → QuestSystem.onRoundEnd(sessionScore, stats)
-      → checks completion → distributes rewards via CurrencySystem
-  → SaveSystem.save()
-  → UIManager.showRoundEndScreen(results)
-  → MonetizationSystem.maybeShowInterstitial()
-```
+ComboSystem
+  streak: number        ← increments on correct tap
+  multiplier: number    ← lookup: streak → multiplier
+  gapTimer: number      ← resets on each tap, counts up each tick
 
-### Gacha Pull Flow
+On correct tap:
+  streak++
+  gapTimer = 0
+  multiplier = MULTIPLIER_TABLE[min(streak, MAX_STREAK)]
 
-```
-UI: player taps "Pull x1"
-  → CollectionSystem.requestPull(pullType)
-      → MonetizationSystem.deductCurrency(gemCost)
-          → CurrencySystem.deduct(gems, amount)
-          → if insufficient → return error → UI shows IAP prompt
-      → GachaEngine.roll(seasonalPool) → flowerID
-      → CollectionSystem.unlockFlower(flowerID)
-          → PlayerData.addToCollection(flowerID)
-          → QuestSystem.onFlowerUnlocked(flowerID)  [via EventBus]
-      → SaveSystem.save()
-  → UI shows pull result animation
-```
-
-### Save Flow
-
-```
-Trigger: scene transition | app pause | round end
-  → SaveSystem.collectState()
-      → reads from: CurrencySystem, CollectionSystem, UpgradeSystem,
-                    GardenSystem, QuestSystem
-      → assembles SaveBundle
-  → SaveSystem.persist(bundle)
-      → cc.sys.localStorage.setItem('save', JSON.stringify(bundle))
-      → FBInstantAdapter.setDataAsync(bundle)  [if on FB platform]
+On wrong tap or gapTimer > GAP_THRESHOLD:
+  streak = 0
+  multiplier = 1
+  gapTimer = 0
 ```
 
 ---
 
-## Scene Management Approach
+## Mobile Touch Input Handling
 
-**Cocos Creator approach:** Use `cc.director.loadScene()` for major transitions and additive scene loading (`cc.director.loadScene` with `additive: true`) for overlay UI (popups, HUD).
+### Critical requirements for mobile
 
-### Scene List
+1. **Use `touchstart` not `touchend`** — `touchend` fires 60-100ms later. For a reflex game, `touchstart` is the correct event. `touchend` should only cancel scroll, not fire game logic.
 
-| Scene | Purpose | Persistent Managers Needed |
-|-------|---------|---------------------------|
-| `Boot` | Load persistent managers, load save, platform init | All managers initialize here |
-| `MainMenu` | Entry point, mode selection, daily quest summary | GameManager, QuestSystem, SaveSystem |
-| `Gameplay` | Core flower timing loop | All gameplay systems |
-| `Collection` | Browse/upgrade flowers, gacha pull | CollectionSystem, UpgradeSystem, MonetizationSystem |
-| `Garden` | Decoration placement meta-layer | GardenSystem, CurrencySystem |
-| `Shop` | IAP and currency purchases | MonetizationSystem |
-| `Leaderboard` | Score rankings | LeaderboardSystem, FBInstantAdapter |
+2. **`preventDefault()` on touchstart** — Required to suppress the 300ms click delay and prevent page scroll during gameplay. Must be called on the canvas element with `{ passive: false }`.
 
-**Boot scene pattern:** All Manager nodes are created in Boot and registered as persistent root nodes. Boot then loads MainMenu. Subsequent scene transitions never destroy managers.
+3. **Coordinate translation** — `touch.clientX/Y` is viewport-relative. Subtract `canvas.getBoundingClientRect()` to get canvas-relative coords, then divide by `cellSize`.
 
-```typescript
-// Boot.ts
-async onLoad() {
-  await PlatformAdapter.initialize();   // FB SDK init if applicable
-  await SaveSystem.load();
-  GameManager.instance.init();
-  // ... init all managers
-  cc.director.loadScene('MainMenu');
+4. **Single-touch only for v1** — Multi-touch opens edge cases (two fingers, palm rejection). Track only `touches[0]`. Ignore subsequent touches.
+
+5. **Unified mouse + touch handler** — Use a single `handlePointerDown(x, y)` function called from both `mousedown` and `touchstart`. Keeps logic DRY and simplifies testing.
+
+**Example:**
+```javascript
+// InputHandler.js
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();  // MUST be non-passive
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  handlePointerDown(x, y);
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  handlePointerDown(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+function handlePointerDown(x, y) {
+  const col = Math.floor(x / CELL_SIZE);
+  const row = Math.floor(y / CELL_SIZE);
+  if (row >= 0 && row < 8 && col >= 0 && col < 8) {
+    onTap({ row, col });
+  }
 }
 ```
 
-**Overlay / additive loading:** Popups (gacha reveal, settings, round end) are loaded additively on top of the current scene, then unloaded. This avoids full scene transitions for modal UI.
+### Canvas sizing for mobile
+
+Scale the canvas to fill the viewport while maintaining the 8x8 grid aspect ratio. Use CSS `width: 100%; height: auto` on the canvas element, and compute `cellSize` from `canvas.clientWidth / 8` at runtime. Re-compute on `resize` events.
 
 ---
 
-## Suggested Build Order
-
-Build order is determined by dependency direction: lower layers must exist before upper layers can call them.
+## Build Order (Component Dependencies)
 
 ```
-Phase 1: Foundation
-  ├── Boot scene + persistent node pattern
-  ├── EventBus (global pub/sub, no dependencies)
-  ├── FlowerDatabase (static data, no runtime deps)
-  ├── SaveSystem (schema only, no content yet)
-  └── PlayerData model (plain data object)
+Tier 1 — No dependencies (build first):
+  flowerTypes.js         ← pure data
+  difficultyPhases.js    ← pure data
+  FlowerFSM.js           ← depends only on flowerTypes data
+  math.js                ← pure utility
 
-Phase 2: Core Gameplay Loop (the fun)
-  ├── FlowerLifecycleSystem (depends on FlowerDatabase)
-  ├── CoreGameplayLoop (depends on FlowerLifecycle)
-  ├── ScoreSystem (depends on CoreGameplayLoop events)
-  └── Gameplay scene + basic UI (score, timer)
+Tier 2 — Depends on Tier 1:
+  Grid.js                ← depends on FlowerFSM
+  ComboSystem.js         ← standalone logic
+  GameState.js           ← standalone logic
 
-Phase 3: Progression Foundation
-  ├── CollectionSystem (depends on PlayerData, FlowerDatabase)
-  ├── UpgradeSystem (depends on CollectionSystem, PlayerData)
-  └── CurrencySystem (depends on PlayerData, SaveSystem)
+Tier 3 — Depends on Tier 2:
+  SpawnManager.js        ← depends on Grid + difficultyPhases
+  InputHandler.js        ← depends on Grid geometry (cellSize)
 
-Phase 4: Meta Systems
-  ├── QuestSystem (depends on EventBus, CurrencySystem)
-  ├── GardenSystem (depends on PlayerData, CurrencySystem)
-  ├── GachaEngine (depends on CollectionSystem, CurrencySystem)
-  └── Collection/Garden scenes
+Tier 4 — Depends on Tier 3:
+  Renderer.js            ← depends on Grid + GameState + AnimationSystem
+  AnimationSystem.js     ← standalone, feeds Renderer
+  GameLoop.js            ← orchestrates all Tier 2-3 components
 
-Phase 5: Social + Platform
-  ├── FBInstantAdapter (isolated, wraps FB SDK)
-  ├── LeaderboardSystem (depends on FBInstantAdapter, ScoreSystem)
-  └── Leaderboard scene
-
-Phase 6: Monetization
-  ├── AdsAdapter (wraps ad SDK)
-  ├── IAPAdapter (wraps store SDK)
-  ├── MonetizationSystem (depends on both adapters, CurrencySystem)
-  └── Shop scene
-
-Phase 7: Polish + Content
-  ├── Seasonal event system (extends CollectionSystem)
-  ├── Achievement system (extends QuestSystem)
-  ├── Performance optimization (asset bundles, texture atlases)
-  └── FB Instant Games file size audit
+Tier 5 — Top of graph:
+  GameScene.js           ← wires everything together
+  ResultScene.js         ← depends on GameState (final score)
+  main.js                ← entry point, scene bootstrap
 ```
 
-**Critical ordering rationale:**
-
-- `EventBus` must exist before any system emits or listens. Build first.
-- `FlowerDatabase` is read-only static config. Build before any system that needs flower data.
-- `CoreGameplayLoop` is the product hypothesis. Build it by Phase 2 to validate the "tap timing" fun before any meta systems.
-- `CurrencySystem` is a dependency for both Upgrade and Gacha — build it before either.
-- `MonetizationSystem` is intentionally last. Do not couple core gameplay to monetization early; it creates design pressure that degrades gameplay quality.
-- Platform adapters (`FBInstantAdapter`, `AdsAdapter`) wrap volatile external SDKs. Build them with null implementations first (no-op adapters) so all other systems can develop without a live SDK.
+**Implication for roadmap:** Build and test `FlowerFSM` + `Grid` + `ComboSystem` as pure logic first (no canvas required). Add `Renderer` once logic is verified. Add `InputHandler` last in the core pass since you can test logic with direct function calls.
 
 ---
 
-## Anti-Patterns to Avoid
+## Anti-Patterns
 
-### Direct Scene-to-Scene Data Passing
-**What goes wrong:** Passing game state via scene parameters or static fields tied to scene lifecycle.
-**Instead:** All state lives in persistent Manager nodes or SaveSystem. Scenes read from managers on `onLoad`.
+### Anti-Pattern 1: Putting Game Logic in the Renderer
 
-### Gameplay Scripts Importing SDK Directly
-**What goes wrong:** `FlowerLifecycle.ts` imports `FBInstant` — breaks native build, impossible to unit test.
-**Instead:** All SDK calls go through adapter layer. Gameplay scripts never import platform SDKs.
+**What people do:** Call `FlowerFSM.update()` inside the draw function, or check `if (flower.state === 'DEAD') removeFlower()` inside the render pass.
 
-### Monolithic GameManager
-**What goes wrong:** One `GameManager` owns all state — becomes a god object, every system depends on it, untestable, merge conflicts on every feature.
-**Instead:** Each system manages its own domain. `GameManager` only orchestrates round lifecycle and routes between scenes.
+**Why it's wrong:** The render function runs at display refresh rate (variable), not at game logic rate. Flower timers become frame-rate-dependent. On a 120Hz phone, flowers die twice as fast.
 
-### Saving on Every Frame or Every Tap
-**What goes wrong:** `cc.sys.localStorage` is synchronous and blocks the main thread. FB `setDataAsync` is rate-limited.
-**Instead:** Save only on round end, scene transition, and app pause (`cc.game.on(cc.Game.EVENT_HIDE)`).
+**Do this instead:** Strict separation — `update(dt)` mutates state, `render()` reads state and draws. Never mutate state in render.
 
-### Hardcoded Flower Configs in Scripts
-**What goes wrong:** Flower growth speed, bloom window, point values in TypeScript constants. Impossible to balance without code changes.
-**Instead:** All flower data in `FlowerDatabase` — JSON files loaded as Cocos Creator assets, editable without recompile.
+### Anti-Pattern 2: Listening to `touchend` for Tap Detection
+
+**What people do:** Wire tap logic to `touchend` because "that's when the tap is complete."
+
+**Why it's wrong:** `touchend` fires ~100ms after `touchstart`. In a 120-second reflex game where BLOOMING windows can be 1-2 seconds, losing 100ms per tap matters. It also causes double-fire when combined with the synthesized `click` event.
+
+**Do this instead:** Use `touchstart` with `preventDefault()`. Only use `touchend` if you need to distinguish tap from swipe (check that touch didn't move more than a threshold).
+
+### Anti-Pattern 3: Mutable Global Game State
+
+**What people do:** `window.score += points`, `window.combo++`, etc.
+
+**Why it's wrong:** Impossible to reset state cleanly between games. End-of-game scene reads stale values. Testing is impossible.
+
+**Do this instead:** All session state lives in a `GameState` instance created fresh at game start. Pass it through to components that need it, or use a minimal event bus.
+
+### Anti-Pattern 4: Animating via setTimeout/setInterval
+
+**What people do:** `setTimeout(() => drawExplosion(), 100)` for visual effects.
+
+**Why it's wrong:** Timers fire off the render cycle. Effects render mid-frame or are skipped entirely. Results in visual tearing and desync.
+
+**Do this instead:** Push effects to an `AnimationSystem` array. Each effect has its own timer. The render loop draws all active effects every frame.
+
+### Anti-Pattern 5: Re-allocating Objects per Frame
+
+**What people do:** `const flowers = grid.cells.filter(c => c.flower).map(c => ...)` inside the update or render loop.
+
+**Why it's wrong:** On mobile, GC pauses from per-frame allocations cause visible hitches during intense spawn waves (exactly when it's worst for gameplay).
+
+**Do this instead:** Pre-allocate fixed arrays. Mark cells as occupied/empty with a flag. Iterate the fixed `cells[64]` array directly.
 
 ---
 
-## Scalability Considerations
+## Integration Points
 
-| Concern | Now (MVP) | At 50+ flower species | At seasonal events |
-|---------|-----------|----------------------|-------------------|
-| Flower data | Single JSON file | Split into category bundles, lazy load | Seasonal pool as separate asset bundle |
-| Save size | Full JSON in localStorage | Same — save only IDs, not full objects | Include event state in save schema v2+ |
-| Gacha pool | Static probability table | Weighted pool by rarity tier, configurable | Pool hot-swap on event start/end |
-| FB file size | All assets in main bundle | Separate asset bundles per scene | Seasonal assets in downloadable bundles (if FB allows) |
-| Ad frequency | Simple round counter | Cooldown timer + session cap | No change needed |
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| InputHandler → GameScene | Callback `onTap(row, col)` | InputHandler knows nothing about game rules |
+| GameScene → FlowerFSM | Direct method call `flower.tap()` | FSM is owned by Grid cell |
+| GameScene → Renderer | Pass current state snapshot each frame | Renderer is read-only consumer |
+| GameScene → AnimationSystem | `addEffect(type, x, y, value)` push | AnimationSystem runs independently |
+| GameLoop → GameScene | Calls `scene.update(dt)` and `scene.render()` | GameLoop owns the rAF handle |
+| ResultScene ← GameState | Reads final score/highscore on construct | localStorage for highscore persistence |
+
+### External Services
+
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| localStorage | Wrapper in `utils/storage.js` | Save/load highscore only; no session state persisted |
+| FB Instant Games SDK (future) | Swap `storage.js` implementation | Core game logic untouched if storage is abstracted |
+
+---
+
+## Scaling Considerations
+
+This is a single-player client-side game — "scaling" means device performance, not server load.
+
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| Low-end Android (60fps target) | Keep draw calls minimal; avoid shadow/blur filters; pool animation objects |
+| Mid-range mobile (smooth gameplay) | Current architecture handles this well; profile GC pressure if hitches occur |
+| FB Instant Games embed | Replace `localStorage` with FBInstant.getDataAsync; rest unchanged |
+
+### Performance Priorities
+
+1. **First bottleneck:** Canvas draw calls. Each flower is a sprite draw. 64 cells + animations is fine on any device. Only becomes an issue if particle effects are unbounded.
+2. **Second bottleneck:** GC pauses from per-tap object creation. Pool `TapEvent` objects or use plain function args instead of objects.
 
 ---
 
 ## Sources
 
-- Cocos Creator documentation (training knowledge through August 2025): scene management, persistent root nodes, `cc.director`, asset bundles
-- FB Instant Games SDK documentation (training knowledge): initialization sequence, leaderboard API, player data API, payments API
-- Established casual game architecture patterns: Manager/Service layer, EventBus decoupling, adapter pattern for platform SDKs
-- Confidence: MEDIUM — WebSearch and WebFetch unavailable for live verification. Patterns are stable and widely used; Cocos Creator API specifics should be verified against current docs (v3.x) before implementation.
+- HTML5 game loop patterns: well-established in gamedev community (Fix Your Timestep, Glenn Fiedler 2004 — canonical reference)
+- Finite state machine for game entities: standard pattern documented in "Game Programming Patterns" (Nystrom)
+- Mobile touch input `touchstart` vs `touchend` behavior: MDN Web Docs (Touch Events)
+- Canvas coordinate transform for responsive sizing: MDN Web Docs (Canvas API)
+- Confidence: MEDIUM — core architecture patterns are stable and well-established; specific implementation details are training knowledge, not verified against 2026 sources due to WebSearch being unavailable
+
+---
+*Architecture research for: HTML5 Casual Grid-Based Tapping Game*
+*Researched: 2026-03-13*

@@ -1,19 +1,17 @@
 # Project Research Summary
 
-**Project:** Bloom Harvest
-**Domain:** Casual mobile tap/timing game with collection, gacha, and garden meta-layer
-**Researched:** 2026-03-07
+**Project:** Bloom Tap
+**Domain:** HTML5 casual grid-based tapping game — mobile web + Facebook Instant Games
+**Researched:** 2026-03-13
 **Confidence:** MEDIUM
-
----
 
 ## Executive Summary
 
-Bloom Harvest is a casual mobile timing game where players tap flowers at the exact moment of peak bloom. The genre (tap/timing + collection) is well-understood: Piano Tiles, Tap Tap Revenge, and Magic Tiles established the core loop; Clash Royale and Pokemon GO proved that layering rarity-based collection on top of a simple mechanic is a durable retention engine. The recommended approach is to build Cocos Creator 3.8.x as the single codebase targeting iOS, Android, and Facebook Instant Games simultaneously — it is the only engine with mature first-class support for all three targets without a wrapper.
+Bloom Tap is a 120-second, time-limited casual tapping game played on an 8x8 grid. Players harvest flowers in specific growth states (Blooming, Full Bloom) to earn points, with a wrong-tap penalty, a combo multiplier system, and a 3-phase difficulty escalation that drives the emotional arc of each session. The established approach for this class of game is Phaser 3 on a Vite + TypeScript scaffold — this combination has the lowest friction, the richest community, and is explicitly supported by Facebook Instant Games. Architecture centers on a fixed-rate game loop driving per-cell Flower FSMs, a decoupled renderer, and a data-driven spawn config that supports difficulty phases without hardcoded logic.
 
-The critical design insight from research is that **the timing feel IS the product, not a feature**. The bloom-burst tap moment must be satisfying before any meta-system is added. Research consistently shows that casual players who bounce in the first 2 minutes never reach gacha, collections, or monetization. Every Phase 1 decision — from asset pipeline discipline to millisecond-based timing windows to particle juice — must serve getting that tap moment right. Layering currency, collection, and social features on top of a mediocre feel produces a mediocre game with monetization bolted on. Nail the tap, then monetize.
+The primary technical risks are performance-related: GC spikes during Phase 3 heavy spawning (prevented by object pooling from the start), flower timer drift over a 120-second session (prevented by timestamp-based state derivation, not delta accumulation), and canvas rendering cost on mid-range Android (prevented by using Phaser's WebGL renderer and avoiding canvas shadowBlur). A secondary structural risk is the dependency chain: the flower growth cycle must exist and be visually readable before any tap-timing or scoring work is valid, and the spawn system must be parameterized from day one to support 3-phase escalation — neither can be retrofitted cheaply.
 
-The top risks are: (1) FB Instant Games bundle size, which must be architected from Day 1 using Cocos Creator's Asset Bundle system — retrofitting this after content is built is expensive; (2) frame-rate-dependent timing logic, which will make the core loop feel inconsistent across the 30fps/60fps device range your actual audience uses; and (3) gacha rate compliance, which is a legal and store-rejection risk if rate tables are not config-driven with unit tests. All three risks are eliminable in Phase 1 if the foundation is set correctly before any content is produced.
+The recommended build sequence is: foundation (rendering, input, viewport, DPR) → pure game logic (FlowerFSM, Grid, ComboSystem as code with no canvas) → wired gameplay (Renderer + InputHandler connecting logic to screen) → session loop (timer, spawn escalation, scoring pipeline) → results and persistence → juice and polish. Facebook Instant Games integration is explicitly deferred to post-v1 because it requires a different initialization architecture and storage layer, but the codebase must abstract these from day one to avoid a costly retrofit.
 
 ---
 
@@ -21,278 +19,147 @@ The top risks are: (1) FB Instant Games bundle size, which must be architected f
 
 ### Recommended Stack
 
-Cocos Creator 3.8.x with TypeScript is the unambiguous engine choice. Unity WebGL builds are too large for the FB Instant Games 5 MB initial payload requirement. Phaser and PixiJS cannot produce native binaries. Godot's HTML5 export lacks a mature monetization plugin ecosystem. Cocos Creator's built-in animation, audio, UI, and asset bundle systems cover all MVP needs — no additional third-party game frameworks are needed.
+The standard stack for a shipped HTML5 casual game in this domain is Phaser 3 (3.87.x) + TypeScript 5.4.x + Vite 5.x. Phaser 3 is the dominant choice because it provides Canvas/WebGL rendering with automatic fallback, a built-in scene system, a pointer event model correctly mapped to `touchstart`, and an official Facebook Instant Games plugin. TypeScript is justified by the complexity of the state machine — catching enum and state transition bugs at compile time rather than runtime saves significant debugging time. Vite provides the fastest dev loop and is the community standard replacement for Webpack in new Phaser projects. The Facebook Instant Games SDK (v7.1) is loaded via CDN script tag, not npm, and must be initialized before any Phaser boot.
 
-For services: Google AdMob (via Cocos Service panel) for mobile ads; FB Instant SDK ads for the HTML5 build; Cocos Creator's built-in IAP service for native purchases; Firebase (Firestore + Remote Config + Analytics) as the lightweight backend. All SDK calls must be wrapped in platform adapter classes — no direct SDK imports in gameplay scripts.
+Three technologies are explicitly forbidden: React/Vue for any in-game UI (60fps tap feedback is incompatible with DOM reflow), Unity WebGL export (5-50MB bundle violates FB's 200KB initial payload limit), and the `npm install fbinstant` unofficial packages (stale, not maintained by Meta).
 
 **Core technologies:**
-- **Cocos Creator 3.8.x**: Engine and cross-platform build pipeline — only engine with first-class iOS + Android + FB Instant in one TypeScript codebase
-- **TypeScript 5.x** (bundled): Game logic language — strong typing prevents bugs in complex flower state machines; JS deprecated in Creator 3.x
-- **FB Instant Games SDK 7.1**: Platform API for leaderboards, payments, sharing, ads on the HTML5 build — required by Facebook, no alternative
-- **Google AdMob**: Rewarded and interstitial ads on native builds — highest fill rate for casual games in Southeast Asia
-- **Firebase (JS SDK 10.x)**: Player sync, leaderboard backend, remote config for seasonal events, analytics — free Spark tier covers MVP scale
-- **Cocos Creator Asset Bundle system**: Critical for splitting the 200 MB FB Instant budget; core bundle must stay under 5 MB initial payload
-- **TexturePacker**: Sprite atlas generation — required to hit the target of less than 25 draw calls in the gameplay scene on low-end Android
-
-**Do NOT use:** Physics engine (Box2D/Bullet — no gameplay use case), Spine (commercial license, bundle size not justified at MVP), Redux/MobX (web-framework patterns do not map to game loops), Facebook Audience Network directly (use via AdMob mediation instead).
-
-**Versions to verify before project setup** (research used training data, not live docs):
-- Cocos Creator latest stable (may be 3.9.x by March 2026)
-- FB Instant Games SDK current version (was 7.1 as of mid-2025)
-- AdMob Android/iOS SDK versions (LOW confidence — change frequently)
-
-See `STACK.md` for full version matrix and verification URLs.
-
----
+- **Phaser 3 (3.87.x):** Game engine — rendering, input, scene management, animations — industry standard for HTML5 casual/Instant Games with official TS types
+- **TypeScript (5.4.x):** Type safety and refactor confidence — Phaser ships official definitions; catches state machine bugs at compile time
+- **Vite (5.x):** Dev server and production bundler — fastest dev loop for Phaser; community standard since 2023
+- **Facebook Instant Games SDK (7.1, CDN):** Platform API for FB distribution — must load before Phaser; never install via npm
 
 ### Expected Features
 
-The game divides cleanly into three layers: core loop (tap/timing), progression meta (collection/upgrade/gacha), and social/monetization. Each layer must be validated before the next is built.
+The game's core value lies at the intersection of timing skill (harvest window) and spatial scanning (8x8 grid) — features absent from pure idle tappers and pure reflex games. Every table-stakes feature must be in place before any timing balance work is valid, because missing feedback (visual, score, combo) invalidates player behavior during testing.
 
-**Must have (table stakes) — MVP blockers:**
-- Responsive tap detection with sub-100ms feedback — any lag breaks the core mechanic
-- Visual and audio hit feedback (particle burst, scale pop, SFX) on tap — this IS the product moment
-- Clear timing window indicator via bloom animation — players must read the window without separate UI
-- Score display and high score tracking — session-to-session motivation
-- Miss/failure feedback (wilt animation + penalty) — required for the skill improvement loop
-- Game over / session end screen with replay button — standard mobile game contract
-- Campaign mode (10-15 levels minimum) and Endless mode — having only one halves retention
-- Level difficulty progression — difficulty curve is the product roadmap for campaign
-- Interactive tutorial — "tap at peak bloom" must be understood in under 30 seconds, no text walls
-- Pause/resume, settings (sound/music toggle) — real life interrupts; missing = uninstalls
-- Rewarded ads (continue after fail, double reward) — highest engagement ad placement for the genre
+**Must have (table stakes — v1 launch):**
+- Responsive tap registration on `pointerdown` — any latency breaks timing feel
+- Visual feedback on every tap (correct and wrong) — silent taps feel broken
+- 5 flower growth states (Bud / Blooming / Full Bloom / Wilting / Dead) with visually distinct rendering — this IS the game
+- Real-time score display and countdown timer with urgency escalation
+- Wrong-tap point deduction with immediate feedback (screen shake, red flash)
+- Combo counter with multiplier (resets on wrong tap) — the accuracy pressure mechanism
+- 3-phase round escalation (0-40s / 40-80s / 80-120s) with parameterized spawn rates
+- Results screen with local highscore (localStorage) and instant restart
+- Essential juice: tap scale pulse, score float pop-up, combo break flash, timer urgency color
 
-**Should have (competitive differentiators) — first update window:**
-- Flower rarity system (Common / Rare / Epic / Legendary) with distinct visual treatment per tier
-- Per-species bloom timing personality (roses forgiving/slow, cherry blossoms punishing/fast)
-- Flower collection / Florarium view with locked slots visible for FOMO motivation
-- Gacha / seed pack opening with pity system (required by Apple Guideline 3.1.1)
-- Daily quests (3/day, reset at midnight) and login streak rewards
-- Global leaderboard (FB Instant native API; Game Center or custom backend for native)
-- Score sharing with deep link — low effort, meaningful virality for a timing game
+**Should have (v1.x after core validation):**
+- Phase transition visual/audio cue
+- Sound effects (tap, combo break, wrong tap, phase change, game over)
+- Flower cycle micro-animations (sprite sheet transitions between states)
+- Results screen score count-up animation
+- Screen shake on wrong tap
 
-**Defer to v2+:**
-- Garden decoration system — High complexity, High reward; needs monetization cohort data before building
-- Seasonal events — requires operational content calendar; plan before shipping, build after launch data
-- Achievement system — nice-to-have, low urgency relative to collection and quests
-- Flower upgrade system — needs collection data to balance; add after cohort analysis
-- Friends leaderboard — requires social auth which varies by platform; defer until player base exists
-
-**Deliberate anti-features (do not build in v1):**
-- Real-time multiplayer PvP
-- Energy/stamina gate (kills new user retention in the critical first week)
-- Crafting/flower combination (cognitive overhead that contradicts the casual loop)
-- In-game chat (moderation infrastructure + COPPA complexity)
-- Subscription monetization (wrong model for casual timing games)
-
-See `FEATURES.md` for full dependency graph and monetization pattern details.
-
----
+**Defer (v2+):**
+- Meta-progression / flower unlocks — requires validated replay loop first
+- Online leaderboard — requires backend infra and confirmed audience
+- Multiple game modes — dilutes focus before core is proven
+- Facebook Instant Games packaging — separate integration architecture
 
 ### Architecture Approach
 
-The recommended pattern is a layered Manager architecture with persistent singleton nodes surviving scene transitions, a central EventBus for decoupled system communication, and platform adapter classes isolating all external SDK calls. Scenes are thin shells that wire UI to manager APIs. The critical discipline: no gameplay script ever imports an SDK directly — all platform calls go through adapter classes that can be no-op stubs during development.
+The architecture separates pure game logic (FlowerFSM, Grid, ComboSystem, GameState, SpawnManager — all platform-independent) from rendering (Phaser GameObjects, Renderer, AnimationSystem) and input (InputHandler translating canvas coords to grid coordinates). This separation allows the entire logic tier to be unit-tested without a browser, isolates the rendering layer so switching renderer strategies requires only one folder, and makes FB Instant Games integration a storage/init swap rather than a logic rewrite.
+
+The critical architectural decisions are: (1) fixed-rate game loop with delta-time accumulator to decouple flower timer accuracy from frame rate; (2) per-cell Flower FSMs with timestamp-based state derivation (not delta accumulation) to prevent timer drift; (3) object pools for all frequently created/destroyed objects (flower slots, score pop-up Text objects) to prevent GC spikes in Phase 3; (4) data-driven spawn config with phase tables from day one — hardcoded spawn logic cannot be extended to 3 phases.
 
 **Major components:**
-1. **Boot Scene + Persistent Managers** — initializes all manager singletons as persistent root nodes; runs FB Instant init sequence before `startGameAsync()`; loads save data; then transitions to MainMenu
-2. **CoreGameplayLoop** — owns round state machine (Idle → Countdown → Playing → RoundOver), tap validation against bloom windows, combo tracking; does NOT own ads, saves, or player data
-3. **FlowerLifecycleSystem** — manages per-flower state machine (Bud → Bloom → Wilt) with millisecond-based timing; exposes bloom window as wall-clock timestamps, never frame counts
-4. **ScoreSystem** — session score accumulator with rarity multipliers, timing quality bands (Perfect/Good/Miss), and combo multiplier; emits `ScoreEvent` consumed by UI and QuestSystem
-5. **CollectionSystem + GachaEngine** — tracks unlocked species; executes gacha pulls from config-driven probability table; enforces pity system
-6. **MonetizationSystem** — single entry point for all ads and IAP; owns ad readiness state, frequency cap logic, and IAP purchase validation flow; no ad SDK calls outside this system
-7. **SaveSystem** — single async interface wrapping both `cc.sys.localStorage` (native) and `FBInstant.player.setDataAsync()` (HTML5); schema-versioned with migration functions; saves only on round end, scene transition, and app pause
-8. **FBInstantAdapter / AdsAdapter / IAPAdapter** — platform adapter layer; all other systems call adapters; adapters can be null-implemented for development without live SDKs
-9. **EventBus** — global pub/sub enabling QuestSystem and UIManager to react to gameplay events without direct coupling to game loop
-10. **FlowerDatabase** — static config loaded from JSON assets; all flower species data (growth speed, bloom window, base points, animation keys) lives here, never hardcoded in scripts
-
-**Scenes:** Boot, MainMenu, Gameplay, Collection, Garden (v2), Shop, Leaderboard.
-
-**Key patterns:**
-- Platform detection at startup selects FBInstantAdapter vs NullPlatformAdapter
-- Node pooling for flowers (prevents GC spikes and listener churn)
-- Additive scene loading for modal UI (gacha reveal, settings, round end) over current scene
-
-See `ARCHITECTURE.md` for full data flow diagrams (session start, tap event, round end, gacha pull, save).
-
----
+1. **FlowerFSM** — per-cell state machine managing the 5-stage growth lifecycle; all timing derived from `performance.now()` spawn timestamp
+2. **Grid** — flat 64-cell array owning FlowerFSM instances; provides random empty cell picker for SpawnManager
+3. **SpawnManager** — phase-table-driven spawn rate controller; reads elapsed time to select active phase config
+4. **ComboSystem** — streak counter with multiplier lookup; resets on wrong tap or gap timeout
+5. **GameState** — session state (score, timer, phase, combo); fresh instance per game start, never global
+6. **Renderer** — Phaser GameObjects drawing from current state; never mutates state
+7. **InputHandler** — translates `pointerdown` canvas coords to (row, col); calls `onTap` callback; knows nothing about game rules
+8. **AnimationSystem** — pooled short-lived effects (tap pulse, score float, combo break flash); runs independently of game state
 
 ### Critical Pitfalls
 
-Research identified 5 critical pitfalls (rewrites, store rejections, permanent churn) and 6 moderate pitfalls. The top 5 to address:
+1. **Touch input on `touchend`/`click` instead of `pointerdown`** — introduces 100-300ms latency on mobile; all timing balance collected with wrong event binding is invalid. Use Phaser's `pointerdown` event from the first line of input code. Set `canvas { touch-action: none }` in CSS. This must be correct before any tap-timing balance testing.
 
-1. **FB Instant bundle exceeds initial payload limit** — Establish Asset Bundle architecture and a hard budget (initial payload under 5 MB, total under 100 MB with headroom) before any content is added. Audit bundle size at every milestone. Retrofitting asset bundling after 20 flower types are built is a multi-day rewrite. Address in Phase 1.
+2. **Flower timer drift from delta-time accumulation** — floating-point accumulation over 120 seconds causes state transitions to drift ±50ms, making the game feel inconsistent. Use timestamp-based state derivation: store `spawnTimestamp = performance.now()`, compute `state = getStateForElapsed(now - spawnTimestamp)` as a pure function. Must be the architecture from day one — retrofitting is HIGH cost.
 
-2. **Frame-rate-dependent timing logic** — Express ALL bloom windows as wall-clock millisecond timestamps (`bloomStart = Date.now() + growDuration`). Never use frame counts or `dt` accumulation for timing window boundaries. Test on a device matrix: high-end iOS, Snapdragon 680-class Android, and Chrome with 4x CPU throttle for FB Instant. Address in Phase 1 (core gameplay prototype).
+3. **GC spikes during Phase 3 from per-spawn object allocation** — creating and destroying Phaser GameObjects in the hot loop causes stop-the-world GC pauses of 30-100ms precisely during the game's most intense moment. Pre-create all 64 flower slots at game init; activate/deactivate instead of create/destroy. Pool score pop-up Text objects (8-10 is sufficient). Must be in place before Phase 3 performance testing.
 
-3. **Save data corruption from dual write paths** — Design a single `SaveManager` abstract interface (both backends return Promises) before any feature saves data. One canonical JSON schema with a version field and migration function for every schema change. Local `localStorage` cache as fallback when FB's `getDataAsync` fails. Address in Phase 1 (foundation).
+4. **Canvas not scaled for device pixel ratio** — sprites appear blurry on all Retina and high-DPI Android devices. Set `resolution: window.devicePixelRatio` in Phaser config at game creation. Changing this later requires recalculating all coordinate systems. Must be set during project foundation.
 
-4. **Draw call explosion from per-flower sprites** — All flower states (bud, bloom, wilt) must share one or two texture atlases, not individual PNGs. Target under 25 draw calls in the gameplay scene. Use a pooled particle system for bloom bursts, not instantiated per-tap. Enforce atlas discipline in the asset pipeline spec before artists produce any content. Address in Phase 1 (asset pipeline setup).
+5. **Mobile viewport scroll conflicts** — without `touch-action: none` on canvas and `position: fixed` on body, vertical swipes scroll the page instead of registering taps; Android browser chrome hide/show resizes the canvas. These CSS rules must be in place before any mobile UX testing.
 
-5. **Gacha rate manipulation — legal and store rejection risk** — Store ALL probability tables in a single config JSON file read by both the draw function and the UI display. Write unit tests that (a) assert rates sum to 100% and (b) run 100,000 simulated draws and assert empirical distribution matches config within 1%. The in-game rate disclosure screen must be generated programmatically from the same config. Address when gacha is introduced; rate table config and tests are the first gacha deliverable.
-
-**Additional pitfalls to track:**
-- Missing juice on tap events: particle burst, screen shake, score popup animation are NOT polish — they ARE the product. Must ship with the first playable prototype.
-- Interstitial ads after loss states: highest uninstall trigger in the genre. Interstitials only after win states or neutral transitions. Minimum 3 levels between triggers. Centralize all trigger logic in `MonetizationSystem`.
-- Client-side only IAP receipt validation: trivially bypassable on Android. Use a Firebase Cloud Function to validate receipts server-side before granting items. One-day implementation, must be in place before IAP ships.
-
-See `PITFALLS.md` for full prevention checklists and warning signs.
+6. **iOS AudioContext silence** — `AudioContext` created before user gesture is suspended on iOS Safari; all sound is silently absent on iPhone. Use a "Tap to Start" splash screen as the first scene to unlock audio before the game loop starts. Must be built alongside the first audio effects.
 
 ---
 
 ## Implications for Roadmap
 
-Research from all four files converges on a clear build order driven by the dependency graph: lower infrastructure layers first, core timing feel validated before any meta-system, monetization last to avoid coupling it to gameplay design decisions.
+Based on the dependency graph across all four research files, the build order is forced by architecture, not preference. The key constraint is that visual readability of flower states is a gameplay prerequisite (players cannot test timing if they cannot read states), and the entire tap-timing pipeline (FSM → input → score → combo) must be wired before any balance work is meaningful.
 
-### Phase 1: Foundation + Core Timing Loop
+### Phase 1: Project Foundation
 
-**Rationale:** The bloom timing mechanic is the product hypothesis. Validate it before anything else. All infrastructure decisions (save abstraction, asset bundle architecture, timing system) made here are locked in for the entire project — getting them wrong is the most expensive class of mistake.
+**Rationale:** Three pitfalls (DPR scaling, viewport scroll, touch-action CSS) must be resolved before any mobile testing is possible. Getting them right at foundation cost is LOW; retrofitting them costs MEDIUM-HIGH due to coordinate system and layout cascade. This phase has no game logic — it just makes the environment correct.
+**Delivers:** Phaser 3 + TypeScript + Vite scaffold; canvas sized correctly for DPR; viewport locked against browser chrome; touch events non-passive and non-scrolling; FB SDK mock wired for local dev; "Tap to Start" splash for iOS audio unlock.
+**Addresses:** Grid rendering surface (prerequisite for all subsequent phases)
+**Avoids:** DPR blurriness (Pitfall 4), viewport scroll conflicts (Pitfall 7), iOS audio silence foundation (Pitfall 6), touch latency from wrong event binding (Pitfall 1)
 
-**Delivers:** A playable prototype where a single flower blooms and the tap feels satisfying. All cross-cutting infrastructure is in place.
+### Phase 2: Core Game Logic (Pure, No Canvas)
 
-**Implements:**
-- Boot scene + EventBus + FlowerDatabase (JSON config)
-- SaveSystem abstract interface (local + FB Instant backends)
-- FlowerLifecycleSystem with millisecond-based timing windows
-- CoreGameplayLoop (single flower, Bud → Bloom → Wilt state machine)
-- ScoreSystem (Perfect / Good / Miss bands, combo multiplier)
-- Tap feedback juice layer: particle burst, screen shake, score popup animation, audio SFX
-- Asset Bundle architecture established; initial payload budget enforced
-- Platform orientation locked (portrait); FB Instant init sequence correct (init → load assets → setLoadingProgress → startGameAsync)
-- Node pool pattern and `targetOff` lifecycle discipline established
+**Rationale:** The architecture research explicitly maps a build order with Tier 1-2 components (FlowerFSM, Grid, ComboSystem, GameState, SpawnManager) as platform-independent pure logic. Building and unit-testing these before adding rendering prevents the worst anti-pattern: putting game logic in the renderer. Timer drift (Pitfall 5) must be architected here — timestamp-based derivation cannot be retrofitted.
+**Delivers:** FlowerFSM with 5 states and timestamp-based timing; Grid (64 cells, spawn/clear helpers); ComboSystem with multiplier table; GameState (score, timer, phase); SpawnManager with phase config tables; all logic unit-testable without a browser.
+**Implements:** FlowerFSM, Grid, ComboSystem, GameState, SpawnManager, flowerTypes data, difficultyPhases data
+**Avoids:** Timer drift (Pitfall 5), mutable global state anti-pattern, hardcoded spawn rates that can't support 3 phases
 
-**Avoids:** C-2 (frame-rate timing), C-3 (dual save path), C-4 (draw calls), M-1 (missing juice), m-3 (audio context), m-4 (orientation breakage), C-1 (bundle size, architecture set)
+### Phase 3: Renderer and Input Wiring
 
-**Research flag:** Standard patterns — skip additional research. Cocos Creator timing and scene management are well-documented.
+**Rationale:** Rendering depends on the logic tier being stable. Once FlowerFSM and Grid are correct, the Renderer is a read-only consumer of state — no mutation in the render pass. This phase wires InputHandler (translating canvas coords to grid tap events) and makes the game visually playable for the first time. Object pooling (Pitfall 2) must be implemented here — the pool architecture must exist before Phase 3 load testing.
+**Delivers:** Phaser GameObjects for all 64 flower slots (pre-created, pooled); Renderer drawing from game state each frame; InputHandler translating `pointerdown` to `onTap(row, col)`; AnimationSystem with pooled score pop-ups and tap pulse effects; a playable (but un-timed) game loop.
+**Uses:** Phaser 3 GameObjects, Phaser ScaleManager (DPR), Phaser Input Manager (pointerdown)
+**Avoids:** GC spikes from missing object pool (Pitfall 2), logic-in-renderer anti-pattern, full canvas redraw performance trap (Pitfall 8)
 
----
+### Phase 4: Session Loop and Scoring Pipeline
 
-### Phase 2: Content + Game Modes
+**Rationale:** With a stable renderer and input layer, the scoring pipeline (tap → FSM → combo → score → animation trigger) can be wired end-to-end. The 120-second timer, 3-phase escalation, and round lifecycle (start → play → end) are implemented here. This is the first phase where the complete game loop is playable and balance testing begins — which is why touch input correctness (Pitfall 1) must have been verified in Phase 1.
+**Delivers:** Complete tap event pipeline (InputHandler → Grid → FlowerFSM.tap() → ComboSystem → GameState.applyScore() → AnimationSystem); 120-second countdown with phase transitions at 40s and 80s marks; parameterized SpawnManager phase switching; real-time score and combo HUD; game-over trigger on timer expiry.
+**Implements:** Event-driven score pipeline (Architecture Pattern 3), Phase-based spawn controller (Architecture Pattern 4)
+**Avoids:** Incorrect tap event binding (must verify `pointerdown` triggers balance test)
 
-**Rationale:** Once the tap feel is validated, add variety (multiple flower species with distinct timing personalities) and structure (Campaign + Endless modes). This is where the game becomes a game, not just a prototype.
+### Phase 5: Results Screen and Persistence
 
-**Delivers:** A releasable core game loop with 3-5 flower species, 10-15 campaign levels, Endless mode, tutorial, settings, pause/resume.
+**Rationale:** Results screen and local highscore are a single dependency unit (FEATURES.md explicitly notes: implement both together). The storage layer must be abstracted at this point — `utils/storage.js` wrapping localStorage — to enable a clean FB Instant Games swap later. This phase completes the v1 MVP loop.
+**Delivers:** ResultScene with final score, highscore comparison, and restart CTA; localStorage highscore abstracted behind StorageService; score count-up animation on results screen; Phaser scene transition from GameScene to ResultScene.
+**Addresses:** Results screen + local highscore (table stakes feature)
+**Avoids:** localStorage FB incompatibility (Pitfall — storage abstraction makes FB port low-cost instead of MEDIUM)
 
-**Implements:**
-- 3-5 flower species with distinct `baseBloomDuration` and `bloomWindowFraction` values in FlowerDatabase
-- Campaign level configs (flower slot layouts, species mix, unlock conditions)
-- Endless mode (progressive speed increase)
-- Interactive tutorial (first level: one flower, prompted tap, positive feedback)
-- Pause/resume, settings screen (sound/music toggle)
-- Game over / session end screen (score summary, replay)
-- Interstitial ad integration via MonetizationSystem (win states only, 3-level gap minimum)
+### Phase 6: Juice and Polish
 
-**Avoids:** M-2 (interstitial abuse — rules established here before any ad fires)
+**Rationale:** Juice elements are explicitly deferred until the mechanic they annotate is stable (FEATURES.md dependency rule: "never implement juice before the mechanic it annotates"). Phase 6 is the payoff phase — it upgrades a mechanically correct but flat game into something that feels good. Audio is implemented here with the iOS AudioContext unlock already in place from Phase 1's splash screen.
+**Delivers:** Phase transition visual/audio cues; sound effects (tap, combo, wrong tap, phase change, game over); flower growth micro-animations (sprite sheet transitions); screen shake on wrong tap; wrong-tap first-play hint text; pause/menu button in HUD.
+**Addresses:** All P2 features from FEATURES.md feature prioritization matrix
+**Avoids:** iOS audio silence (Pitfall 6) — already mitigated by Phase 1 "Tap to Start" screen; audio implementation here just adds SFX
 
-**Research flag:** Difficulty curve tuning (how fast to increase bloom speed in Endless, how to sequence species in Campaign) requires playtest data — flag for balancing iteration, not research.
+### Phase 7: Facebook Instant Games Integration (Post-v1)
 
----
-
-### Phase 3: Progression Meta (Collection + Currency + Gacha)
-
-**Rationale:** Once the core loop is fun, add the long-term retention engine. Collection and gacha are tightly coupled (rarity system feeds both) and must be built together. Economy model must be designed as a spreadsheet before implementation — tuning after launch is possible but expensive.
-
-**Delivers:** Flower collection view (Florarium), 4-tier rarity system, gacha seed packs with pity system, soft/premium currency system, basic IAP (gem packs, starter bundle).
-
-**Implements:**
-- CollectionSystem (unlocked species registry, progression state)
-- CurrencySystem (soft coins + premium gems ledger, persisted via SaveSystem)
-- GachaEngine (config-driven probability table, pity counter, pull result animation)
-- Gacha rate config unit tests (sum to 100%, empirical distribution test)
-- IAPAdapter + MonetizationSystem IAP flow
-- Server-side IAP receipt validation (Firebase Cloud Function)
-- Collection / Florarium scene
-- Shop scene (gem packs, starter bundle shown days 1-3)
-- Rewarded ads (continue after fail in Endless, double harvest reward)
-
-**Avoids:** C-5 (gacha rate manipulation), M-3 (client-side IAP), M-4 (economy miscalibration — requires economy spreadsheet before implementation)
-
-**Research flag:** Apple Guideline 3.1.1 (gacha/loot box disclosure) and Google Play random reward policy must be verified against current wording before gacha ships. Training data covers through Aug 2025 — policies may have updated.
-
----
-
-### Phase 4: Engagement Loops (Quests + Social)
-
-**Rationale:** Daily return habit is established by quests and streaks. Leaderboard adds competitive motivation. Both depend on the EventBus infrastructure from Phase 1 and the collection/currency infrastructure from Phase 3.
-
-**Delivers:** Daily quests (3/day), login streak rewards, global leaderboard, score sharing.
-
-**Implements:**
-- QuestSystem (daily quest state, reset timer, reward distribution via CurrencySystem)
-- Achievement system (permanent long-term goals)
-- Login streak tracking + escalating rewards
-- LeaderboardSystem + FB Instant leaderboard API integration
-- Score sharing (screenshot-ready end screen + deep link)
-- Leaderboard scene
-
-**Avoids:** m-2 (score spoofing — add server-side plausibility check on score submission)
-
-**Research flag:** FB Instant leaderboard API behavior (caching, rate limits) — verify against current FB Instant SDK docs. Also: friends leaderboard requires social auth which behaves differently on iOS/Android vs FB Instant; may need to scope to global-only for v1.
-
----
-
-### Phase 5: Polish, Performance, and Platform Compliance
-
-**Rationale:** This phase catches everything that was deferred for speed and prepares the game for store submission. Performance must be verified on actual low-end target devices before submission, not assumed from development machines.
-
-**Delivers:** Store-ready builds for iOS, Android, and FB Instant Games.
-
-**Implements:**
-- Texture atlas audit (all flower states in shared atlases, draw call target under 25)
-- FB Instant Games file size audit (initial payload under 5 MB, total under 100 MB)
-- Memory profiler run after 10-minute gameplay session (check for listener leaks)
-- Device matrix performance test (Snapdragon 680-class Android, iPhone SE-class iOS)
-- FB Instant init sequence audit (setLoadingProgress called, startGameAsync after assets ready)
-- Haptic feedback on native tap events
-- Audio context unlock on iOS Safari / FB Instant WebView verified
-- App store submission metadata, privacy policy, loot box odds disclosure screen
-
-**Research flag:** App store submission requirements (privacy nutrition labels, ATT prompt for AdMob on iOS) — verify current requirements at time of submission. These change frequently.
-
----
-
-### Phase 6 (Post-launch): Garden Decoration + Seasonal Events
-
-**Rationale:** Deferred to post-launch because (1) garden is high complexity / high cost to build without knowing which player segments will spend, and (2) seasonal events require an operational content calendar that can only be planned after you know your player retention shape. Both need launch data to scope correctly.
-
-**Delivers:** Garden decoration system (IAP-driven cosmetic meta-layer) and seasonal event infrastructure (remote-config-driven limited flowers + event leaderboards).
-
-**Implements:**
-- GardenSystem (placement, decoration catalog, garden scene)
-- Firebase Remote Config for event parameters (start/end dates, featured flower IDs, reward multipliers)
-- Seasonal flower pool (extends CollectionSystem)
-- Event leaderboard (extends LeaderboardSystem)
-- Upgrade system (per-species stat improvements)
-
-**Avoids:** m-5 (seasonal event dates baked into build — Remote Config must be the mechanism)
-
-**Research flag:** Garden UX (drag-to-place, snap grid, item management) is a design research area with established patterns but needs UX prototyping. Seasonal event operational workflow (content calendar, QA pipeline) is an organizational pattern, not a code pattern — plan the process before building the system.
-
----
+**Rationale:** FB integration is an architectural swap, not a feature addition. The codebase was designed to support this (storage abstraction, no hardcoded DOM UI, no React layer). The async init order (Pitfall 3) must be implemented first — everything else fails if Phaser boots before `FBInstant.initializeAsync()` resolves. This phase is out of scope for v1 but the roadmap must account for it.
+**Delivers:** FB SDK async init gate before Phaser boot; `FBInstant.setLoadingProgress()` wired to Phaser preload; StorageService routing to `FBInstant.player.setDataAsync()` in FB context; FB mock flow verified end-to-end.
+**Avoids:** FB init order error (Pitfall 3), localStorage FB incompatibility, external CDN asset loading rejection
 
 ### Phase Ordering Rationale
 
-- **EventBus before everything** — every system emits or listens; it has no dependencies of its own
-- **SaveSystem before any feature that saves state** — retrofitting a unified save abstraction is the most painful cross-cutting refactor in a Cocos Creator game
-- **Asset Bundle architecture before any art assets** — splitting bundles after content is built requires reworking all asset references
-- **Core timing feel before meta systems** — players who bounce in the first 2 minutes never reach gacha; validating the feel first is not optional
-- **Currency system before collection/gacha** — both depend on it; building them without a currency abstraction creates hard coupling
-- **MonetizationSystem shell before any ad placement** — centralizing trigger logic before the first ad fires prevents the scattered-trigger anti-pattern
-- **Gacha economy spreadsheet before gacha code** — the rates are a game design deliverable, not a code deliverable; the code just reads the config
+- **Foundation before logic:** Three mobile pitfalls (DPR, viewport, touch-action) affect every subsequent mobile test session — they must be fixed at zero-cost, not retrofitted.
+- **Logic before rendering:** The architecture research build order (Tier 1-4) explicitly requires FlowerFSM and Grid to be testable without a browser before the Renderer is added. This prevents logic creeping into rendering.
+- **Object pools in Phase 3, not later:** GC spikes from missing pools are worst in Phase 3 (spawn wave) — the pool architecture must exist before any Phase 3 performance testing, which means it must exist before Phase 4 balance work.
+- **Juice deferred to Phase 6:** FEATURES.md dependency rule is clear — juice without function is wasted work. Every juice element has a parent mechanic that must be stable first.
+- **FB deferred to post-v1:** FB integration requires a different initialization order and storage routing. It's an isolated swap if the codebase is structured correctly from the start.
 
-### Research Flags Summary
+### Research Flags
 
-| Phase | Research Needed | Reason |
-|-------|----------------|--------|
-| Phase 3 | Apple/Google gacha policy | Training data through Aug 2025; policies change; verify before shipping gacha |
-| Phase 4 | FB Instant leaderboard API specifics | Rate limits, caching behavior; verify against current SDK docs |
-| Phase 5 | iOS ATT prompt + AdMob interaction | ATT requirements change; verify at submission time |
-| Phase 6 | Garden UX patterns | UX prototyping needed; not purely a code problem |
-| All | Cocos Creator 3.9.x changes | A newer version may exist by project start; verify API changes |
+Phases likely needing deeper research during planning:
+- **Phase 3 (Renderer and Input):** Phaser 3 object pool patterns (Phaser.GameObjects.Group with `maxSize`, `createFromConfig`) should be researched at planning time — the pooling API is version-specific and getting it wrong requires rewriting all spawn callsites.
+- **Phase 7 (FB Instant Games):** FB SDK async init patterns and `setLoadingProgress` integration with Phaser's preload lifecycle need verification against the current SDK version at integration time. Training knowledge is MEDIUM confidence only.
 
-**Phases with standard patterns (no research needed):**
-- Phase 1: Cocos Creator scene management and timing systems are extensively documented and stable
-- Phase 2: Campaign/endless game mode structure is a well-established casual game pattern
-- Phase 5: Performance profiling workflow in Cocos Creator is standard and well-documented
+Phases with standard patterns (skip research-phase):
+- **Phase 1 (Foundation):** Phaser Scale config, DPR setup, CSS viewport rules are all well-documented stable patterns.
+- **Phase 2 (Core Logic):** FlowerFSM, delta-time game loop, combo counter — canonical patterns from Game Programming Patterns (Nystrom) and Glenn Fiedler's "Fix Your Timestep." No research needed.
+- **Phase 5 (Results + Persistence):** localStorage abstraction is a trivial wrapper pattern. ResultScene is a standard Phaser scene transition.
+- **Phase 6 (Juice):** Audio unlock, Phaser tween API, screen shake are well-documented. If sound effects need authoring, that's an asset task, not a research task.
 
 ---
 
@@ -300,45 +167,47 @@ Research from all four files converges on a clear build order driven by the depe
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | MEDIUM | Core engine choice is HIGH confidence. SDK version numbers (AdMob, FB Instant, Firebase) are MEDIUM-LOW; WebSearch unavailable during research; verify all versions at project kickoff |
-| Features | MEDIUM | Genre patterns from training data are well-established; IAP pricing tiers and ad frequency caps are community-standard figures that should be verified against 2026 analytics reports |
-| Architecture | MEDIUM | Manager/singleton/adapter patterns for Cocos Creator are stable and widely used; specific API names (cc.director, cc.sys.localStorage) should be verified against the Creator version installed |
-| Pitfalls | HIGH for engineering patterns; MEDIUM for policy compliance | Frame-rate timing, memory leaks, draw calls, save abstraction — HIGH confidence (engine fundamentals). Gacha policy wording, store submission requirements — MEDIUM; must be verified against live guidelines before shipping |
+| Stack | MEDIUM | All version numbers from training data (cutoff August 2025); no external verification possible during research. Verify Phaser latest stable and FB SDK version before pinning. Core technology choices (Phaser 3 + Vite + TS) are HIGH confidence — they are the community consensus. |
+| Features | MEDIUM | Core feature set derived from PROJECT.md (PRIMARY source) + well-established casual game design patterns. Competitor analysis is training knowledge, not current App Store verification. The feature set for v1 is well-reasoned and internally consistent. |
+| Architecture | MEDIUM | Architectural patterns (FSM, fixed-rate game loop, event-driven pipeline) are canonical — sourced from "Game Programming Patterns" (Nystrom) and Glenn Fiedler's timestep article. Pattern application to Phaser 3 specifically is training knowledge. No 2026 source verification. |
+| Pitfalls | MEDIUM-HIGH | Touch event behavior, iOS AudioContext policy, canvas performance traps, DPR scaling — these are MDN-sourced and verified. FB Instant Games init order and localStorage gotchas are training knowledge (MEDIUM). The pitfalls listed are real and well-documented in the HTML5 game dev community. |
 
-**Overall confidence:** MEDIUM — Sufficient to begin development. The core architectural decisions are sound. The items flagged for live verification (SDK versions, gacha policy, store requirements) are all pre-ship verification tasks, not blockers to starting Phase 1.
+**Overall confidence:** MEDIUM
+
+The core technology and architecture decisions are well-grounded in established patterns. The primary uncertainty is version numbers (Phaser, FB SDK) and FB-specific behavior that could not be verified against live documentation. These gaps are low-risk to address: verify versions before `npm install`, test FB SDK init flow with the mock file before submission.
 
 ### Gaps to Address
 
-- **Cocos Creator exact version**: Check https://www.cocos.com/en/creator at project kickoff. A 3.9.x may exist. If so, audit breaking changes from 3.8.x before committing.
-- **FB Instant Games SDK current version and bundle limit**: Verify at https://developers.facebook.com/docs/games/instant-games/sdk. The 5 MB initial payload threshold is community-documented, not an officially published hard limit — test empirically.
-- **Apple App Store Guideline 3.1.1 current wording on gacha/loot boxes**: Check https://developer.apple.com/app-store/review/guidelines/ before gacha feature is designed. Requirements have evolved and may have updated since Aug 2025.
-- **Google Play random reward policy**: Check https://play.google.com/about/monetization-ads/ — same concern as Apple.
-- **Economy balance model**: No playtest data exists yet. The unlock timeline targets (Common 100% at 2-3 weeks, Rare 80% at 1-2 months) are industry benchmarks, not validated for this specific game. Build the economy spreadsheet in Phase 3 and validate with external playtesters before the gacha ships.
-- **AdMob SDK versions**: LOW confidence on specific version numbers; verify at https://developers.google.com/admob before native integration.
-- **Device matrix for performance testing**: Research assumed Snapdragon 680-class as the mid-range Android target. Verify this is representative of the actual SEA casual market device distribution in 2026 before setting performance targets.
+- **Phaser version:** Confirm latest stable at https://github.com/phaserjs/phaser/releases before pinning. Research used 3.87.x as latest known.
+- **FB SDK version:** Confirm current SDK version at https://developers.facebook.com/docs/games/instant-games/guides/sdk-reference. Research used 7.1 as latest known.
+- **FB bundle size limits:** Verify the 200KB initial payload limit is still current at https://developers.facebook.com/docs/games/instant-games/ — this constraint shapes all asset loading architecture.
+- **Flower visual differentiation:** Research cannot validate that the planned 5 flower state sprites will be distinguishable at 375px-wide viewport (iPhone SE). Requires an actual visual prototype test on a physical device before committing to the art direction.
+- **Phase timing balance:** The 40s/80s/120s phase boundaries and spawn rate deltas are design assumptions, not research findings. These must be validated through playtesting in Phase 4 — no external source can provide them.
 
 ---
 
 ## Sources
 
-### Primary (HIGH confidence — stable engineering patterns)
-- Cocos Creator 3.x official documentation (training knowledge through Aug 2025): scene management, persistent root nodes, asset bundle system, audio system, memory management — https://docs.cocos.com/creator/manual/en/
-- Frame-rate-independent timing: fundamental game development principle verified across multiple engine ecosystems
-- Save system dual-path pattern: well-established cross-platform pattern, both localStorage and FB Instant Data API are stable
+### Primary (HIGH confidence)
+- `PROJECT.md` — project requirements, core mechanic decisions (combo, wrong-tap penalty, 3-phase arc)
+- MDN Web Docs — Touch Events, Canvas Optimizing, Web Audio API best practices, Animation performance (verified via WebFetch 2026-03-13)
+- "Game Programming Patterns" (Nystrom) — FSM pattern, game loop pattern (canonical reference)
+- "Fix Your Timestep" (Glenn Fiedler, 2004) — fixed-rate game loop with delta-time accumulator (canonical reference)
+- "Juice It Or Lose It" (Jonasson & Purho, GDC 2012) — game feel / juice principles (canonical for casual game design)
+- Apple HIG — 44px minimum tap target standard (stable, training knowledge)
 
-### Secondary (MEDIUM confidence — training data, patterns may have updated)
-- FB Instant Games SDK documentation (training knowledge): initialization sequence, leaderboard API, payments API, bundle constraints — https://developers.facebook.com/docs/games/instant-games
-- Firebase SDK 10.x documentation (training knowledge): Firestore, Remote Config, Analytics — https://firebase.google.com/docs
-- Casual mobile game design patterns: Fruit Ninja, Piano Tiles, Tap Tap, Magic Tiles (timing loop); Pokemon GO, Clash Royale, Gardenscapes (collection/gacha meta)
-- IAP pricing tiers: standard casual mobile benchmarks circa 2024-2025 — verify against current analytics
-- Apple App Store Review Guidelines 3.1.1 (gacha odds disclosure): verified as of Aug 2025
+### Secondary (MEDIUM confidence)
+- Phaser 3 ecosystem — training knowledge through August 2025 (versions, API, community patterns)
+- Facebook Instant Games SDK v7.1 — training knowledge (init order, bundle constraints, storage API)
+- Casual mobile game genre conventions — training knowledge (Cookie Clicker, Fruit Ninja, Tap Titans, Bejeweled Blitz patterns)
+- Phaser 3 Vite template patterns — training knowledge (https://github.com/phaserjs/template-vite-ts not fetched, verify manually)
 
-### Tertiary (LOW confidence — version numbers, market data)
-- Google AdMob Android SDK 23.x / iOS SDK 11.x — version numbers change frequently; verify at https://developers.google.com/admob
-- TexturePacker 7.x — verify at https://www.codeandweb.com/texturepacker
-- SEA device market distribution (Snapdragon 680-class as mid-range proxy): verify with current market share data before performance target-setting
-- Casual mobile retention benchmarks (D1, D7, D30): industry-standard figures from Adjust/AppsFlyer/GameAnalytics circa 2024-2025
+### Tertiary (LOW confidence — needs validation before implementation)
+- FB SDK current version (7.1 as of training data cutoff — verify before FB port phase)
+- FB initial payload limit (200KB figure — verify before FB port phase)
+- Current Phaser stable version (3.87.x — verify at https://github.com/phaserjs/phaser/releases)
 
 ---
-*Research completed: 2026-03-07*
+
+*Research completed: 2026-03-13*
 *Ready for roadmap: yes*

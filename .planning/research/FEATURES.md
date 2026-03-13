@@ -1,201 +1,222 @@
-# Feature Landscape: Bloom Harvest
+# Feature Research
 
-**Domain:** Casual mobile tap/timing game with collection and garden decoration
-**Researched:** 2026-03-07
-**Confidence:** MEDIUM — based on established casual mobile game design patterns (training data through Aug 2025). WebSearch unavailable; recommend spot-checking competitor titles before locking feature priorities.
+**Domain:** Casual tapping game — HTML5, grid-based, time-limited round
+**Researched:** 2026-03-13
+**Confidence:** MEDIUM (training knowledge; web search unavailable for external verification)
 
 ---
 
-## Table Stakes
+## Feature Landscape
 
-Features users expect from any casual mobile tap/timing game. Missing one = users leave within the first session.
+### Table Stakes (Users Expect These)
+
+Features users assume exist. Missing these = product feels incomplete or broken.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Responsive tap detection** | Core mechanic must feel immediate. Sub-100ms feedback is the baseline. Any lag = broken game. | Low | Cocos Creator's input pipeline handles this; test on low-end Android devices specifically. |
-| **Visual hit feedback** | Particle burst, screen flash, or scale pop on successful tap. Without it, players don't know if they tapped "correctly." | Low | The bloom-burst moment IS the product — invest here. |
-| **Audio feedback on tap** | Satisfying sound on perfect tap, distinct sound on miss. Audio is 50% of the timing feel. | Low | Sound design budget matters more than most realize here. |
-| **Clear timing window indicator** | Players must see when the flower is at peak bloom. Visual affordance (glow, pulse, highlight ring) is non-negotiable. | Medium | Animation curve communicates window; no separate UI element needed if bloom animation is readable. |
-| **Score display** | Current score visible during play. Players need moment-to-moment feedback. | Low | — |
-| **High score tracking** | Retain best score per mode. Session replay motivation. | Low | Local storage minimum; server sync for leaderboard later. |
-| **Miss/failure feedback** | Player must know they missed and why. Wilting flower + score penalty animation. | Low | Critical for skill loop — without this, players can't improve. |
-| **Game over / session end screen** | Summary of score, stars earned, replay button. Standard mobile game contract. | Low | — |
-| **Multiple game modes (Campaign + Endless)** | Campaign gives structure/goal; Endless gives replayability. Having only one halves retention. | Medium | Both are in scope per PROJECT.md. |
-| **Level progression in Campaign** | Each level must be clearly harder than the last. Difficulty curve is the product roadmap. | Medium | Controlled via flower species mix and bloom speed per level. |
-| **Basic tutorial / onboarding** | First-time player must understand "tap at peak bloom" in under 30 seconds. No text walls. | Medium | Interactive: show one flower blooming, prompt tap, give positive feedback. |
-| **Pause / resume** | Real life interrupts. No pause = immediate uninstall from anyone with kids or a job. | Low | — |
-| **Settings screen** | Sound on/off, music on/off at minimum. | Low | — |
-| **Loading screen / splash** | Required for any game with asset loading. FB Instant Games especially needs a branded loading state. | Low | — |
+| Responsive tap/touch registration | Core interaction — any lag or missed tap kills feel immediately | LOW | Must fire on `touchstart` not `touchend` on mobile; debounce to prevent phantom taps |
+| Visual feedback on every tap | Users need to know the tap registered; silent taps feel broken | LOW | Flash/scale animation on the tapped cell, distinct for correct vs wrong tap |
+| Score displayed in real-time | Score is the primary motivator; hiding it until end removes moment-to-moment dopamine | LOW | Live counter update on every collect event |
+| Countdown timer | Fixed-round games must show time remaining; without it tension is absent | LOW | Large, visible, changes color/urgency near end (e.g., red at <15s) |
+| Distinct flower growth states | Users must be able to tell states apart at a glance — this IS the game | MEDIUM | Clear visual differentiation: Bud vs Blooming vs Full Bloom vs Wilting vs Dead |
+| Wrong-tap penalty feedback | Trừ điểm alone is not enough — player must feel the consequence | LOW | Screen shake, red flash, or negative score pop-up animation |
+| Game over / results screen | Round end needs closure — score, highscore, play again | LOW | Standard for all time-limited games; missing it feels abrupt |
+| Local high score persistence | Players return to beat their own score; without it there's no session-to-session hook | LOW | `localStorage` is sufficient for v1 |
+| New game / restart | Players must be able to replay immediately | LOW | Single tap restart from results screen |
+| Combo counter display | Combo system without a visible counter is invisible and wastes its motivational value | LOW | Show current combo multiplier prominently, animate on increase |
 
----
+### Differentiators (Competitive Advantage)
 
-## Differentiators
-
-Features that set Bloom Harvest apart. Not expected as baseline, but create competitive advantage and retention.
+Features that set Bloom Tap apart from generic tappers. These map directly to the project's core value.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Flower rarity system (Common → Legendary)** | Transforms a tap game into a collection game. Rarity = long-term goal. | Medium | 4 tiers is the sweet spot (matches Clash Royale, Pokemon GO patterns). Each tier needs distinct visual treatment so rarity is legible instantly. |
-| **Per-species bloom timing personality** | Roses bloom slow and wide (forgiving); Cherry blossoms bloom fast and narrow (punishing). Different species = different skill challenges. | Medium | This is the core design space. Each flower species is a mini-game variant. Requires careful balancing. |
-| **Flower collection / Florarium view** | Gallery of all unlocked flowers. Drives completionist behavior. "Gotta catch em all" loop. | Medium | Each slot visible but locked = FOMO motivation. Display % collected. |
-| **Garden decoration system** | Lets players personalize their space. Drives IAP and emotional attachment to the game. | High | Decorations can be cosmetic-only; separates spenders from non-spenders cleanly. |
-| **Flower upgrade system** | Upgrading a flower increases its score multiplier or widens its bloom window. | Medium | Creates a second spending loop: earn currency → upgrade → score higher → unlock harder content. |
-| **Daily quests** | "Harvest 5 roses" or "Score 3 perfects in a row." Creates daily return habit. | Medium | 3 quests per day is the standard (Plants vs Zombies Heroes, Clash Royale pattern). Reset at midnight local time. |
-| **Streak / login reward system** | Daily login rewards with escalating value. Standard retention driver. | Low | Day 7 reward must be meaningful (a Rare flower seed minimum). |
-| **Achievement system** | Long-term goals beyond quests. "Harvest 1000 flowers lifetime." | Medium | Drives background engagement; players work toward achievements passively. |
-| **Gacha / seed pack opening** | Spending premium currency to receive random flowers. Highly monetizable. High engagement moment. | High | Must include pity system (guaranteed Rare after N pulls) to comply with app store guidelines (Apple 2024 rule on loot boxes). Requires disclosure of odds. |
-| **Seasonal events / limited flowers** | Time-limited content (Cherry Blossoms in Spring, Sunflowers in Summer). Creates urgency and return visits. | High | Biggest retention driver for casual games post-launch. Plan the content calendar before shipping. |
-| **Score sharing / social flex** | Screenshot-ready end screen. "I harvested a Legendary Rose — can you beat my score?" | Low | Deep link back to game. Low effort, high virality potential. |
-| **Leaderboard (friends + global)** | Competition loop. Seeing friends above you is a motivation trigger. | Medium | Facebook Instant Games has native leaderboard API. iOS/Android needs Game Center or custom backend. |
+| Timing-skill harvest window (Nở Hé vs Nở Rực Rỡ) | Creates risk/reward depth absent in pure reaction tappers — wait longer for more points or play safe | MEDIUM | The "window" must be clearly communicated; timing arc per flower type needs careful balance testing |
+| 3-phase round escalation (0-40s / 40-80s / 80-120s) | Creates a natural emotional arc — casual ramp, strategic midgame, frantic endgame — within a single session | MEDIUM | Spawn rate, flower count, and cycle speed must each shift at phase boundaries; needs parametric tuning |
+| Per-flower-type score and speed differentiation | 5 flower types with distinct risk/reward ratios gives implicit "build your own strategy" depth | MEDIUM | Rare fast high-value flower vs common slow low-value flower — without this all taps feel the same |
+| Wrong-tap point deduction (not freeze/miss) | Penalizes rashness without stopping play; keeps round flow smooth while punishing mindless tapping | LOW | Decision already made in PROJECT.md; implementation is straightforward |
+| Combo multiplier tied to correct taps only | Encourages deliberate accuracy over mash-speed; differentiates from pure speed games | LOW | Combo resets on wrong tap — this creates real tension between speed and accuracy |
+| Grid spatial awareness | 8x8 grid means optimal play requires scanning the board, not just reacting to one cell | LOW | No extra implementation needed — it's a property of the grid layout itself |
+
+### Anti-Features (Deliberately Excluded from v1)
+
+Features that seem good but would harm v1 scope, focus, or stability.
+
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Meta-progression / flower unlocks | "Games always have unlocks" — keeps players coming back | Requires save system, balance across unlock curve, UI for collection — multiplies scope 3-4x | Nail the core loop first; add unlocks in v1.1 once replay value of base game is proven |
+| Online leaderboard | Social competition and bragging rights | Backend infra, auth, anti-cheat, GDPR concerns — enormous scope for unproven game | Local highscore first; add online board after FB Instant Games port |
+| Multiple game modes | Variety keeps players engaged | Dilutes focus — each mode needs separate balance, UI, onboarding | Ship one mode perfectly; modes are v2 expansion |
+| Daily challenges / quests | Drives daily retention | Requires server-side challenge generation or complex local scheduling | Irrelevant until retention loop is proven; out of scope for v1 |
+| Tutorial / forced onboarding sequence | New-user comprehension | Adds state machine complexity and narrative investment before core is stable | Use implicit teaching: slow phase 0-40s is the natural tutorial — no explicit UI needed |
+| Endless mode (no timer) | Some players prefer zen, non-pressured play | Requires difficulty ramp without time pressure — entirely different balance problem | 120s round with the three-phase arc IS the product; endless is a different game |
+| Power-ups / special tiles | Adds excitement and "moments" | Scope explosion; each power-up needs own art, logic, balance — premature for v1 | The combo multiplier IS the power-up mechanic for v1 |
+| Particle-heavy VFX from the start | Looks polished | Premature investment in art before gameplay is validated; Canvas particle systems eat mobile perf budget | Placeholder scale/flash animations; invest in VFX only after gameplay is confirmed fun |
 
 ---
 
-## Anti-Features
+## Game Feel Essentials ("Juice")
 
-Features to deliberately NOT build in v1 — either too complex, wrong for the core loop, or premature.
+These are not gameplay features but are essential to making the game feel good. Missing these makes a mechanically correct game feel dead.
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Real-time multiplayer PvP** | Requires matchmaking server, low-latency infrastructure, anti-cheat. Massive scope for a launch feature. Already marked out-of-scope in PROJECT.md. | Leaderboard gives competitive feeling without real-time complexity. Add in v2 if retention data supports it. |
-| **Crafting / flower combination system** | Adding crafting to a tap game creates cognitive overhead that contradicts "casual." Players open the game on the bus. | Upgrade system is sufficient depth. Keep crafting for a garden-builder genre, not timing games. |
-| **Narrative / story campaign** | Story requires writer, VO, cinematics, branching logic. Casual players skip cutscenes. | Level names and visual themes can imply narrative without building one. |
-| **Clan / guild system** | Social infrastructure for clans requires significant backend, moderation, and UX work. Premature before you have a player base. | Friends leaderboard captures social benefit at 1/10th the cost. |
-| **Energy / stamina system in v1** | Energy gates churn new users. F2P players who can't play freely during the critical first week won't return. | Implement in v2 once you have a paying cohort. Use ads as the soft gate instead. |
-| **Complex offline progression (AFK farming)** | Idle game mechanics are a different genre. Grafting AFK farming onto a timing game creates hybrid confusion. | Daily login rewards and quest resets handle the "progress while away" feeling. |
-| **PC / Desktop build** | Different input model (mouse vs touch), different distribution (Steam vs app stores), different audience. Splits focus. | Facebook Instant Games runs in browser but plays like mobile. Sufficient for web reach. |
-| **Procedural level generation** | Procedural levels for timing games are notoriously hard to balance (difficulty spikes, impossible timing). | Hand-authored levels up to Campaign milestone 50+, then reassess. |
-| **Chat / messaging** | In-game chat requires moderation infrastructure and COPPA compliance complexity. | Share buttons give social interaction without chat overhead. |
-| **Subscription monetization** | Subscriptions are effective for productivity/utility apps; casual games have low willingness to pay recurring. | One-time IAP bundles and cosmetics outperform subscriptions in this genre. |
+| Juice Element | What It Does | Complexity | Implementation Hint |
+|---------------|--------------|------------|---------------------|
+| Tap impact scale pulse | Cell briefly scales up then back on tap — satisfies the finger | LOW | CSS transform scale 1.0 → 1.25 → 1.0 over 100ms |
+| Score pop-up float | "+120 x3" floats up and fades from the tapped cell | LOW | Absolutely-positioned DOM element or Canvas text, animate upward over 600ms |
+| Combo counter "pop" | Combo number grows and bounces when it increases | LOW | Scale animation on counter element each time combo increments |
+| Combo break flash | Screen-edge red flash when combo resets on wrong tap | LOW | Full-viewport overlay at low opacity for 150ms |
+| Phase transition cue | Visual/audio signal when entering phase 2 and phase 3 | LOW | Brief flash, countdown text "FASTER!", color shift on background |
+| Flower cycle micro-animation | Flowers should visually animate through growth states, not snap | MEDIUM | CSS keyframe or sprite sheet transitions between growth stages |
+| Timer urgency escalation | Timer pulses or changes color in final 15 seconds | LOW | CSS animation on timer element when value < 15 |
+| Results screen score count-up | Final score counts up to value rather than displaying instantly | LOW | `setInterval` tween over 1 second; creates anticipation |
+| Wrong-tap screen shake | Brief camera shake reinforces penalty | LOW | `transform: translateX` oscillation over 300ms on game container |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Tap Detection
-  └── Visual/Audio Feedback (depends on: tap detection working)
-        └── Timing Window Indicator (depends on: animation system)
-              └── Score System (depends on: timing accuracy measurement)
-                    └── High Score / Leaderboard (depends on: score system)
-                    └── Game Over Screen (depends on: score system)
+[Flower Growth Cycle States]
+    └──requires──> [Visual Differentiation per State]
+                       └──required by──> [Tap Timing Skill Window]
+                                             └──required by──> [Score Differentiation (Hé vs Rực Rỡ)]
 
-Flower Species Definitions
-  └── Per-Species Bloom Timing (depends on: species data model)
-        └── Rarity System (depends on: species definitions)
-              └── Collection / Florarium (depends on: rarity system + unlock state)
-                    └── Upgrade System (depends on: collection + currency)
-              └── Gacha / Seed Packs (depends on: rarity system + premium currency)
-                    └── Pity System (depends on: gacha + pull history tracking)
+[Combo System]
+    └──requires──> [Correct Tap Detection]
+    └──requires──> [Wrong Tap Detection]
+    └──enhances──> [Combo Display Counter]
+                       └──enhances──> [Combo Break Flash (juice)]
 
-Currency System (soft + premium)
-  └── Upgrade System (depends on: currency)
-  └── Gacha (depends on: premium currency)
-  └── Garden Decoration Shop (depends on: soft or premium currency)
+[3-Phase Escalation]
+    └──requires──> [Spawn System with configurable rate]
+    └──requires──> [Countdown Timer]
+    └──enhances──> [Phase Transition Cue (juice)]
 
-Daily Quests
-  └── Achievement System (depends on: quest tracking infrastructure)
-  └── Streak / Login Rewards (depends on: session tracking)
+[Results Screen]
+    └──requires──> [Score System]
+    └──requires──> [Local Highscore Storage]
 
-Ads Integration (Rewarded + Interstitial)
-  └── Rewarded Ad Placement (depends on: ad SDK initialized)
-  └── Interstitial Placement (depends on: session flow defined — between levels)
+[Score Pop-up (juice)]
+    └──requires──> [Score System]
 
-Campaign Levels
-  └── Difficulty Curve (depends on: species speed parameters)
-  └── Star Rating per Level (depends on: score thresholds)
-
-Seasonal Events
-  └── Limited Flower Species (depends on: rarity system)
-  └── Event Leaderboard (depends on: leaderboard system)
-  └── Server-side date/flag system (depends on: backend or remote config)
+[Tap Impact Scale (juice)]
+    └──requires──> [Tap Registration on Grid Cells]
 ```
 
----
+### Dependency Notes
 
-## Monetization Pattern Details
-
-### Ads (Rewarded + Interstitial)
-
-**Table stakes behavior:**
-- Rewarded ads gated to player choice ("Watch ad to continue after fail" / "Watch ad to double harvest reward")
-- Interstitials between levels — not during gameplay, never blocking UI
-- Interstitial frequency cap: maximum 1 per 2 minutes to avoid policy violations (Apple, Google)
-
-**What performs well in casual timing games:**
-- "Revive" rewarded ad (after game over in Endless mode) — highest engagement rate
-- "Double harvest" rewarded ad (after level complete) — low friction, high value perception
-- Rewarded ad for premium currency ("Watch 3 ads = 10 gems") — drives engagement loop
-
-**Complexity:** Low (SDK integration) to Medium (placement strategy, frequency logic)
-
-### IAP (In-App Purchase)
-
-**Table stakes IAP tiers for casual mobile (MEDIUM confidence — market standard as of 2025):**
-
-| Tier | Price Range | What to Sell |
-|------|-------------|-------------|
-| Entry | $0.99 – $1.99 | Small gem pack, ad removal for session |
-| Mid | $4.99 – $9.99 | Medium gem pack + bonus flower seed |
-| Whale | $19.99 – $29.99 | Large gem pack + Exclusive skin |
-| Starter Pack | $2.99 (one-time, time-limited) | Best value bundle shown to new players in first 3 days |
-
-**Key IAP rules:**
-- Starter pack shown day 1-3 only (urgency) — highest conversion window
-- "No Ads" permanent purchase ($2.99–$4.99) — low revenue but high satisfaction signal
-- Gacha bundles outperform direct purchase of specific flowers (mystery = higher perceived value)
-- Never gate campaign completion behind IAP — this kills organic reviews
-
-**Complexity:** Medium (store setup, receipt validation, entitlement system)
+- **Flower Growth Cycle requires Visual Differentiation:** Players cannot play without being able to read state at a glance. Art fidelity of states is a gameplay prerequisite, not decoration.
+- **Combo System requires both Correct and Wrong Tap Detection:** The combo break on wrong tap is what gives the combo tension. Without penalty, combo becomes trivial.
+- **3-Phase Escalation requires Spawn System parameterization:** Hardcoded spawn logic cannot support three distinct phases. Spawn rate, max simultaneous flowers, and flower cycle speed must be data-driven from the start.
+- **Results Screen requires Local Highscore Storage:** The highscore comparison is the emotional payoff of the results screen; implement both together.
+- **Juice elements require their parent feature:** Never implement juice before the mechanic it annotates; juice without function is wasted work.
 
 ---
 
-## MVP Recommendation
+## MVP Definition
 
-Build in this order to validate the core loop before adding meta-systems:
+### Launch With (v1)
 
-**Must ship in MVP:**
-1. Tap detection + bloom animation + hit/miss feedback (the feel)
-2. 3-5 flower species with distinct timing personalities
-3. Score system with combo multiplier
-4. Campaign mode: 10-15 levels
-5. Endless mode
-6. Basic tutorial (interactive, first level)
-7. Settings (sound/music toggle)
-8. Rewarded ads (continue + double reward)
+Minimum viable product — what's needed to validate the core loop.
 
-**Ship in first update (week 2-4 post-launch):**
-1. Collection / Florarium view
-2. Rarity system (4 tiers)
-3. Gacha / seed pack with pity system
-4. Daily quests (3/day)
-5. Login streak rewards
-6. Leaderboard (global score)
-7. IAP: gem packs + starter bundle
+- [ ] 8x8 grid rendering with individual cell tap zones — core interaction surface
+- [ ] Flower spawn system with configurable rate (supports 3-phase parameterization)
+- [ ] 5 flower types, each with distinct cycle speed and base point value
+- [ ] 5 growth states per flower: Bud / Blooming / Full Bloom / Wilting / Dead
+- [ ] Tap registration: correct window (Blooming, Full Bloom) vs wrong (Bud, Wilting, Dead)
+- [ ] Score delta on correct tap (positive, Full Bloom > Blooming) and wrong tap (negative)
+- [ ] Combo counter: increments on correct tap, resets on wrong tap
+- [ ] Combo multiplier applied to score on collect
+- [ ] 120-second countdown timer
+- [ ] 3-phase escalation (spawn rate + cycle speed shift at 40s and 80s marks)
+- [ ] Realtime score display
+- [ ] Results screen (score, highscore comparison, restart)
+- [ ] Local highscore via localStorage
+- [ ] Essential juice: tap scale pulse, score float pop-up, combo break flash, timer urgency color
 
-**Defer to v2:**
-- Garden decoration (High complexity, High reward — needs monetization data first)
-- Seasonal events (needs operational calendar and content pipeline)
-- Achievement system (nice-to-have, low urgency)
-- Friends leaderboard (needs social auth which varies by platform)
-- Upgrade system (needs collection data to balance)
+### Add After Validation (v1.x)
 
-**Rationale for ordering:**
-The timing mechanic must feel great before ANY meta-layer is added. Players who bounce in the first 2 minutes never see the gacha. Nail the tap feel, then layer monetization.
+Features to add once core loop is confirmed fun.
+
+- [ ] Phase transition visual/audio cue — adds arc without changing mechanics
+- [ ] Results screen score count-up animation — improves results screen feel
+- [ ] Flower cycle micro-animations (sprite transitions) — investment after art is proven
+- [ ] Sound effects (tap, combo, wrong, phase change, game over) — audio doubles perceived quality
+- [ ] Screen shake on wrong tap — reinforces penalty, low effort
+
+### Future Consideration (v2+)
+
+Defer until product-market fit is established.
+
+- [ ] Meta-progression / flower unlocks — requires validated replay loop first
+- [ ] Online leaderboard — requires backend infra, validated audience first
+- [ ] Multiple game modes — requires core mode to be demonstrably strong
+- [ ] Daily challenges / seasonal content — requires retention data to justify
+- [ ] In-app purchase / monetization hooks — requires audience and retention first
+- [ ] FB Instant Games / mobile app packaging — requires stable gameplay first
+
+---
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Grid tap registration | HIGH | LOW | P1 |
+| Flower growth cycle (5 states) | HIGH | MEDIUM | P1 |
+| Visual state differentiation | HIGH | MEDIUM | P1 |
+| Score system (correct/wrong delta) | HIGH | LOW | P1 |
+| Combo system with multiplier | HIGH | LOW | P1 |
+| 120s countdown timer | HIGH | LOW | P1 |
+| 3-phase spawn escalation | HIGH | MEDIUM | P1 |
+| Results screen + local highscore | HIGH | LOW | P1 |
+| Tap scale pulse (juice) | MEDIUM | LOW | P1 |
+| Score float pop-up (juice) | MEDIUM | LOW | P1 |
+| Combo break flash (juice) | MEDIUM | LOW | P1 |
+| Timer urgency color change (juice) | MEDIUM | LOW | P1 |
+| Phase transition cue (juice) | MEDIUM | LOW | P2 |
+| Sound effects | HIGH | MEDIUM | P2 |
+| Flower sprite transition animations | MEDIUM | MEDIUM | P2 |
+| Results score count-up (juice) | LOW | LOW | P2 |
+| Screen shake on wrong tap (juice) | MEDIUM | LOW | P2 |
+| Meta-progression / unlocks | HIGH (long-term) | HIGH | P3 |
+| Online leaderboard | MEDIUM | HIGH | P3 |
+| Multiple game modes | MEDIUM | HIGH | P3 |
+
+**Priority key:**
+- P1: Must have for launch — core loop is broken without it
+- P2: Should have — add in v1.x once core is validated
+- P3: Nice to have — v2+, requires validated audience
+
+---
+
+## Competitor Feature Analysis
+
+Note: Competitor analysis is based on training knowledge of the casual tapping genre (e.g., Tap Titans, Fruit Ninja, Tap My Katamari, Cookie Clicker). Confidence MEDIUM — not verified against current App Store state.
+
+| Feature | Generic Tapper (e.g., Tap Titans) | Fruit Ninja-style | Bloom Tap Approach |
+|---------|----------------------------------|-------------------|--------------------|
+| Core interaction | Tap anywhere / tap one target | Swipe to hit | Tap specific grid cell at right timing window |
+| Scoring depth | Tap volume (DPS) | Accuracy + streak | Timing accuracy + combo chain |
+| Session structure | Infinite, idle | Infinite rounds | Fixed 120s round with 3-phase arc |
+| Wrong-tap penalty | Rare or none | Miss = no score | Wrong tap = negative score + combo break |
+| Progression | Meta-progression central | None (arcade) | v1: score/highscore only; unlocks deferred |
+| Grid / spatial | No grid | No grid | 8x8 grid creates scan-and-choose decision layer |
+| Depth driver | Character/gear upgrades | Speed mastery | Timing skill + grid scanning + combo management |
+
+Bloom Tap's differentiator is the **intersection of timing skill and spatial scanning** — neither pure idle tapper nor pure reflex game. The combo system adds an accuracy layer that generic tappers lack.
 
 ---
 
 ## Sources
 
-- Casual mobile game design patterns: training data through August 2025 (MEDIUM confidence)
-- Tap/timing game UX patterns: training data — examples include Fruit Ninja, Piano Tiles, Tap Tap series, Magic Tiles (MEDIUM confidence)
-- Collection game loops: training data — examples include Pokemon GO, Merge games, Gardenscapes (MEDIUM confidence)
-- IAP pricing tiers: training data — standard casual mobile benchmarks circa 2024-2025 (MEDIUM confidence, recommend verifying against current app store analytics)
-- Apple loot box disclosure requirement (2024): training data (MEDIUM confidence — recommend verifying current App Store Review Guidelines Section 3.1.1)
-- Gacha pity system requirement: training data — Apple App Store guidelines and common practice (MEDIUM confidence)
-- Facebook Instant Games leaderboard API: training data (MEDIUM confidence — verify against current FB Instant Games SDK docs before implementation)
+- PROJECT.md (project requirements and decisions) — PRIMARY
+- Training knowledge: Casual mobile game design patterns (Cookie Clicker, Fruit Ninja, Tap Titans, Crossy Road, casual HTML5 genre conventions) — MEDIUM confidence
+- Game feel / "juice" principles: Martin Jonasson & Petri Purho "Juice It Or Lose It" GDC talk (2012, still canonical) — HIGH confidence for juice patterns
+- Timed round structure: well-established in casual games (Bejeweled Blitz 60s, Zuma, Peggle variants) — HIGH confidence pattern is table stakes
 
-**Gaps to validate before implementation:**
-- Current Apple App Store Rules on loot boxes / gacha (verify Section 3.1.1 of current guidelines)
-- Google Play policy on random reward mechanics (verify current Play Console policy)
-- Facebook Instant Games current file size limit and leaderboard API changes (verify at developers.facebook.com)
-- Ad network recommended frequency caps for 2026 (check AdMob, IronSource, MAX docs)
+*Note: Web search was unavailable during this research session. Findings reflect training knowledge of the casual game design domain. Recommend verifying competitor App Store feature sets before final roadmap commitment.*
+
+---
+
+*Feature research for: Bloom Tap — HTML5 casual tapping game*
+*Researched: 2026-03-13*
