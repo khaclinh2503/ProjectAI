@@ -21,7 +21,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Foundation | 0/? | Not started | — |
+| 1. Project Foundation | 0/2 | Not started | — |
 | 2. Core Game Logic | 0/? | Not started | — |
 | 3. Renderer and Input | 0/? | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
@@ -41,7 +41,11 @@
   2. On a physical mobile device (or DevTools emulation), the canvas fills the viewport without blurriness on high-DPI screens
   3. Tapping the canvas does not scroll the page; touch events fire on `pointerdown` with no passive-listener warnings
   4. The Phaser scene system is wired with at least a BootScene that transitions to a placeholder GameScene
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Scaffold project (Phaser 3 + TS + Vite) and configure mobile canvas (DPR, safe-area, touch-action, Scale.FIT)
+- [ ] 01-02-PLAN.md — Implement BootScene (splash + audio unlock + fade transition) and placeholder GameScene
 
 ---
 
@@ -154,4 +158,4 @@ Note on GRID-01 / GRID-02: Grid data model is defined in Phase 2 (pure logic); g
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-13 after initial creation*
+*Last updated: 2026-03-14 — Phase 1 plans created (01-01, 01-02)*
