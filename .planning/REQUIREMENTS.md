@@ -1,122 +1,130 @@
-# Bloom Harvest — Requirements
+# Requirements: Bloom Tap
+
+**Defined:** 2026-03-13
+**Core Value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
 
 ## v1 Requirements
 
-### Core — Flower Lifecycle
+### Foundation
 
-- [ ] **CORE-01**: Mỗi bông hoa trải qua 3 trạng thái rõ ràng: Nụ (bud) → Nở bung (full bloom) → Tàn (wilt)
-- [ ] **CORE-02**: Mỗi trạng thái có animation/visual riêng biệt, dễ phân biệt
-- [ ] **CORE-03**: Tốc độ phát triển của từng loài hoa khác nhau (5 loài, 5 tốc độ)
-- [ ] **CORE-04**: Thời gian "nở bung" có cửa sổ tap nhất định (không quá dài, không quá ngắn)
+- [ ] **FOUND-01**: Project chạy được trên browser với Phaser 3 + TypeScript + Vite
+- [ ] **FOUND-02**: Game canvas scale đúng trên mobile (DPR scaling, viewport lock)
+- [ ] **FOUND-03**: Touch input chuẩn (không scroll trang, pointerdown events, touch-action: none)
 
-### Core — Tap Timing & Scoring
+### Grid
 
-- [ ] **SCORE-01**: Player tap vào hoa đang "nở bung" → thu hoạch được, nhận điểm dương
-- [ ] **SCORE-02**: Player tap vào hoa đang "nụ" hoặc "tàn" → trừ điểm + mất hoa
-- [ ] **SCORE-03**: Điểm thưởng tỉ lệ với độ chính xác (tap giữa cửa sổ = điểm max)
-- [ ] **SCORE-04**: Hiển thị điểm realtime trên màn hình trong khi chơi
-- [ ] **SCORE-05**: Hiển thị tổng điểm khi kết thúc màn
+- [ ] **GRID-01**: 8x8 grid render với 64 ô tap riêng biệt
+- [ ] **GRID-02**: Grid scale responsive theo màn hình mobile
 
-### Core — Flower Species (5 loài)
+### Flower
 
-- [ ] **FLORA-01**: 5 loài hoa với tốc độ phát triển khác nhau (rất chậm → rất nhanh)
-- [ ] **FLORA-02**: Mỗi loài hoa có visual design riêng (màu sắc, hình dạng)
-- [ ] **FLORA-03**: Mỗi loài hoa có giá trị điểm cơ bản khác nhau
+- [ ] **FLOW-01**: 5 loại hoa, mỗi loại có tốc độ chu kỳ và điểm gốc khác nhau
+- [ ] **FLOW-02**: Mỗi hoa có 5 trạng thái: Nụ → Nở Hé → Nở Rực Rỡ → Tàn → Chết
+- [ ] **FLOW-03**: 5 trạng thái nhìn là phân biệt được ngay, không cần đọc text
+- [ ] **FLOW-04**: Hoa nảy mầm ở ô trống với tốc độ spawn có thể cấu hình theo phase
 
-### Core — Juice & Feedback
+### Gameplay
 
-- [ ] **JUICE-01**: Particle burst khi tap đúng lúc "nở bung"
-- [ ] **JUICE-02**: Sound effect riêng cho: tap đúng (rewarding), tap sai (punishing), hoa tàn tự nhiên
-- [ ] **JUICE-03**: Visual feedback ngay lập tức khi tap (không có input lag cảm nhận được)
-- [ ] **JUICE-04**: Số điểm float lên tại vị trí tap ("+100", "-50")
+- [ ] **GAME-01**: Tap "Nở Hé" thu thập hoa và cộng điểm gốc của loại hoa đó
+- [ ] **GAME-02**: Tap "Nở Rực Rỡ" cộng nhiều điểm hơn "Nở Hé" cùng loại hoa
+- [ ] **GAME-03**: Tap "Nụ" hoặc "Tàn/Chết" bị trừ điểm
+- [ ] **GAME-04**: Tap đúng liên tiếp tăng combo multiplier; điểm tap đó được nhân với multiplier hiện tại
+- [ ] **GAME-05**: Tap sai reset combo multiplier về 1
 
-### Gameplay — Level & Garden
+### Session
 
-- [ ] **LEVEL-01**: 1 màn chơi cố định để test tính năng (vườn với số lượng hoa nhất định)
-- [ ] **LEVEL-02**: Màn kết thúc khi tất cả hoa trong vườn đã được thu hoạch hoặc tàn
-- [ ] **LEVEL-03**: Màn hình kết quả sau khi chơi xong (điểm, số hoa thu hoạch, số hoa bị bỏ lỡ)
+- [ ] **SESS-01**: Mỗi ván chính xác 120 giây
+- [ ] **SESS-02**: Giai đoạn 1 (0–40s): spawn ngẫu nhiên chậm — học luật tự nhiên
+- [ ] **SESS-03**: Giai đoạn 2 (40–80s): spawn đều ở tốc độ vừa, combo chain xuất hiện
+- [ ] **SESS-04**: Giai đoạn 3 (80–120s): làn sóng spawn nhanh dồn dập
+- [ ] **SESS-05**: Ván kết thúc khi timer về 0
 
-### Tutorial
+### HUD
 
-- [ ] **TUT-01**: Tutorial tương tác hướng dẫn cơ chế nụ → nở → tàn
-- [ ] **TUT-02**: Tutorial chỉ cần hoàn thành 1 lần, không lặp lại
+- [ ] **HUD-01**: Điểm số hiển thị và cập nhật realtime
+- [ ] **HUD-02**: Countdown timer hiển thị suốt ván
+- [ ] **HUD-03**: Combo multiplier hiện trên màn và có animation khi tăng
 
-### Platform & Technical
+### Juice / Game Feel
 
-- [ ] **TECH-01**: Chạy trên Mobile (iOS + Android) qua Cocos Creator build
-- [ ] **TECH-02**: Chạy trên Facebook Instant Games (HTML5/WebGL)
-- [ ] **TECH-03**: Timing logic dùng wall-clock milliseconds (không phụ thuộc frame rate)
-- [ ] **TECH-04**: Asset Bundle architecture đảm bảo FB Instant initial payload < 5MB
-- [ ] **TECH-05**: Save/load trạng thái game (platform abstraction: FB Instant vs localStorage)
+- [ ] **JUICE-01**: Ô tap scale phồng lên rồi về khi nhấn (scale pulse ~100ms)
+- [ ] **JUICE-02**: Điểm nổi lên từ ô hoa vừa tap ("+120 x3" float animation)
+- [ ] **JUICE-03**: Visual flash khi tap sai và combo bị reset
+- [ ] **JUICE-04**: Timer đổi màu hoặc nhấp nháy trong 15 giây cuối
 
----
+### Results
 
-## v2 Requirements (Deferred)
+- [ ] **RSLT-01**: Màn kết quả hiển thị điểm ván vừa chơi + highscore all-time
+- [ ] **RSLT-02**: Người chơi có thể restart ngay từ màn kết quả
+- [ ] **RSLT-03**: Highscore lưu giữ giữa các session qua localStorage
 
-### Collection & Gacha
-- Hệ thống độ hiếm 4 bậc (Common → Legendary)
-- Florarium / bộ sưu tập view
-- Gacha system với pity mechanism
-- Seasonal event hoa đặc biệt
+## v2 Requirements
 
-### Progression
-- Upgrade hoa (tốc độ phát triển, multiplier điểm)
-- Currency system (kiếm và tiêu)
-- Daily quests + achievements
-- Login streak
+### Polish
 
-### Social
-- Global + Friends leaderboard
-- Chia sẻ điểm cao lên mạng xã hội
+- **POLSH-01**: Sound effects (tap đúng, tap sai, combo, phase change, game over)
+- **POLSH-02**: Phase transition cue — visual/audio signal khi bước vào phase 2 và 3
+- **POLSH-03**: Results screen score count-up animation (đếm lên thay vì hiện ngay)
+- **POLSH-04**: Screen shake ngắn khi tap sai
+- **POLSH-05**: Flower sprite transition micro-animations giữa các trạng thái
 
-### Monetization
-- Rewarded Ads (đổi extra time / lives)
-- Interstitial Ads (giữa màn)
-- IAP: remove ads, currency bundles, hoa hiếm
+### Platform
 
-### Content
-- Campaign: 15+ levels với vườn khác nhau
-- Endless mode
-- Trang trí vườn (cosmetics)
-
----
+- **PLAT-01**: FB Instant Games integration (async init, FBInstant.player.setDataAsync storage)
+- **PLAT-02**: Mobile app packaging (PWA hoặc Capacitor wrapper)
 
 ## Out of Scope
 
-- Multiplayer real-time PvP — phức tạp, sẽ không làm
-- Story/narrative mode — không phù hợp casual loop
-- PC/Desktop build — focus mobile + FB Instant
-- Web browser (non-FB) — ngoài target platform
-
----
+| Feature | Reason |
+|---------|--------|
+| Meta-progression / unlock hoa | v2+ — cần validate core loop trước, không thêm scope cho v1 |
+| Online leaderboard | Cần backend, auth, anti-cheat — scope quá lớn cho v1 chưa có audience |
+| Tutorial / onboarding UI | Phase 1 (0-40s) chậm chính là tutorial tự nhiên — không cần UI riêng |
+| Multiple game modes | Dilutes focus — v1 phải hoàn hảo 1 mode trước |
+| Power-ups / special tiles | Combo multiplier ĐÃ là cơ chế depth — không cần thêm |
+| Endless mode (không timer) | Đây là game khác hoàn toàn, không phải variant |
+| In-app purchase / monetization | Cần audience trước, không premature |
+| Particle-heavy VFX từ đầu | Đầu tư art trước khi validate gameplay là lãng phí |
 
 ## Traceability
 
-| REQ-ID | Phase | Status |
-|--------|-------|--------|
-| TECH-01 | Phase 1 — Project Foundation | Pending |
-| TECH-02 | Phase 1 — Project Foundation | Pending |
-| TECH-04 | Phase 1 — Project Foundation | Pending |
-| TECH-03 | Phase 2 — Save & Timing Infrastructure | Pending |
-| TECH-05 | Phase 2 — Save & Timing Infrastructure | Pending |
-| CORE-01 | Phase 3 — Flower Lifecycle System | Pending |
-| CORE-02 | Phase 3 — Flower Lifecycle System | Pending |
-| CORE-03 | Phase 3 — Flower Lifecycle System | Pending |
-| CORE-04 | Phase 3 — Flower Lifecycle System | Pending |
-| FLORA-01 | Phase 4 — Flower Species Content | Pending |
-| FLORA-02 | Phase 4 — Flower Species Content | Pending |
-| FLORA-03 | Phase 4 — Flower Species Content | Pending |
-| SCORE-01 | Phase 5 — Tap Detection & Scoring | Pending |
-| SCORE-02 | Phase 5 — Tap Detection & Scoring | Pending |
-| SCORE-03 | Phase 5 — Tap Detection & Scoring | Pending |
-| SCORE-04 | Phase 5 — Tap Detection & Scoring | Pending |
-| JUICE-01 | Phase 6 — Juice & Feedback | Pending |
-| JUICE-02 | Phase 6 — Juice & Feedback | Pending |
-| JUICE-03 | Phase 6 — Juice & Feedback | Pending |
-| JUICE-04 | Phase 6 — Juice & Feedback | Pending |
-| LEVEL-01 | Phase 7 — Level & Garden Shell | Pending |
-| LEVEL-02 | Phase 7 — Level & Garden Shell | Pending |
-| LEVEL-03 | Phase 7 — Level & Garden Shell | Pending |
-| SCORE-05 | Phase 7 — Level & Garden Shell | Pending |
-| TUT-01 | Phase 8 — Tutorial | Pending |
-| TUT-02 | Phase 8 — Tutorial | Pending |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FOUND-01 | — | Pending |
+| FOUND-02 | — | Pending |
+| FOUND-03 | — | Pending |
+| GRID-01 | — | Pending |
+| GRID-02 | — | Pending |
+| FLOW-01 | — | Pending |
+| FLOW-02 | — | Pending |
+| FLOW-03 | — | Pending |
+| FLOW-04 | — | Pending |
+| GAME-01 | — | Pending |
+| GAME-02 | — | Pending |
+| GAME-03 | — | Pending |
+| GAME-04 | — | Pending |
+| GAME-05 | — | Pending |
+| SESS-01 | — | Pending |
+| SESS-02 | — | Pending |
+| SESS-03 | — | Pending |
+| SESS-04 | — | Pending |
+| SESS-05 | — | Pending |
+| HUD-01 | — | Pending |
+| HUD-02 | — | Pending |
+| HUD-03 | — | Pending |
+| JUICE-01 | — | Pending |
+| JUICE-02 | — | Pending |
+| JUICE-03 | — | Pending |
+| JUICE-04 | — | Pending |
+| RSLT-01 | — | Pending |
+| RSLT-02 | — | Pending |
+| RSLT-03 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 29 total
+- Mapped to phases: 0 (pending roadmap creation)
+- Unmapped: 29 ⚠️
+
+---
+*Requirements defined: 2026-03-13*
+*Last updated: 2026-03-13 after initial definition*
