@@ -1,20 +1,52 @@
 # Phase 1: Project Foundation - Research
 
-**Researched:** 2026-03-07
-**Domain:** Cocos Creator 3.8.x cross-platform project scaffolding, Asset Bundle architecture, platform adapter pattern
-**Confidence:** MEDIUM-HIGH
+**Researched:** 2026-03-14
+**Domain:** Phaser 3 + TypeScript + Vite scaffold; mobile canvas scaling; touch input; scene wiring
+**Confidence:** HIGH
 
 ---
 
-## Summary
+<user_constraints>
+## User Constraints (from CONTEXT.md)
 
-Phase 1 establishes every structural decision that the remaining seven phases depend on. The core challenge is not complexity — it is discipline: every anti-pattern that is allowed in Phase 1 (direct SDK imports, loose PNGs, frame-count-based timing stubs, missing bundle architecture) compounds exponentially as content is added in later phases. Retrofitting any of these after art production begins is a multi-day rewrite.
+### Locked Decisions
 
-Cocos Creator 3.8.8 is the current LTS stable release (December 2025). There is no 3.9.x yet — 3.8.x is explicitly the long-term stable branch. This resolves the STATE.md blocker: use 3.8.x with confidence. The FB Instant Games build target is a first-class Cocos Creator 3.8 feature with an integrated SDK injection pipeline. The Asset Bundle system is mature and the primary tool for controlling the initial payload budget.
+**Canvas Sizing:**
+- Orientation: Portrait-only — do not handle landscape
+- Logical width: 390px (baseline iPhone 14)
+- Logical height: Dynamic — computed from `window.innerHeight` minus safe area
+- Safe area: CSS `env(safe-area-inset-*)` padding on container div
+- Phaser scale mode: `Scale.FIT` with parent div occupying viewport minus safe area
+- DPR: set `resolution: window.devicePixelRatio` in Phaser game config — mandatory, never omit
+- Canvas CSS: `touch-action: none` — mandatory
 
-The 5 MB initial payload target is a performance target (Facebook's guideline: "aim for ~1 MB initial download, sessions abandon beyond 5 seconds load time"), not a hard API-enforced byte cutoff. The total bundle cap is 200 MB. This means the budget must be enforced by discipline and measurement, not by a CI gate that trips on a platform error. The Phase 1 plan must include a manual payload size measurement step and a documented method to repeat it on every build.
+**BootScene Behavior:**
+- Splash type: Game name ("Bloom Tap") + text "Tap to Start" — text only, no graphics
+- Asset loader: None in Phase 1 (no heavy assets)
+- Scene transition: Camera fade out BootScene (300ms) → start GameScene → camera fade in (300ms)
+- Audio unlock: Tap on "Tap to Start" is the user gesture; `AudioContext.resume()` / Phaser audio unlock happens here
+- No loading bar in Phase 1
 
-**Primary recommendation:** Scaffold the project with the Asset Bundle folder hierarchy in place before writing any scripts. The bundle topology (main/core, game-assets, audio) is harder to restructure after scenes reference assets. Create null-implementation platform adapters on Day 1 so all subsequent development can proceed without live SDKs.
+**Scene Structure:**
+- BootScene: splash + audio unlock + transition to GameScene
+- GameScene (Phase 1): empty placeholder scene only
+
+**Touch Input:**
+- Use `pointerdown` exclusively — never `touchend`, `touchstart`, or `click`
+- Use `scene.input.on('pointerdown', ...)` via Phaser InputPlugin
+
+**Tech stack:** Phaser 3 + TypeScript + Vite — locked
+
+### Claude's Discretion
+
+None specified for Phase 1 — all decisions are locked.
+
+### Deferred Ideas (OUT OF SCOPE)
+
+- Visual style / animation of BootScene (deferred to Phase 5 Juice)
+- Exact grid cell size (computed in Phase 3 from actual logical height)
+- GameScene layout (grid vs HUD positioning — Phase 3)
+</user_constraints>
 
 ---
 
@@ -23,10 +55,22 @@ The 5 MB initial payload target is a performance target (Facebook's guideline: "
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| TECH-01 | Run on Mobile (iOS + Android) via Cocos Creator build | Native build pipeline via Xcode + Android Studio; NDK r21-r23; Cocos Creator 3.8 produces APK/AAB and IPA from the same TypeScript codebase |
-| TECH-02 | Run on Facebook Instant Games (HTML5/WebGL) | Cocos Creator 3.8 has first-class `fb-instant-games` build target; SDK auto-injected; produces uploadable .zip; init sequence is `initializeAsync → setLoadingProgress → startGameAsync` |
-| TECH-04 | Asset Bundle architecture ensures FB Instant initial payload < 5 MB | Cocos Creator Asset Bundle system splits assets into separately loadable packages; `main` bundle contains only first scene + boot scripts; game-assets bundle lazy-loaded post-boot |
+| FOUND-01 | Project runs in browser with Phaser 3 + TypeScript + Vite | Official template phaserjs/template-vite-ts provides the exact scaffold; npm install + npm run dev yields working Phaser canvas |
+| FOUND-02 | Game canvas scales correctly on mobile (DPR scaling, viewport lock) | `resolution: window.devicePixelRatio` in Phaser config; `Scale.FIT` with parent div; `100dvh` + `env(safe-area-inset-*)` CSS; portrait-lock via meta tag |
+| FOUND-03 | Touch input correct (no page scroll, pointerdown events, touch-action: none) | `touch-action: none` on canvas/container prevents scroll; Phaser InputPlugin `pointerdown` avoids passive-listener warnings; no `touchstart`/`click` |
 </phase_requirements>
+
+---
+
+## Summary
+
+Phase 1 creates the entire project from a blank repository. There is no existing code — the phase produces the Vite + TypeScript + Phaser 3 project scaffold, configures it for mobile-first portrait play, and wires two scenes (BootScene and a placeholder GameScene).
+
+The official Phaser team publishes `phaserjs/template-vite-ts` which pins Phaser 3.90.0 (the final Phaser v3 release, May 2025), Vite 6.x, and TypeScript 5.7. This template is the correct starting point; the planner should use it as the structural reference rather than generating a custom scaffold.
+
+The three locked decisions that most affect Phase 1 implementation detail are: (1) `resolution: window.devicePixelRatio` must be set in the Phaser game config at creation time — retrofitting it later requires coordinate system recalculation across all scenes; (2) `touch-action: none` must be on the canvas element (or its container) before the first touch event — omitting it causes the viewport to scroll on tap on both iOS Safari and Chrome Android; (3) the BootScene "Tap to Start" tap is the **only** user gesture before the game loop begins, making it the mandatory AudioContext unlock point for iOS Safari compatibility.
+
+**Primary recommendation:** Scaffold from `phaserjs/template-vite-ts`, delete the example scenes, configure Phaser with the locked mobile parameters, then add BootScene and placeholder GameScene.
 
 ---
 
@@ -36,43 +80,35 @@ The 5 MB initial payload target is a performance target (Facebook's guideline: "
 
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| Cocos Creator | 3.8.8 (LTS) | Engine, editor, cross-platform build pipeline | Only engine with first-class iOS + Android + FB Instant in one TypeScript codebase. 3.8.x is the confirmed LTS branch as of Dec 2025; no 3.9 yet. |
-| TypeScript | 5.x (bundled with Creator) | Game logic language | Cocos Creator 3.x deprecated JavaScript; TypeScript is the only supported scripting language. Bundled — do not install separately. |
-| Cocos Dashboard | Latest | Engine version management, project creation | Required tool to install and manage Creator versions. |
+| phaser | ^3.90.0 | 2D game framework, scene system, input, scaling | Official final Phaser v3 release (May 2025); official TS types bundled; community standard for HTML5 casual games |
+| typescript | ~5.7.2 | Type safety, IDE support | Bundled in official Phaser template; Phaser ships its own `.d.ts` |
+| vite | ^6.3.1 | Dev server with HMR, production bundler | Official Phaser template uses Vite 6; fastest dev loop for Phaser |
+| terser | ^5.39.0 | JS minification for production build | Included in official template for `npm run build` |
 
-### Build Environment
+### Supporting (Phase 1 — no additional libraries needed)
 
-| Tool | Version | Purpose | When to Use |
-|------|---------|---------|-------------|
-| Android Studio | Latest stable (4.1+) | Android APK/AAB compilation | Required for all Android native builds |
-| NDK | r21–r23 (r24 for Apple Silicon) | Native code compilation | Set in Cocos Creator Preferences > External SDKs |
-| Xcode | Latest stable (11.5+ minimum) | iOS IPA compilation | Required for all iOS native builds |
-| Chrome DevTools | Bundled with Chrome | HTML5/FB Instant debugging | Use with `http-server --ssl` for local FB Instant testing |
-
-### Supporting
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| FB Instant Games SDK | 7.1 (auto-injected by Creator) | Platform API surface | Available as `FBInstant` global in FB build only; declare via `.d.ts` file |
-| VS Code + Cocos Creator extension | Latest | TypeScript editing with Cocos API autocomplete | Primary IDE |
+Phase 1 is intentionally minimal: text-only BootScene, no asset loading, no audio playback yet. No additional libraries required.
 
 ### Alternatives Considered
 
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| Cocos Creator 3.8.x | Unity | Unity WebGL output is 10–30 MB minimum — fails the FB Instant initial load budget |
-| Cocos Creator 3.8.x | Phaser 3 / PixiJS | Cannot produce native iOS/Android binaries without a Capacitor wrapper |
-| Null-impl platform adapters | Live SDKs in Phase 1 | Live SDKs require app registrations, certificates, and test devices; null adapters let all other development proceed immediately |
+| `Scale.FIT` | `Scale.RESIZE` | RESIZE gives full flex canvas but requires manual coordinate recalculation in all scenes; FIT with fixed logical size is simpler |
+| `resolution: window.devicePixelRatio` | Multiply width/height by DPR and invert zoom | Both work; `resolution` property is the Phaser-native way on v3 |
+| camera fade via `cameras.main.fadeOut()` | Phaser.Tweens on alpha | Camera fade is built-in, zero boilerplate, fires a completion event |
 
 **Installation:**
 ```bash
-# Install Cocos Creator via Cocos Dashboard
-# https://www.cocos.com/en/creator-download
-# In Dashboard: install Creator 3.8.8 (LTS), create new TypeScript project
+npm create vite@latest bloom-tap -- --template vanilla-ts
+# OR clone directly:
+npx degit phaserjs/template-vite-ts bloom-tap
+cd bloom-tap
+npm install
+```
 
-# No npm installs needed for Phase 1.
-# Firebase, AdMob — deferred to later phases.
-# FB SDK is auto-injected by the fb-instant-games build target.
+Then add Phaser if not already present:
+```bash
+npm install phaser@^3.90.0
 ```
 
 ---
@@ -82,167 +118,175 @@ The 5 MB initial payload target is a performance target (Facebook's guideline: "
 ### Recommended Project Structure
 
 ```
-assets/
-├── boot/                    # Boot scene + all persistent manager scripts
-│   ├── Boot.scene
-│   └── scripts/
-│       ├── Boot.ts          # Orchestrates platform init + manager creation
-│       ├── GameManager.ts   # Root persistent node, round state machine
-│       └── EventBus.ts      # Global typed pub/sub (no external deps)
-├── core/                    # Shared infrastructure (marked as Asset Bundle: "core")
-│   └── scripts/
-│       ├── adapters/
-│       │   ├── IPlatformAdapter.ts       # Interface — the contract
-│       │   ├── FBInstantAdapter.ts       # Wraps FBInstant.* calls
-│       │   └── NullPlatformAdapter.ts    # No-ops; used for native + dev
-│       ├── FlowerDatabase.ts             # Reads flower JSON config
-│       └── PlatformDetector.ts          # Selects adapter at runtime
-├── game-assets/             # Marked as Asset Bundle: "game-assets" (lazy-loaded)
-│   ├── scenes/
-│   │   └── Gameplay.scene
-│   ├── sprites/             # Texture atlases go here (NOT in main bundle)
-│   └── audio/              # SFX/BGM files
-├── resources/               # Dynamic load via cc.resources (avoid for Phase 1)
-└── scenes/
-    └── MainMenu.scene       # Included in main bundle via Build panel
+bloom-tap/
+├── index.html              # viewport meta, container div, entry script
+├── public/
+│   └── assets/             # sprites, audio (empty in Phase 1)
+├── src/
+│   ├── main.ts             # createGame() — constructs Phaser.Game instance
+│   ├── game/
+│   │   ├── config.ts       # Phaser GameConfig object (width, scale, scenes, etc.)
+│   │   └── scenes/
+│   │       ├── BootScene.ts
+│   │       └── GameScene.ts
+├── vite/
+│   ├── config.dev.mjs      # dev server config (port 8080, hot reload)
+│   └── config.prod.mjs     # production build config
+├── tsconfig.json
+└── package.json
 ```
 
-**Key discipline:** Keep the `main` bundle to Boot + MainMenu scene + core/scripts only. All art, audio, and gameplay scenes go into `game-assets` bundle loaded after `startGameAsync()`.
+### Pattern 1: Mobile-First Phaser Config
 
-### Pattern 1: Persistent Manager Node
+**What:** Set `width`, `scale.mode`, `resolution`, `parent` correctly at game creation — cannot be changed without scene restarts.
 
-**What:** All Manager classes are `Component`s attached to a root node that survives scene transitions.
-**When to use:** Any system that must persist across scene loads (GameManager, EventBus, FlowerDatabase).
-**Example:**
+**When to use:** Always; this is the singular Phaser game config.
+
 ```typescript
-// Source: Cocos Creator 3.8 official docs — scene management
-// Boot.ts
-import { _decorator, Component, director, game } from 'cc';
-const { ccclass } = _decorator;
+// src/game/config.ts
+import Phaser from 'phaser';
+import { BootScene } from './scenes/BootScene';
+import { GameScene } from './scenes/GameScene';
 
-@ccclass('Boot')
-export class Boot extends Component {
-    onLoad() {
-        // Make this node persist across all scene transitions
-        game.addPersistRootNode(this.node);
-        // Initialize managers here before transitioning
-    }
-}
+export const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  width: 390,
+  // height is NOT fixed — computed from container at runtime
+  parent: 'game-container',
+  backgroundColor: '#1a1a2e',
+  resolution: window.devicePixelRatio,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  scene: [BootScene, GameScene],
+};
 ```
 
-### Pattern 2: Platform Adapter (Null Object Pattern)
-
-**What:** All external SDK calls go through an interface. Game logic never imports platform SDKs directly.
-**When to use:** Every call to FBInstant, AdMob, Firebase. No exceptions.
-**Example:**
 ```typescript
-// IPlatformAdapter.ts — the contract
-export interface IPlatformAdapter {
-    initialize(): Promise<void>;
-    getPlayerID(): string | null;
-    setLoadingProgress(percent: number): void;
-    startGame(): Promise<void>;
-}
+// src/main.ts
+import Phaser from 'phaser';
+import { config } from './game/config';
 
-// NullPlatformAdapter.ts — safe no-op for native builds and dev
-export class NullPlatformAdapter implements IPlatformAdapter {
-    async initialize(): Promise<void> { /* no-op */ }
-    getPlayerID(): string | null { return 'dev-player'; }
-    setLoadingProgress(_percent: number): void { /* no-op */ }
-    async startGame(): Promise<void> { /* no-op */ }
-}
-
-// FBInstantAdapter.ts — wraps the real SDK
-declare const FBInstant: any;
-export class FBInstantAdapter implements IPlatformAdapter {
-    async initialize(): Promise<void> {
-        await FBInstant.initializeAsync();
-    }
-    getPlayerID(): string | null {
-        return FBInstant.player.getID();
-    }
-    setLoadingProgress(percent: number): void {
-        FBInstant.setLoadingProgress(percent);
-    }
-    async startGame(): Promise<void> {
-        await FBInstant.startGameAsync();
-    }
-}
-
-// PlatformDetector.ts — selects adapter at runtime, called once in Boot
-import { sys } from 'cc';
-export function createPlatformAdapter(): IPlatformAdapter {
-    const isFBInstant = sys.isBrowser && typeof (globalThis as any).FBInstant !== 'undefined';
-    return isFBInstant ? new FBInstantAdapter() : new NullPlatformAdapter();
-}
+const container = document.getElementById('game-container')!;
+// Height is determined by the container, not hard-coded in Phaser config.
+// Container height is set via CSS (100dvh minus safe-area insets).
+new Phaser.Game(config);
 ```
 
-### Pattern 3: Asset Bundle Loading Sequence
+### Pattern 2: Container CSS for Mobile Viewport
 
-**What:** Boot loads the `core` bundle synchronously, then after `startGameAsync()`, loads `game-assets` on demand.
-**When to use:** Every non-boot asset load.
-**Example:**
+**What:** A `#game-container` div that fills the safe-area-aware viewport; Phaser's ScaleManager targets this div.
+
+**When to use:** Always for mobile-first portrait games.
+
+```html
+<!-- index.html -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #000;
+    overflow: hidden;
+  }
+  #game-container {
+    width: 100%;
+    height: 100dvh;
+    /* Push content inside safe area on notched devices */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* Prevent any touch from scrolling the page */
+    touch-action: none;
+  }
+  canvas {
+    touch-action: none;
+    display: block;
+  }
+</style>
+```
+
+Note: `viewport-fit=cover` is required for `env(safe-area-inset-*)` to have non-zero values on iPhones.
+
+### Pattern 3: BootScene with Fade Transition and Audio Unlock
+
+**What:** Text-only splash, tap-to-start, camera fade out/in, AudioContext unlock on tap.
+
+**When to use:** This is the locked BootScene specification from CONTEXT.md.
+
 ```typescript
-// Source: Cocos Creator 3.8 Asset Bundle docs
-import { assetManager, director } from 'cc';
+// src/game/scenes/BootScene.ts
+// Source: Phaser docs + ourcade.co fade transition pattern
+import Phaser from 'phaser';
 
-async function bootSequence(): Promise<void> {
-    // 1. Platform adapter init (FBInstant.initializeAsync or no-op)
-    await platformAdapter.initialize();
-    platformAdapter.setLoadingProgress(10);
+export class BootScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'BootScene' });
+  }
 
-    // 2. Load the core bundle (already embedded in main payload)
-    // No explicit load needed if core scripts are in main bundle.
-    // Only explicitly load bundles that are remote/separate.
+  create(): void {
+    const { width, height } = this.scale;
 
-    // 3. Signal FB that loading is done
-    platformAdapter.setLoadingProgress(100);
-    await platformAdapter.startGame();
+    this.add.text(width / 2, height * 0.4, 'Bloom Tap', {
+      fontSize: '48px',
+      color: '#ffffff',
+    }).setOrigin(0.5);
 
-    // 4. Now lazy-load heavy assets
-    assetManager.loadBundle('game-assets', (err, bundle) => {
-        if (err) { console.error(err); return; }
-        director.loadScene('MainMenu');
+    const tapText = this.add.text(width / 2, height * 0.6, 'Tap to Start', {
+      fontSize: '24px',
+      color: '#aaaaaa',
+    }).setOrigin(0.5);
+
+    // Single tap handler — also serves as the user gesture for AudioContext unlock
+    this.input.once('pointerdown', () => {
+      // Unlock audio context (iOS Safari requires this before any sound can play)
+      if (this.sound.context && this.sound.context.state === 'suspended') {
+        this.sound.context.resume();
+      }
+
+      this.cameras.main.fadeOut(300, 0, 0, 0);
     });
+
+    this.cameras.main.once(
+      Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE,
+      () => {
+        this.scene.start('GameScene');
+      }
+    );
+  }
 }
 ```
 
-### Pattern 4: Asset Bundle Configuration
+```typescript
+// src/game/scenes/GameScene.ts
+import Phaser from 'phaser';
 
-**What:** Marking folders as bundles via the Cocos Creator Assets panel.
-**When to use:** When configuring the project — this is an editor operation, not a code operation.
+export class GameScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'GameScene' });
+  }
 
-Steps:
-1. Select the `game-assets/` folder in the Assets panel.
-2. In the Inspector, check "Is Bundle".
-3. Set Bundle Name: `game-assets`.
-4. Set Compression Type: `Merge Depend` (default — merges JSON dependencies).
-5. Leave "Is Remote Bundle" unchecked for Phase 1 (all assets ship in the zip).
-6. Click "Apply".
+  create(): void {
+    // Phase 1: empty placeholder
+    this.cameras.main.fadeIn(300, 0, 0, 0);
 
-Built-in bundles created automatically: `main` (scenes from Build panel), `resources`, `internal`. You do NOT mark these manually.
-
-### Pattern 5: FB Instant Games Build + Local Testing
-
-**What:** Build the FB Instant Games target and test locally with HTTPS before uploading.
-**When to use:** Verifying SC-2 (runs as FB Instant Games bundle).
-
-Steps:
-1. Menu > Project > Build. Platform: "Facebook Instant Game".
-2. Build produces `build/fb-instant-games/fb-instant-games.zip`.
-3. Measure zip size immediately: `ls -lh build/fb-instant-games/fb-instant-games.zip`.
-4. For local HTTPS testing: `npx http-server build/fb-instant-games -S -C cert.pem -K key.pem -p 8443`.
-5. Upload zip to Facebook App Dashboard > Instant Games > Web Hosting > Upload Version.
-
-**SDK auto-injection:** Creator's FB build template automatically injects the FB Instant Games SDK script tag into `index.html`. You do NOT manually add the SDK. You CAN customize the injected SDK version by creating `build-templates/fb-instant-games/index.html` in your project root.
+    // Confirm scene is active — remove in Phase 3
+    this.add.text(
+      this.scale.width / 2,
+      this.scale.height / 2,
+      'GameScene placeholder',
+      { fontSize: '18px', color: '#888888' }
+    ).setOrigin(0.5);
+  }
+}
+```
 
 ### Anti-Patterns to Avoid
 
-- **Direct SDK import in gameplay scripts:** Any `.ts` file outside `adapters/` that contains `FBInstant.`, `firebase.`, or `admob.` is a violation. All SDK calls must be behind the adapter interface.
-- **Art assets in the main bundle:** Placing sprites, audio, or scene-specific assets in `boot/` or at the assets root causes them to be included in the main bundle, bloating the initial payload.
-- **Nesting Asset Bundle folders:** Do not create a bundle inside another bundle folder. Cocos Creator does not support nested bundles — all bundles must be siblings.
-- **Physics engine enabled:** Do not enable Box2D or Bullet in Project Settings. Bloom Harvest has no physics simulation use case; the engine adds bundle size and init overhead.
-- **`resources/` for gameplay assets:** The `resources/` folder is always included in the main bundle. Never put flower sprites or audio there.
+- **Hardcoding height in Phaser config:** `height: 844` ignores safe area and real device height. Use the container-driven approach above.
+- **Setting `resolution` after game creation:** The canvas dimensions are calculated once; late DPR setting requires full game restart or manual canvas resize.
+- **Using `touchstart` / `touchend` / `click` instead of `pointerdown`:** Adds 100–300ms latency on mobile; breaks the timing model used in Phase 2+ game logic.
+- **Missing `viewport-fit=cover` meta tag:** Without it, `env(safe-area-inset-top/bottom)` returns `0` on all devices, defeating safe-area handling.
+- **Adding passive touch listeners outside Phaser:** If any other `addEventListener('touchstart', fn)` call exists without `{ passive: false }`, browsers may warn; Phaser's internal listeners handle this correctly when `touch-action: none` is set on the canvas.
 
 ---
 
@@ -250,154 +294,120 @@ Steps:
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Cross-scene state | Custom scene param passing | Persistent root node (`game.addPersistRootNode`) | Cocos Creator's built-in mechanism; survives all scene transitions |
-| Asset lazy-loading | Custom XHR/fetch loader | `assetManager.loadBundle()` | Handles caching, dependencies, decompression, and error recovery |
-| FB SDK initialization | Manual script tag injection | Creator's `fb-instant-games` build template | Template handles SDK injection, loading progress hook, and `index.js` initialization |
-| TypeScript compilation | Custom webpack/tsc pipeline | Creator's built-in compiler | Creator's compiler is configured for its module system; bypassing it causes runtime module errors |
-| Screen adaptation | Manual canvas resize | Creator's `Design Resolution` + Widget component + `Fit Height` mode | Handles every device size and safe area correctly |
+| Scene lifecycle | Manual state machine with flags | Phaser Scene system (`scene.start`, `scene.pause`, `scene.stop`) | Handles init/preload/create/update/shutdown lifecycle; memory cleanup on scene stop |
+| Canvas DPR scaling | Manual `canvas.width *= dpr` | `resolution: window.devicePixelRatio` in Phaser config | Phaser also scales its coordinate system; manual DPR misses internal pointer offset math |
+| Touch-to-canvas coordinate mapping | Manual `getBoundingClientRect()` subtraction | Phaser InputPlugin pointer events | Phaser accounts for CSS scaling (FIT mode compresses canvas) in its coordinate transform |
+| Camera transition animation | Tween on scene alpha | `this.cameras.main.fadeOut/fadeIn()` | Built-in; fires `FADE_OUT_COMPLETE` event; zero extra code |
+| Audio context unlock | Custom `document.addEventListener('click', ...)` | Phaser's built-in `this.sound.unlock()` or `this.sound.context.resume()` inside pointer handler | Phaser tracks context state; manual listener can fire before Phaser is ready |
 
-**Key insight:** Cocos Creator 3.8 has a mature built-in solution for every infrastructure concern in Phase 1. The work is configuration and wiring, not custom engineering.
+**Key insight:** In Phaser 3, the coordinate, scaling, and input systems are deeply coupled. Bypassing any one of them with custom DOM code causes coordinate mismatches, especially under `Scale.FIT` where the canvas is CSS-scaled down from its physical pixel size.
 
 ---
 
 ## Common Pitfalls
 
-### Pitfall 1: Main Bundle Payload Creep
+### Pitfall 1: DPR Not Set — Blurry Canvas on Retina Devices
 
-**What goes wrong:** Sprites, audio, or scene assets get referenced from the Boot or MainMenu scene, causing them to be bundled into the main payload. The zip grows past the 5 MB target before the first art pass.
-**Why it happens:** Cocos Creator's build system follows all asset references from included scenes. If a scene references a sprite directly, that sprite enters the main bundle even if you intended to lazy-load it.
-**How to avoid:** The Boot and MainMenu scenes reference ONLY script components and UI nodes with no sprite frames assigned in the editor. All art assets are loaded programmatically via `assetManager.loadBundle('game-assets', ...)` after boot. Measure zip size after every build in Phase 1 before any art exists — establish a baseline.
-**Warning signs:** Build zip exceeds 2 MB before any art assets are added.
+**What goes wrong:** On any iPhone (all have DPR ≥ 2) or modern Android, the canvas renders at 1x and is CSS-upscaled, producing visibly blurry text and graphics.
+**Why it happens:** Phaser defaults `resolution` to `1` if not specified.
+**How to avoid:** Set `resolution: window.devicePixelRatio` in the top-level `GameConfig` object when calling `new Phaser.Game(config)`.
+**Warning signs:** Game looks slightly soft/blurry on device but sharp in desktop browser DevTools at 1x zoom.
 
-### Pitfall 2: SDK Import in Gameplay Scripts
+### Pitfall 2: Missing `touch-action: none` — Viewport Scrolls on Tap
 
-**What goes wrong:** A developer writes `const id = FBInstant.player.getID()` directly in `FlowerLifecycle.ts`. The native build fails to compile (FBInstant is undefined). The FB build works, but the code is now untestable without a live FB context.
-**Why it happens:** It's the path of least resistance. The global `FBInstant` appears to work during FB testing.
-**How to avoid:** Enforce the adapter pattern from the first commit. `FBInstantAdapter.ts` is the ONLY file in the project that references `FBInstant`. A grep for `FBInstant` outside the adapters folder is a failing check.
-**Warning signs:** `FBInstant` appears in any file outside `assets/core/scripts/adapters/`.
+**What goes wrong:** Tapping the game canvas scrolls the page on iOS Safari and Chrome Android. No `pointerdown` event fires in Phaser because the browser consumes the touch as a scroll gesture.
+**Why it happens:** Browsers default to treating touch events as potential scroll gestures. Without `touch-action: none`, the browser intercepts before Phaser sees the event.
+**How to avoid:** Apply `touch-action: none` to both `#game-container` and `canvas` in CSS.
+**Warning signs:** Chrome DevTools shows "Added non-passive event listener" console warning; page visibly scrolls instead of firing game events.
 
-### Pitfall 3: Nested Asset Bundles
+### Pitfall 3: Missing `viewport-fit=cover` — Safe Area Returns Zero
 
-**What goes wrong:** Developer marks `game-assets/sprites/` as a bundle, then marks `game-assets/` as a bundle. Cocos Creator silently ignores or mis-builds nested bundles — assets may not load at runtime.
-**Why it happens:** It seems intuitive to organize by sub-bundle.
-**How to avoid:** All bundle-marked folders are siblings in the `assets/` tree, not children of each other.
+**What goes wrong:** Notch area and home indicator overlap game HUD and action areas on iPhone X/11/12/13/14/15.
+**Why it happens:** `env(safe-area-inset-*)` only returns non-zero values when the viewport meta includes `viewport-fit=cover`.
+**How to avoid:** Use `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">` in `index.html`.
+**Warning signs:** Safe area padding appears to be applied in code but has no visual effect on notched devices.
 
-### Pitfall 4: Wrong FB Init Sequence Order
+### Pitfall 4: Hardcoded Canvas Height
 
-**What goes wrong:** Calling `startGameAsync()` before the loading assets are ready, or calling any FB API before `initializeAsync()` completes. FB Instant Games will throw or silently fail.
-**Why it happens:** Async/await errors are easy to get wrong.
-**How to avoid:** The sequence is strictly: `initializeAsync()` → (load assets) → `setLoadingProgress(100)` → `startGameAsync()`. No FB API call may precede `initializeAsync()`. Use `async/await` with `try/catch`, not callbacks.
-**Warning signs:** FB build hangs on the Facebook loading screen indefinitely.
+**What goes wrong:** On devices shorter than the hardcoded value (e.g., iPhone SE at 667px logical height), the canvas is cropped or overflows; on taller devices, there are black bars. Cannot be adjusted per-device without a full game restart.
+**Why it happens:** Setting `height: 844` in Phaser config locks the logical height.
+**How to avoid:** Omit `height` from Phaser config; let the `#game-container` CSS (`100dvh` minus safe-area padding) define available height; Phaser's `Scale.FIT` fits within that container.
+**Warning signs:** Game appears correct on one device but clipped or letterboxed on others.
 
-### Pitfall 5: Missing `game.addPersistRootNode` Before Scene Load
+### Pitfall 5: AudioContext Not Unlocked Before Phase 5 Sound Effects
 
-**What goes wrong:** Managers are created in Boot, but the Boot scene node is destroyed when `director.loadScene('MainMenu')` runs, taking all manager instances with it.
-**Why it happens:** Scene loads destroy all non-persistent nodes by default.
-**How to avoid:** Call `game.addPersistRootNode(this.node)` in the `onLoad()` of EVERY manager node before any scene transition is triggered. This must happen before the first `director.loadScene()` call.
+**What goes wrong:** Phase 5 adds sound effects that are silent on iOS Safari. Tracing the bug back to Phase 1 reveals no user gesture unlocked the AudioContext.
+**Why it happens:** iOS Safari requires a user gesture (tap/click) to resume an `AudioContext`. If BootScene passes through to GameScene without a user tap, the context stays suspended.
+**How to avoid:** The "Tap to Start" interaction in BootScene must call `this.sound.context.resume()` (or check `this.sound.unlock()`). This is already specified in CONTEXT.md and must not be skipped even in a "just make it work" Phase 1.
+**Warning signs:** No sound on iOS Safari; `this.sound.context.state` returns `'suspended'` at game start.
 
-### Pitfall 6: TypeScript Module Configuration Mismatch
+### Pitfall 6: Scene List Not Registered at Phaser.Game Construction
 
-**What goes wrong:** Developer modifies `compilerOptions.module` in `tsconfig.json` to `commonjs`, enabling `require()` in the IDE. At runtime, Creator's module loader fails because it expects ES modules.
-**Why it happens:** Cocos Creator's `tsconfig.json` extends `tmp/tsconfig.cocos.json`. The base config sets `module: es2015`. Overriding it causes a runtime vs. compile-time mismatch.
-**How to avoid:** Never override `compilerOptions.target` or `compilerOptions.module` in the project `tsconfig.json`. Only add options that do not conflict with the inherited base (e.g., `noImplicitAny`, `strictNullChecks`).
+**What goes wrong:** `this.scene.start('GameScene')` throws "Scene not found" at runtime.
+**Why it happens:** Scenes must be registered in the `scene: []` array of the initial Phaser game config. They cannot be added after `new Phaser.Game()` is called without explicit `this.scene.add()`.
+**How to avoid:** Always pass all scenes (even placeholders) in the initial `config.scene` array.
 
 ---
 
 ## Code Examples
 
-Verified patterns from Cocos Creator 3.8 official documentation:
-
-### EventBus (No External Dependency)
+### Verified Phaser GameConfig Structure (from official template)
 
 ```typescript
-// Source: Standard TypeScript pattern, no Cocos API required
-// assets/boot/scripts/EventBus.ts
-type Handler<T = any> = (data: T) => void;
+// Source: phaserjs/template-vite-ts (Phaser 3.90.0)
+import Phaser from 'phaser';
 
-export class EventBus {
-    private static handlers: Map<string, Handler[]> = new Map();
+const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  width: 390,
+  parent: 'game-container',
+  resolution: window.devicePixelRatio,
+  backgroundColor: '#1a1a2e',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  scene: [BootScene, GameScene],
+};
 
-    static on<T>(event: string, handler: Handler<T>): void {
-        if (!this.handlers.has(event)) this.handlers.set(event, []);
-        this.handlers.get(event)!.push(handler as Handler);
-    }
-
-    static off<T>(event: string, handler: Handler<T>): void {
-        const list = this.handlers.get(event);
-        if (list) {
-            const idx = list.indexOf(handler as Handler);
-            if (idx >= 0) list.splice(idx, 1);
-        }
-    }
-
-    static emit<T>(event: string, data?: T): void {
-        const list = this.handlers.get(event);
-        if (list) list.forEach(h => h(data));
-    }
-}
-
-// Usage — emitter does NOT need to know who listens
-EventBus.emit('flower:wilted', { flowerID: 'rose-01' });
-// Usage — listener does NOT need to know who emits
-EventBus.on('flower:wilted', ({ flowerID }) => { /* ... */ });
+export default new Phaser.Game(config);
 ```
 
-### FlowerDatabase Stub (JSON config pattern)
+### Camera Fade Transition Between Scenes
 
 ```typescript
-// Source: Cocos Creator 3.8 asset loading docs
-// assets/core/scripts/FlowerDatabase.ts
-import { JsonAsset, assetManager } from 'cc';
+// Source: Phaser docs — Cameras.Scene2D.Events.FADE_OUT_COMPLETE
+// In BootScene.create():
+this.cameras.main.fadeOut(300, 0, 0, 0);   // 300ms, fade to black
 
-export interface FlowerConfig {
-    id: string;
-    displayName: string;
-    baseBloomDurationMs: number;   // wall-clock ms, never frame counts
-    bloomWindowFractionOfDuration: number;  // 0.0–1.0
-    basePoints: number;
-    animationKey: string;
-    atlasKey: string;
-}
+this.cameras.main.once(
+  Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE,
+  () => {
+    this.scene.start('GameScene');
+  }
+);
 
-export class FlowerDatabase {
-    private static configs: Map<string, FlowerConfig> = new Map();
-
-    static async load(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            assetManager.loadBundle('core', (err, bundle) => {
-                if (err) { reject(err); return; }
-                bundle.load('data/flowers', JsonAsset, (err, asset) => {
-                    if (err) { reject(err); return; }
-                    const data = asset.json as FlowerConfig[];
-                    data.forEach(cfg => FlowerDatabase.configs.set(cfg.id, cfg));
-                    resolve();
-                });
-            });
-        });
-    }
-
-    static get(id: string): FlowerConfig {
-        const cfg = FlowerDatabase.configs.get(id);
-        if (!cfg) throw new Error(`Unknown flower ID: ${id}`);
-        return cfg;
-    }
-}
+// In GameScene.create():
+this.cameras.main.fadeIn(300, 0, 0, 0);    // 300ms, fade from black
 ```
 
-### Measuring Initial Payload (Build Verification)
+### Vitest Config (for testing pure game logic in later phases)
+
+```typescript
+// vite.config.ts addition (for Vitest — needed from Phase 2 onward)
+/// <reference types="vitest" />
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',  // pure logic; no DOM needed for FSM/grid tests
+  },
+});
+```
 
 ```bash
-# After every FB Instant Games build, run:
-# On Windows (Git Bash or PowerShell):
-ls -lh build/fb-instant-games/fb-instant-games.zip
-# Or with exact byte count:
-du -b build/fb-instant-games/ --max-depth=1
-
-# Target: zip file < 5 MB
-# If over budget, identify which assets grew the bundle:
-# Unzip to a temp folder and sort by size:
-mkdir /tmp/fb-bundle && cd /tmp/fb-bundle && unzip ~/project/build/fb-instant-games/fb-instant-games.zip
-find . -type f | xargs ls -s | sort -n | tail -20
+npm install vitest --save-dev
 ```
 
 ---
@@ -406,159 +416,96 @@ find . -type f | xargs ls -s | sort -n | tail -20
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Cocos Creator 2.x (JavaScript) | Cocos Creator 3.8.x (TypeScript, dual-kernel) | Creator 3.0 (2021), LTS in 3.8 | TypeScript is now the only supported language; all new projects use 3.x |
-| `cc.loader` (deprecated) | `assetManager.loadBundle()` | Creator 3.0 | Old loading API removed; all asset loading goes through `assetManager` |
-| `cc.game.addPersistRootNode` | `game.addPersistRootNode` (module import style) | Creator 3.x | Namespace changed; import `game` from `'cc'`, not `cc.game` |
-| Subpackages (Creator 2.x) | Asset Bundles (Creator 3.x) | Creator 3.0 | More powerful; supports remote bundles, priority, compression |
-| `sys.localStorage` namespace | `sys.localStorage` (same, but import `sys` from `'cc'`) | Creator 3.x | Module import style required in TypeScript |
+| `window.innerHeight` as Phaser height | Omit height; use `Scale.FIT` with CSS-sized container | Phaser 3.16+ (Scale Manager) | Eliminates viewport height mismatch bugs |
+| `100vh` for full-screen canvas | `100dvh` | 2022 (browsers) | `dvh` tracks actual visible viewport as browser chrome shows/hides |
+| Manual DPR: multiply width/height, invert zoom | `resolution: window.devicePixelRatio` | Phaser 3 (original) | Phaser handles DPR in its rendering pipeline natively |
+| Webpack | Vite | 2022–2023 | 10–100x faster dev server HMR; no config for TypeScript |
+| Phaser CE (community edition) | Phaser 3.90.0 | 2018 | Phaser CE deprecated; v3 is the maintained line |
 
 **Deprecated/outdated:**
-- `cc.loader`: Removed. Use `assetManager`.
-- JavaScript scripting: Deprecated in Creator 3.x. TypeScript only.
-- Cocos Creator 2.x project structure: `.fire` scene files replaced by `.scene` (YAML-based).
+- `Phaser.Scale.NONE` with manual resize handlers: replaced by ScaleManager modes
+- `game.canvas.style.width/height` manipulation: handled by Scale.FIT automatically
+- Phaser v2 / Phaser CE: archived, not maintained
 
 ---
 
 ## Open Questions
 
-1. **Exact NDK version for the dev machine**
-   - What we know: r21–r23 is recommended; r24 for Apple Silicon Macs.
-   - What's unclear: Which specific NDK is installed on the team's build machine.
-   - Recommendation: Document the exact NDK path in `CLAUDE.md` or project README after initial setup. Store the path in Creator Preferences > External SDKs.
+1. **Exact height value passed to Phaser**
+   - What we know: CONTEXT.md says "Dynamic — computed from `window.innerHeight` minus safe area"; `Scale.FIT` with a CSS-sized parent div handles this without passing `height` to Phaser config explicitly
+   - What's unclear: Whether Phaser reads the parent container height at init or whether a JS-computed height should be passed
+   - Recommendation: Use CSS-only approach (`100dvh` + safe-area padding on container), omit `height` from Phaser config, let `Scale.FIT` use the container dimensions. If rendering issues appear, fall back to JS-computed height: `document.getElementById('game-container').clientHeight`.
 
-2. **FB Instant Games initial payload: hard limit or soft target?**
-   - What we know: Facebook recommends aiming for ~1 MB initial download; total bundle cap is 200 MB; sessions abandon beyond 5-second load; community convention uses 5 MB as a planning target.
-   - What's unclear: Whether Facebook enforces a hard byte limit on the initial payload or whether it is purely a performance SLA.
-   - Recommendation: Treat 5 MB as a hard self-imposed limit enforced by measurement. If the FB platform ever rejects the upload or degrades the game's loading experience, the root cause is bundle size. Test empirically during SC-3 verification.
-
-3. **Cocos Creator 3.8.8 and Xcode 16 compatibility**
-   - What we know: The 3.8.x changelog mentions a fix for "iOS/macOS build errors caused by Xcode 16.3".
-   - What's unclear: Whether the fix is in the 3.8.8 release or a later patch.
-   - Recommendation: Use the latest 3.8.x patch available at project start. If iOS builds fail with Xcode 16.x, downgrade Xcode or check the Cocos forum for the relevant patch.
+2. **Vitest setup timing**
+   - What we know: Phase 1 has no pure logic to test; Vitest is not needed until Phase 2 (FlowerFSM, Grid)
+   - What's unclear: Whether planner should add `vitest` devDependency in Phase 1 (Wave 0 prep) or Phase 2
+   - Recommendation: Install Vitest in Phase 1 so Phase 2 can write tests immediately without environment setup overhead. Add `vitest --save-dev` and a `vitest.config.ts` stub in Phase 1.
 
 ---
 
 ## Validation Architecture
 
-`nyquist_validation` is enabled. Phase 1 is infrastructure-only — there is no automated test framework appropriate for Cocos Creator project structure validation. The validation strategy is a combination of build pipeline checks, grep-based static analysis, and manual device verification.
-
 ### Test Framework
 
 | Property | Value |
 |----------|-------|
-| Framework | No runtime test framework in Phase 1. Validation is build-based + static analysis + manual device check. |
-| Config file | N/A — add a test framework (e.g., Jest for pure TypeScript unit tests) in Phase 2 when logic units exist. |
-| Quick run command | `bash .planning/phases/01-project-foundation/validate.sh` (to be created in Wave 0) |
-| Full suite command | Same — all Phase 1 checks run in one script. |
+| Framework | Vitest (to be installed in Phase 1) |
+| Config file | `vitest.config.ts` — Wave 0 creates this |
+| Quick run command | `npx vitest run` |
+| Full suite command | `npx vitest run --coverage` |
 
-### Success Criterion → Validation Map
+### Phase Requirements → Test Map
 
-| SC | Behavior | Test Type | Automated Command | Created |
-|----|----------|-----------|-------------------|---------|
-| SC-1 | Cocos Creator project builds and deploys a blank scene to iOS or Android without errors | Manual (device required) | Build step: `Build panel > iOS or Android > Build + Compile`; verify 0 errors in build log | Manual — no automation possible without device CI |
-| SC-2 | Project builds and runs as Facebook Instant Games HTML5 bundle without errors | Semi-automated | `ls -lh build/fb-instant-games/fb-instant-games.zip` verifies build artifact exists; upload and open in FB Developer sandbox for runtime check | ❌ Wave 0: create `validate.sh` that checks build artifact presence |
-| SC-3 | Initial payload bundle measures under 5 MB | Automated (post-build) | `test $(stat -c%s build/fb-instant-games/fb-instant-games.zip) -lt 5242880 && echo PASS || echo FAIL` | ❌ Wave 0: add to `validate.sh` |
-| SC-4 | No direct SDK imports outside adapter files | Automated (static analysis) | `grep -r "FBInstant\." assets/ --include="*.ts" | grep -v "adapters/"` (must return 0 matches) | ❌ Wave 0: add to `validate.sh` |
+| Req ID | Behavior | Test Type | Automated Command | File Exists? |
+|--------|----------|-----------|-------------------|-------------|
+| FOUND-01 | Project starts with `npm run dev` and displays Phaser canvas, no console errors | smoke (manual browser check) | `npm run build` (build must succeed without TypeScript errors) | ❌ Wave 0 |
+| FOUND-02 | Canvas fills viewport without blur on high-DPI devices | manual (requires device/DevTools) | `npm run build` (TypeScript type check covers config correctness) | ❌ Wave 0 |
+| FOUND-03 | Touch fires `pointerdown` without scroll, no passive-listener warnings | manual (requires mobile device/DevTools emulation) | `npm run build` (structural verification) | ❌ Wave 0 |
 
-### validate.sh (Wave 0 deliverable)
-
-```bash
-#!/usr/bin/env bash
-# .planning/phases/01-project-foundation/validate.sh
-# Run after every FB Instant Games build to verify Phase 1 success criteria.
-
-set -e
-PASS=0; FAIL=0
-
-# SC-3: Check zip size < 5 MB (5,242,880 bytes)
-ZIP=build/fb-instant-games/fb-instant-games.zip
-if [ -f "$ZIP" ]; then
-    SIZE=$(stat -c%s "$ZIP" 2>/dev/null || stat -f%z "$ZIP")
-    if [ "$SIZE" -lt 5242880 ]; then
-        echo "[PASS] SC-3: Initial payload ${SIZE} bytes < 5 MB"
-        PASS=$((PASS+1))
-    else
-        echo "[FAIL] SC-3: Initial payload ${SIZE} bytes >= 5 MB (budget exceeded)"
-        FAIL=$((FAIL+1))
-    fi
-else
-    echo "[SKIP] SC-3: Build artifact not found at $ZIP — run FB Instant Games build first"
-fi
-
-# SC-4: No direct SDK imports outside adapters/
-VIOLATIONS=$(grep -r "FBInstant\." assets/ --include="*.ts" 2>/dev/null | grep -v "adapters/" || true)
-if [ -z "$VIOLATIONS" ]; then
-    echo "[PASS] SC-4: No direct FBInstant calls outside adapters/"
-    PASS=$((PASS+1))
-else
-    echo "[FAIL] SC-4: Direct SDK imports found outside adapters/:"
-    echo "$VIOLATIONS"
-    FAIL=$((FAIL+1))
-fi
-
-# SC-2: Build artifact exists
-if [ -f "$ZIP" ]; then
-    echo "[PASS] SC-2: FB Instant Games build artifact exists"
-    PASS=$((PASS+1))
-else
-    echo "[FAIL] SC-2: FB Instant Games build artifact missing — build not completed"
-    FAIL=$((FAIL+1))
-fi
-
-echo ""
-echo "Results: $PASS passed, $FAIL failed"
-echo "SC-1 (iOS/Android device deploy): MANUAL — verify by deploying to a device and confirming blank scene loads without errors."
-echo "SC-2 (runtime): MANUAL — upload zip to FB Developer sandbox and confirm game starts."
-[ "$FAIL" -eq 0 ] && exit 0 || exit 1
-```
+Note: FOUND-01, FOUND-02, FOUND-03 are environment/browser-behaviour requirements that cannot be meaningfully validated by unit tests. The automated gate for Phase 1 is: TypeScript compilation succeeds (`npm run build` exits 0). Manual browser+device verification covers the rest.
 
 ### Sampling Rate
 
-- **Per task commit:** Run `bash .planning/phases/01-project-foundation/validate.sh` after every build.
-- **Per wave merge:** Full script + manual SC-1 device check (at minimum simulator; physical device preferred).
-- **Phase gate:** All four SC checks green before `/gsd:verify-work`.
+- **Per task commit:** `npm run build` (TypeScript type-check + Vite bundle)
+- **Per wave merge:** `npm run build` + manual browser smoke test
+- **Phase gate:** `npm run build` exits 0 AND manual checklist complete before `/gsd:verify-work`
 
 ### Wave 0 Gaps
 
-- [ ] `.planning/phases/01-project-foundation/validate.sh` — covers SC-2 (artifact), SC-3 (size), SC-4 (grep)
-- [ ] `assets/fbinstant.d.ts` — TypeScript declaration for `FBInstant` global (enables type checking without importing FB SDK)
-- [ ] `assets/core/scripts/adapters/IPlatformAdapter.ts` — adapter interface (must exist before any other script references platform)
-- [ ] `assets/core/scripts/adapters/NullPlatformAdapter.ts` — no-op implementation
-- [ ] `assets/core/scripts/adapters/FBInstantAdapter.ts` — real implementation
-- [ ] `assets/data/flowers.json` — stub flower config (even empty array) so FlowerDatabase has a target to load
-- [ ] No Jest or other test framework needed in Phase 1 — add in Phase 2 when pure logic units (FlowerLifecycleSystem timing math) exist
-
-*(SC-1 device deploy and SC-2 runtime FB validation are manual-only — no automation can substitute for a real device or FB Instant sandbox.)*
+- [ ] `vitest.config.ts` — stub for Phase 2 test infrastructure
+- [ ] `package.json` with `"test": "vitest run"` script
+- [ ] No unit test files needed in Phase 1 (no pure logic to test yet)
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Cocos Creator 3.8 Asset Bundle Overview](https://docs.cocos.com/creator/3.8/manual/en/asset/bundle.html) — bundle creation, priority, loading APIs, memory management
-- [Cocos Creator 3.8 TypeScript config](https://docs.cocos.com/creator/3.8/manual/en/scripting/tsconfig.html) — tsconfig structure, fixed vs. customizable options
-- [Cocos Creator 3.8 Publish to Facebook Instant Games](https://docs.cocos.com/creator/3.8/manual/en/editor/publish/publish-fb-instant-games.html) — build workflow, SDK auto-injection, upload process
-- [filehorse.com / WebSearch verified](https://www.filehorse.com/download-cocos-creator/) — confirmed Cocos Creator 3.8.8 as latest stable (Dec 28, 2025); no 3.9 yet
-- [Cocos Creator 3.8 Native Development Environment](https://docs.cocos.com/creator/3.8/manual/en/editor/publish/setup-native-development.html) — NDK r21–r23, Android Studio 4.1+, Xcode 11.5+ requirements
+
+- `phaserjs/template-vite-ts` GitHub repo — pinned versions: Phaser 3.90.0, Vite 6.3.1, TypeScript 5.7.2; project structure reference
+- https://docs.phaser.io/phaser/concepts/scale-manager — Scale.FIT configuration, parent div, autoCenter
+- https://docs.phaser.io/phaser/concepts/audio — AudioContext unlock, `sound.unlock()`, iOS Safari handling
 
 ### Secondary (MEDIUM confidence)
-- [Cocos Creator 3.8 General Build Options](https://docs.cocos.com/creator/3.8/manual/en/editor/publish/build-options.html) — build panel configuration
-- WebSearch (multiple results) — FB Instant Games total bundle cap 200 MB, initial load performance target ~1 MB; 5 MB is community-standard planning budget, not a hard API limit
-- [GameMaker/YoYo Games FB Instant Games docs](https://gamemaker.zendesk.com/hc/en-us/articles/360001723511-Facebook-Instant-Games-Additional-Features) — corroborates 200 MB total cap and "aim for 1 MB initial download" guidance
 
-### Tertiary (LOW confidence — unverified specifics)
-- FB Instant Games SDK current version (7.1 from training data) — verify at https://developers.facebook.com/docs/games/instant-games/sdk before integration
-- Xcode 16.3 compatibility fix in Cocos 3.8.x — verify exact patch version in Creator changelog
+- https://blog.ourcade.co/posts/2020/phaser-3-fade-out-scene-transition/ — Camera fade transition TypeScript pattern (verified against Phaser event API)
+- https://davidmorais.com/blog/testing-phaser-games-with-vitest — Vitest + Phaser setup (verified Vitest integrates via Vite config)
+- https://phaser.io/news/2025/05/phaser-v390-released — v3.90.0 "Tsugumi" is the final Phaser v3 release
+- MDN `env()` CSS function — `env(safe-area-inset-*)` requires `viewport-fit=cover`
+
+### Tertiary (LOW confidence)
+
+- Community forum posts on DPR/resolution config — superseded by official Scale Manager docs above
 
 ---
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH — Cocos Creator 3.8.8 LTS confirmed current; TypeScript bundled; build targets stable since 3.6
-- Architecture: HIGH — Persistent root node pattern, Asset Bundle system, adapter pattern are all first-class Cocos Creator 3.8 features with official documentation
-- Pitfalls: HIGH for engineering patterns; MEDIUM for FB payload limit classification (hard vs. soft)
-- Validation: HIGH — build-based and grep-based checks are deterministic; device checks are manual by necessity
+- Standard stack: HIGH — official template confirms all versions (Phaser 3.90.0, Vite 6.3.1, TS 5.7.2)
+- Architecture: HIGH — scale mode, DPR, touch-action all verified via official Phaser docs and known browser behavior
+- Pitfalls: HIGH — DPR, touch-action, safe-area, AudioContext are documented bugs/pitfalls explicitly called out in STATE.md and verified independently
+- Vitest setup: MEDIUM — pattern verified via community post; Vitest/Vite integration is well-established
 
-**Research date:** 2026-03-07
-**Valid until:** 2026-09-07 (6 months — Cocos Creator LTS branch is stable; FB Instant Games platform requirements may shift)
+**Research date:** 2026-03-14
+**Valid until:** 2026-09-14 (Phaser 3 is now in maintenance mode — stable; Vite version may advance but breaking changes unlikely)
