@@ -1,12 +1,12 @@
-# Bloom Harvest
+# Bloom Tap
 
 ## What This Is
 
-Bloom Harvest là casual game mobile về vườn hoa, nơi người chơi phải thu hoạch hoa đúng lúc chúng nở to nhất. Mỗi loài hoa có vòng đời riêng (nụ → nở → tàn) với tốc độ khác nhau — người chơi phải tap đúng thời điểm "nở bung" để ghi điểm cao. Game kết hợp gameplay timing/reaction với hệ thống sưu tập, nâng cấp, và trang trí vườn. Target: Mobile (iOS/Android) và Facebook Instant Games.
+Bloom Tap là casual game mobile dạng tapping trên bàn cờ 8x8. Các bông hoa nảy mầm và trải qua chu kỳ sinh trưởng tự nhiên — người chơi phải tap đúng thời điểm hoa nở để gom điểm trước khi hoa tàn. Mỗi ván kéo dài 120 giây với độ khó tăng dần qua 3 giai đoạn.
 
 ## Core Value
 
-Cảm giác satisfying khi tap đúng khoảnh khắc hoa nở bung — timing hoàn hảo tạo ra vòng lặp reward không thể cưỡng lại.
+Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
 
 ## Requirements
 
@@ -16,62 +16,48 @@ Cảm giác satisfying khi tap đúng khoảnh khắc hoa nở bung — timing h
 
 ### Active
 
-**Core Gameplay**
-- [ ] Hoa trải qua 3 trạng thái: nụ → nở bung → tàn
-- [ ] Mỗi loài hoa có tốc độ phát triển khác nhau
-- [ ] Player tap "nở bung" → điểm cao; tap sai thời điểm → trừ điểm + mất hoa
-- [ ] Vườn hoa cố định theo từng màn chơi (số lượng và loại hoa)
-- [ ] Chế độ Campaign: level tăng dần độ khó (nhiều loài hoa, tốc độ nhanh hơn)
-- [ ] Chế độ Endless: tốc độ tăng dần cho đến khi thua
-
-**Hệ thống Hoa & Độ Hiếm**
-- [ ] Phân loại hoa theo độ hiếm (Common → Rare → Epic → Legendary)
-- [ ] Mỗi độ hiếm có multiplier điểm khác nhau
-- [ ] Unlock hoa qua gameplay (level, quest) và gacha (dùng currency)
-- [ ] Seasonal events: hoa đặc biệt theo mùa/sự kiện
-
-**Bộ Sưu Tập & Progression**
-- [ ] Bộ sưu tập hoa: xem tất cả hoa đã mở khóa
-- [ ] Hệ thống nâng cấp: cải thiện tốc độ phát triển, tăng điểm thưởng
-- [ ] Trang trí vườn: mua và sắp xếp vật trang trí
-
-**Social & Engagement**
-- [ ] Daily quest và hệ thống achievement
-- [ ] Leaderboard: so sánh điểm với bạn bè và toàn cầu
-- [ ] Chia sẻ điểm cao (khoe điểm)
-
-**Monetization**
-- [ ] Rewarded ads và interstitial ads
-- [ ] IAP: premium currency, skin vườn, hoa hiếm
+- [ ] Bàn cờ 8x8, mỗi ô có thể chứa một bông hoa
+- [ ] 5 loại hoa mở sẵn từ đầu, mỗi loại có tốc độ chu kỳ và điểm khác nhau
+- [ ] Chu kỳ hoa: Nụ → Nở Hé → Nở Rực Rỡ → Tàn → Chết
+- [ ] Tap "Nở Hé" hoặc "Nở Rực Rỡ" để thu thập — Nở Rực Rỡ cho nhiều điểm hơn
+- [ ] Tap sai (Nụ hoặc Tàn/Chết) bị trừ điểm
+- [ ] Hệ thống combo: tap liên tiếp đúng × điểm của bông hoa đó
+- [ ] Ván chơi 120 giây, chia 3 giai đoạn:
+  - 0–40s: Spawn ngẫu nhiên chậm (làm quen)
+  - 40–80s: Spawn đều, combo chain xuất hiện
+  - 80–120s: Làn sóng nhanh dồn dập (bùng nổ cuối ván)
+- [ ] Hiển thị điểm số realtime và countdown timer
+- [ ] Màn hình kết quả cuối ván (score, highscore)
 
 ### Out of Scope
 
-- Multiplayer real-time PvP — phức tạp, để sau v2
-- Story/narrative — không phù hợp casual loop
-- PC/Desktop build — focus mobile + FB Instant trước
+- Meta-progression / unlock hoa mới — để version sau, v1 tập trung core gameplay
+- Multiplayer / leaderboard online — v1 chỉ cần local highscore
+- In-app purchase / monetization — v2+
+- FB Instant Games / mobile app build — target sau khi core game hoàn thiện
+- Visual style cố định — quyết định sau khi có prototype chạy được
 
 ## Context
 
-- **Engine**: Cocos Creator (tốt cho mobile + HTML5/FB Instant Games)
-- **Platform**: iOS, Android, Facebook Instant Games
-- **Target audience**: Casual gamers, yêu thích theme hoa/thiên nhiên
-- **Monetization model**: Hybrid Ads + IAP (phổ biến với casual mobile)
-- **Seasonal content**: Cần hệ thống event để duy trì retention dài hạn
+- Game nhắm đến casual players trên Mobile và FB Instant Games (long-term)
+- V1 build như web game (HTML5/Canvas hoặc framework game) để dễ port sau
+- Độ khó tăng tự nhiên qua 3 giai đoạn 120s — không cần level system riêng ở v1
+- Combo multiplier là cơ chế chiều sâu chính: tap nhanh đúng × điểm cao hơn
 
 ## Constraints
 
-- **Platform**: Cocos Creator — phải support cả native mobile và WebGL/FB Instant
-- **Performance**: FB Instant Games có giới hạn file size (~200MB), cần optimize assets
-- **Monetization**: Tuân thủ chính sách ads của Apple, Google, Facebook
+- **Platform v1**: Web (HTML5) — dễ test, dễ port sang mobile/FB Instant sau
+- **Scope v1**: Core gameplay only — 5 hoa, 1 game mode, local highscore
+- **Visual**: Chưa cố định — cần prototype gameplay trước khi đầu tư art
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Cocos Creator | Hỗ trợ cả mobile native và HTML5/FB Instant trong 1 codebase | — Pending |
-| Hybrid Ads + IAP | Tối đa doanh thu casual, phù hợp behavior người chơi | — Pending |
-| Gacha + Gameplay unlock | Gacha tăng monetization, gameplay unlock giữ F2P player | — Pending |
-| Seasonal events | Tăng retention dài hạn, tạo lý do quay lại game | — Pending |
+| 5 loại hoa mở sẵn từ đầu (không unlock) | Đơn giản hóa v1, tập trung balance core loop | — Pending |
+| Nở Rực Rỡ > Nở Hé về điểm | Tạo risk/reward — đợi lâu hơn = điểm cao hơn nhưng có thể lỡ | — Pending |
+| Tap sai bị trừ điểm (không phải freeze) | Tạo penalty rõ ràng, thúc đẩy chú ý hơn | — Pending |
+| 3 giai đoạn tốc độ trong 120s | Tạo arc cảm xúc tự nhiên — dễ vào → căng dần → bùng nổ | — Pending |
 
 ---
-*Last updated: 2026-03-07 after initialization*
+*Last updated: 2026-03-13 after initialization*
