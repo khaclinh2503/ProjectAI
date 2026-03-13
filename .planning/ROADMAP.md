@@ -41,7 +41,11 @@
   2. On a physical mobile device (or DevTools emulation), the canvas fills the viewport without blurriness on high-DPI screens
   3. Tapping the canvas does not scroll the page; touch events fire correctly with no warnings
   4. The Cocos scene system is wired with at least a BootScene that transitions to a placeholder GameScene
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Create Cocos Creator project with design resolution 720x1280, portrait Fit Width, TypeScript strict mode
+- [ ] 01-02-PLAN.md — Write BootController, GameController, build template (touch-action:none); verify all 3 success criteria
 
 ---
 
