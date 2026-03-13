@@ -8,9 +8,9 @@
 
 ## Phases
 
-- [ ] **Phase 1: Project Foundation** — Scaffold, mobile canvas, touch input baseline
+- [ ] **Phase 1: Project Foundation** — Cocos Creator scaffold, mobile canvas, touch input baseline
 - [ ] **Phase 2: Core Game Logic** — FlowerFSM, Grid, ComboSystem, SpawnManager — pure, no canvas
-- [ ] **Phase 3: Renderer and Input** — Phaser GameObjects wired to logic; playable grid on screen
+- [ ] **Phase 3: Renderer and Input** — Cocos Creator Nodes wired to logic; playable grid on screen
 - [ ] **Phase 4: Session Loop and Scoring** — 120s timer, 3-phase escalation, full scoring pipeline, HUD
 - [ ] **Phase 5: Juice and Polish** — Tap pulse, score float, combo break flash, timer urgency
 - [ ] **Phase 6: Results and Persistence** — Results screen, highscore, restart flow
@@ -37,15 +37,11 @@
 **Depends on**: Nothing (first phase)
 **Requirements**: FOUND-01, FOUND-02, FOUND-03
 **Success Criteria** (what must be TRUE):
-  1. The project starts with `npm run dev` and displays a Phaser canvas in a browser with no console errors
+  1. The project opens in Cocos Creator and can preview in browser with no console errors
   2. On a physical mobile device (or DevTools emulation), the canvas fills the viewport without blurriness on high-DPI screens
-  3. Tapping the canvas does not scroll the page; touch events fire on `pointerdown` with no passive-listener warnings
-  4. The Phaser scene system is wired with at least a BootScene that transitions to a placeholder GameScene
-**Plans:** 2 plans
-
-Plans:
-- [ ] 01-01-PLAN.md — Scaffold project (Phaser 3 + TS + Vite) and configure mobile canvas (DPR, safe-area, touch-action, Scale.FIT)
-- [ ] 01-02-PLAN.md — Implement BootScene (splash + audio unlock + fade transition) and placeholder GameScene
+  3. Tapping the canvas does not scroll the page; touch events fire correctly with no warnings
+  4. The Cocos scene system is wired with at least a BootScene that transitions to a placeholder GameScene
+**Plans**: TBD
 
 ---
 

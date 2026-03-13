@@ -7,7 +7,7 @@
 
 ### Foundation
 
-- [ ] **FOUND-01**: Project chạy được trên browser với Phaser 3 + TypeScript + Vite
+- [ ] **FOUND-01**: Project chạy được trên browser với Cocos Creator + TypeScript
 - [ ] **FOUND-02**: Game canvas scale đúng trên mobile (DPR scaling, viewport lock)
 - [ ] **FOUND-03**: Touch input chuẩn (không scroll trang, pointerdown events, touch-action: none)
 
