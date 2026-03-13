@@ -1,162 +1,157 @@
-# Roadmap: Bloom Harvest
+# Roadmap: Bloom Tap
 
-## Overview
+**Created:** 2026-03-13
+**Granularity:** Standard (5-8 phases)
+**Coverage:** 29/29 v1 requirements mapped
 
-Bloom Harvest v1 validates one thing: does tapping a flower at the exact moment of peak bloom feel satisfying enough to keep players coming back? Every phase serves that hypothesis. The build order is infrastructure first (so nothing is retrofitted), lifecycle system second (the heart of the mechanic), species and scoring third (variety and feedback), juice fourth (the product moment), then level structure and tutorial to make it a completable game. All 22 v1 requirements are mapped across 8 phases.
+---
 
 ## Phases
 
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- [ ] **Phase 1: Project Foundation** — Scaffold, mobile canvas, touch input baseline
+- [ ] **Phase 2: Core Game Logic** — FlowerFSM, Grid, ComboSystem, SpawnManager — pure, no canvas
+- [ ] **Phase 3: Renderer and Input** — Phaser GameObjects wired to logic; playable grid on screen
+- [ ] **Phase 4: Session Loop and Scoring** — 120s timer, 3-phase escalation, full scoring pipeline, HUD
+- [ ] **Phase 5: Juice and Polish** — Tap pulse, score float, combo break flash, timer urgency
+- [ ] **Phase 6: Results and Persistence** — Results screen, highscore, restart flow
 
-Decimal phases appear between their surrounding integers in numeric order.
+---
 
-- [ ] **Phase 1: Project Foundation** - Cocos Creator project scaffold, mobile + FB Instant build targets, asset bundle architecture
-- [ ] **Phase 2: Save & Timing Infrastructure** - Wall-clock millisecond timing system, save abstraction for native and FB Instant
-- [ ] **Phase 3: Flower Lifecycle System** - Per-flower Bud → Bloom → Wilt state machine with configurable speed
-- [ ] **Phase 4: Flower Species Content** - 5 species with distinct visuals, animation sets, growth speeds, and base point values
-- [ ] **Phase 5: Tap Detection & Scoring** - Input handling, timing-quality scoring bands, realtime score HUD
-- [ ] **Phase 6: Juice & Feedback** - Particle burst, sound effects, zero-lag visual confirmation, floating score numbers
-- [ ] **Phase 7: Level & Garden Shell** - Fixed garden layout, session end condition, result screen with harvest summary
-- [ ] **Phase 8: Tutorial** - One-time interactive tutorial that teaches the bloom-and-tap mechanic
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Project Foundation | 0/? | Not started | — |
+| 2. Core Game Logic | 0/? | Not started | — |
+| 3. Renderer and Input | 0/? | Not started | — |
+| 4. Session Loop and Scoring | 0/? | Not started | — |
+| 5. Juice and Polish | 0/? | Not started | — |
+| 6. Results and Persistence | 0/? | Not started | — |
+
+---
 
 ## Phase Details
 
 ### Phase 1: Project Foundation
-**Goal**: A Cocos Creator project exists that builds and runs on iOS, Android, and Facebook Instant Games with the asset bundle architecture in place and the initial payload budget enforced.
+**Goal**: The development environment is correct and mobile-ready before any game logic is written
 **Depends on**: Nothing (first phase)
-**Requirements**: TECH-01, TECH-02, TECH-04
+**Requirements**: FOUND-01, FOUND-02, FOUND-03
 **Success Criteria** (what must be TRUE):
-  1. A Cocos Creator project builds and deploys a blank scene to an iOS or Android device without errors.
-  2. The same project builds and runs as a Facebook Instant Games HTML5 bundle without errors.
-  3. The project uses Cocos Creator's Asset Bundle system; the initial payload bundle measures under 5 MB.
-  4. All external SDK calls (FB Instant, AdMob, Firebase) are routed through platform adapter stub classes — no direct SDK imports exist in any game logic file.
-**Plans**: 2 plans
+  1. The project starts with `npm run dev` and displays a Phaser canvas in a browser with no console errors
+  2. On a physical mobile device (or DevTools emulation), the canvas fills the viewport without blurriness on high-DPI screens
+  3. Tapping the canvas does not scroll the page; touch events fire on `pointerdown` with no passive-listener warnings
+  4. The Phaser scene system is wired with at least a BootScene that transitions to a placeholder GameScene
+**Plans**: TBD
 
-Plans:
-- [ ] 01-01-PLAN.md — Project scaffold: Cocos Creator project creation, folder hierarchy, TypeScript config, Boot/GameManager/EventBus scripts, and validate-build.sh
-- [ ] 01-02-PLAN.md — Platform adapter layer (IPlatformAdapter, NullPlatformAdapter, FBInstantAdapter, PlatformDetector), Boot.ts wiring, FB Instant Games build, and payload measurement
+---
 
-### Phase 2: Save & Timing Infrastructure
-**Goal**: A wall-clock millisecond timing system exists and a unified save abstraction works across native localStorage and FB Instant's async data API.
+### Phase 2: Core Game Logic
+**Goal**: All game rules exist as pure, testable TypeScript with no canvas dependency
 **Depends on**: Phase 1
-**Requirements**: TECH-03, TECH-05
+**Requirements**: GRID-01, GRID-02, FLOW-01, FLOW-02, FLOW-03, FLOW-04
 **Success Criteria** (what must be TRUE):
-  1. Timing windows are expressed as wall-clock millisecond timestamps (Date.now()); no bloom window boundary uses frame counts or dt accumulation.
-  2. Game state saved on the native build persists across app restarts using localStorage.
-  3. Game state saved on the FB Instant build persists across sessions using FBInstant.player.setDataAsync.
-  4. Both save paths share one abstract SaveSystem interface; swapping backends requires changing zero gameplay scripts.
-**Plans**: 3 plans
+  1. A FlowerFSM instance, given a spawn timestamp, returns the correct state (Bud/Blooming/FullBloom/Wilting/Dead) for any elapsed-time query — verifiable via unit test without a browser
+  2. A Grid instance exposes 64 cells; `getRandomEmptyCell()` returns a cell or null; `spawnFlower(cell, type)` and `clearCell(cell)` mutate state correctly
+  3. All 5 flower type configs exist (cycle speed, base score) and are referenced by FlowerFSM
+  4. ComboSystem increments the multiplier on correct-tap calls and resets to 1 on wrong-tap calls
+  5. SpawnManager reads elapsed session time and returns the spawn-rate config for the active phase (0–40s, 40–80s, 80–120s)
+**Plans**: TBD
 
-Plans:
-- [ ] 02-00-PLAN.md — Jest test infrastructure: install jest/ts-jest, write failing test stubs for TimingService and SaveSystem (Wave 0 — must run first)
-- [ ] 02-01-PLAN.md — TimingService: Date.now() wrapper with bloom-window query helpers (TECH-03)
-- [ ] 02-02-PLAN.md — SaveSystem: SaveData types, ISaveBackend interface, LocalStorageSaveBackend, FBInstantSaveBackend, retry logic, createSaveBackend factory (TECH-05)
+---
 
-### Phase 3: Flower Lifecycle System
-**Goal**: A single flower on screen moves through Bud → Bloom → Wilt states with visually distinct animations, each state timed by the wall-clock system, and a configurable bloom window per species.
+### Phase 3: Renderer and Input
+**Goal**: The 8x8 grid is visible on screen and tapping a cell produces a visual response wired to the logic tier
 **Depends on**: Phase 2
-**Requirements**: CORE-01, CORE-02, CORE-03, CORE-04
+**Requirements**: GRID-01, GRID-02, GAME-01, GAME-02, GAME-03
 **Success Criteria** (what must be TRUE):
-  1. A flower cycles through three visually distinct states (Bud, Bloom, Wilt) in sequence without any manual trigger.
-  2. Each state has its own animation or visual treatment that is unambiguous at a glance.
-  3. Growth speed differs between at least two species configured in FlowerDatabase — setting a faster speed in config produces a noticeably shorter lifecycle.
-  4. The bloom window has a defined duration (neither instantaneous nor permanent) during which the flower is in the tappable state.
+  1. All 64 grid cells render as Phaser GameObjects pre-created at scene init; no cells are created or destroyed during gameplay
+  2. Each flower cell displays a visually distinct appearance for all 5 growth states — distinguishable without reading any text label
+  3. Tapping a cell in Blooming or FullBloom state triggers the correct-tap path and removes the flower from the grid
+  4. Tapping a cell in Bud or Wilting/Dead state triggers the wrong-tap path; a visual indicator (red flash or similar) plays immediately
+  5. The grid scales correctly to fit the screen on a 375px-wide viewport (iPhone SE) and a 430px-wide viewport (iPhone 14 Pro Max)
 **Plans**: TBD
 
-Plans:
-- [ ] 03-01: FlowerLifecycleSystem state machine (Bud → Bloom → Wilt) with millisecond timing
-- [ ] 03-02: Per-state animation wiring and FlowerDatabase species config (5 speeds)
+---
 
-### Phase 4: Flower Species Content
-**Goal**: All 5 flower species are implemented with distinct visual designs, per-species growth speeds, and per-species base point values loadable from FlowerDatabase config.
+### Phase 4: Session Loop and Scoring
+**Goal**: A complete 120-second game session runs from start to game-over with accurate scoring, combo tracking, and 3-phase difficulty escalation
 **Depends on**: Phase 3
-**Requirements**: FLORA-01, FLORA-02, FLORA-03
+**Requirements**: GAME-04, GAME-05, SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, HUD-01, HUD-02, HUD-03
 **Success Criteria** (what must be TRUE):
-  1. Five species are selectable from FlowerDatabase config, each with a unique name and bloom speed value.
-  2. Each species has a visually distinct design (color palette and/or petal shape) that is recognizable at gameplay scale.
-  3. Each species has a different base point value in config; a slower species awards fewer points than a faster one by default.
-  4. All flower state sprites share one or two texture atlases — no species uses individual loose PNG files in the gameplay scene.
+  1. A session starts, runs for exactly 120 seconds, and ends — the timer displayed in the HUD counts down to 0 and triggers game-over
+  2. Tapping flowers in sequence increases the combo multiplier; the score applied for each tap equals the flower's base score times the current multiplier
+  3. A wrong tap resets the combo multiplier to 1; the HUD combo display updates immediately
+  4. Flower spawn rate is visibly slower in Phase 1 (0–40s), moderate in Phase 2 (40–80s), and fast/dense in Phase 3 (80–120s) — observable during a test session
+  5. Score, countdown timer, and combo multiplier are all visible and updating in real time throughout the session
 **Plans**: TBD
 
-Plans:
-- [ ] 04-01: Sprite atlas for all 5 species (Bud, Bloom, Wilt states) with atlas discipline enforced
-- [ ] 04-02: FlowerDatabase entries for all 5 species (speed, base points, animation keys, visual design)
+---
 
-### Phase 5: Tap Detection & Scoring
-**Goal**: Players can tap flowers and receive correct score outcomes: positive points for tapping during Bloom, point penalty for tapping during Bud or Wilt, with score accuracy scaling by timing precision and a live score display.
-**Depends on**: Phase 3
-**Requirements**: SCORE-01, SCORE-02, SCORE-03, SCORE-04
-**Success Criteria** (what must be TRUE):
-  1. Tapping a flower in the Bloom state awards a positive score — the flower is harvested and removed from the garden.
-  2. Tapping a flower in the Bud or Wilt state subtracts points and the flower is lost.
-  3. Tapping at the center of the bloom window awards more points than tapping at the edge (at least two scoring bands are observable).
-  4. A live score counter is visible on screen during gameplay and increments or decrements immediately after each tap.
-**Plans**: TBD
-
-Plans:
-- [ ] 05-01: Tap detection and input routing to FlowerLifecycleSystem state check
-- [ ] 05-02: ScoreSystem with Perfect/Good/Miss bands, combo tracking, and realtime HUD display
-
-### Phase 6: Juice & Feedback
-**Goal**: Every tap — correct or incorrect — produces immediate multi-sensory feedback: visual particle effect, sound effect, and a floating score number. The mechanic feels rewarding before any meta-system exists.
-**Depends on**: Phase 5
+### Phase 5: Juice and Polish
+**Goal**: Every tap action has immediate, satisfying feedback that confirms correctness without requiring the player to read text
+**Depends on**: Phase 4
 **Requirements**: JUICE-01, JUICE-02, JUICE-03, JUICE-04
 **Success Criteria** (what must be TRUE):
-  1. A correct tap on a Bloom-state flower produces a visible particle burst at the tap position.
-  2. Tapping a flower (correct or incorrect) plays the appropriate sound effect within one frame of the tap event.
-  3. No perceptible input lag exists between tap and visual response when measured on a mid-range Android device (Snapdragon 680-class or equivalent).
-  4. A floating score number (e.g., "+100" or "-50") appears at the tap position and animates upward after every tap.
-  5. Three distinct sound effects exist: correct harvest, wrong-timing tap, and natural wilt.
+  1. Tapping any flower cell produces a visible scale-pulse animation on that cell completing within ~100ms
+  2. A score label (e.g., "+120 x3") floats upward from the tapped cell and fades out after a correct tap
+  3. A wrong tap (or combo reset) produces a distinct visual indicator — a red flash or similar — that is immediately noticeable without reading text
+  4. In the final 15 seconds of a session, the timer display changes color or enters a blinking state to signal urgency
 **Plans**: TBD
 
-Plans:
-- [ ] 06-01: Particle burst system (pooled) and floating score number animation
-- [ ] 06-02: Audio system with three SFX assets wired to lifecycle events
+---
 
-### Phase 7: Level & Garden Shell
-**Goal**: A complete playable session exists: a fixed garden of flowers grows, the player harvests or misses them, the session ends automatically, and a result screen shows the outcome.
+### Phase 6: Results and Persistence
+**Goal**: After every session, the player sees their score, knows their all-time best, and can restart immediately
 **Depends on**: Phase 5
-**Requirements**: LEVEL-01, LEVEL-02, LEVEL-03, SCORE-05
+**Requirements**: RSLT-01, RSLT-02, RSLT-03
 **Success Criteria** (what must be TRUE):
-  1. A garden loads with a fixed set of flowers (species and count defined in level config) and all flowers begin cycling immediately.
-  2. The session ends automatically when every flower has been harvested or wilted — no manual stop required.
-  3. A result screen appears after session end showing: total score, number of flowers successfully harvested, and number of flowers missed.
-  4. The player can restart and play the same level again from the result screen.
+  1. When the session timer reaches 0, the game transitions to a results screen showing the session score and the all-time highscore
+  2. If the session score exceeds the stored highscore, the highscore updates to the new value and the results screen reflects this
+  3. The highscore persists across browser refreshes and new sessions — closing and reopening the tab does not reset it
+  4. A restart button on the results screen starts a new 120-second session with all state reset (score 0, combo 1, fresh grid)
 **Plans**: TBD
 
-Plans:
-- [ ] 07-01: Garden scene with fixed flower slot layout and level config loader
-- [ ] 07-02: Session end condition, result screen, and replay flow
+---
 
-### Phase 8: Tutorial
-**Goal**: A first-time player who has never played a timing game can learn the Bud → Bloom → Wilt mechanic and tap correctly through a single guided interaction, and will never see the tutorial again.
-**Depends on**: Phase 7
-**Requirements**: TUT-01, TUT-02
-**Success Criteria** (what must be TRUE):
-  1. On first launch, a tutorial sequence appears that guides the player to tap a flower at peak bloom through explicit prompts (no text-wall instructions required).
-  2. After the player successfully completes the tutorial tap, the tutorial ends and the main game session begins.
-  3. On every subsequent launch, the tutorial is skipped automatically — the game goes directly to the garden.
-  4. Tutorial completion state persists across app restarts (saved via SaveSystem).
-**Plans**: TBD
+## Requirement Coverage
 
-Plans:
-- [ ] 08-01: Interactive tutorial scene with prompted tap and positive feedback flow
-- [ ] 08-02: Tutorial completion flag persisted via SaveSystem; skip logic on subsequent launches
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| GRID-01 | Phase 2 + 3 | Pending |
+| GRID-02 | Phase 2 + 3 | Pending |
+| FLOW-01 | Phase 2 | Pending |
+| FLOW-02 | Phase 2 | Pending |
+| FLOW-03 | Phase 3 | Pending |
+| FLOW-04 | Phase 2 | Pending |
+| GAME-01 | Phase 3 | Pending |
+| GAME-02 | Phase 3 | Pending |
+| GAME-03 | Phase 3 | Pending |
+| GAME-04 | Phase 4 | Pending |
+| GAME-05 | Phase 4 | Pending |
+| SESS-01 | Phase 4 | Pending |
+| SESS-02 | Phase 4 | Pending |
+| SESS-03 | Phase 4 | Pending |
+| SESS-04 | Phase 4 | Pending |
+| SESS-05 | Phase 4 | Pending |
+| HUD-01 | Phase 4 | Pending |
+| HUD-02 | Phase 4 | Pending |
+| HUD-03 | Phase 4 | Pending |
+| JUICE-01 | Phase 5 | Pending |
+| JUICE-02 | Phase 5 | Pending |
+| JUICE-03 | Phase 5 | Pending |
+| JUICE-04 | Phase 5 | Pending |
+| RSLT-01 | Phase 6 | Pending |
+| RSLT-02 | Phase 6 | Pending |
+| RSLT-03 | Phase 6 | Pending |
 
-## Progress
+**Coverage: 29/29 v1 requirements mapped**
 
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Note on GRID-01 / GRID-02: Grid data model is defined in Phase 2 (pure logic); grid rendering is wired in Phase 3. Both phases share these requirements because the grid spans both tiers. The authoritative coverage assignment is Phase 2 (data) and Phase 3 (render). No requirement is orphaned.
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Project Foundation | 0/2 | Not started | - |
-| 2. Save & Timing Infrastructure | 0/3 | Not started | - |
-| 3. Flower Lifecycle System | 0/2 | Not started | - |
-| 4. Flower Species Content | 0/2 | Not started | - |
-| 5. Tap Detection & Scoring | 0/2 | Not started | - |
-| 6. Juice & Feedback | 0/2 | Not started | - |
-| 7. Level & Garden Shell | 0/2 | Not started | - |
-| 8. Tutorial | 0/2 | Not started | - |
+---
+
+*Roadmap created: 2026-03-13*
+*Last updated: 2026-03-13 after initial creation*

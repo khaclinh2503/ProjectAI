@@ -1,80 +1,110 @@
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: planning
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-07T15:31:20.485Z"
-last_activity: 2026-03-07 — Roadmap created, 22 v1 requirements mapped across 8 phases
-progress:
-  total_phases: 8
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 0
-  percent: 0
----
+# Project State: Bloom Tap
 
-# Project State
+**Last updated:** 2026-03-13
+**Session:** Roadmap creation
+
+---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-07)
+**Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
 
-**Core value:** The satisfying feeling of tapping a flower at the exact moment of peak bloom — perfect timing creates an irresistible reward loop.
-**Current focus:** Phase 1 — Project Foundation
+**What this is:** 120-second casual tapping game on an 8x8 grid. Flowers bloom through 5 states; players tap at the right moment to score. Wrong taps deduct points. Combo multiplier rewards accurate streaks. Three difficulty phases drive the emotional arc.
+
+**Platform v1:** Web (HTML5) — Phaser 3 + TypeScript + Vite
+
+---
 
 ## Current Position
 
-Phase: 1 of 8 (Project Foundation)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-03-07 — Roadmap created, 22 v1 requirements mapped across 8 phases
+**Current phase:** None started (roadmap just created)
+**Current plan:** None
+**Status:** Ready to begin Phase 1
 
-Progress: [░░░░░░░░░░] 0%
+```
+Progress: [ ] Phase 1  [ ] Phase 2  [ ] Phase 3  [ ] Phase 4  [ ] Phase 5  [ ] Phase 6
+           |___________|___________|___________|___________|___________|
+           Foundation  CoreLogic   Renderer    Session     Juice       Results
+```
+
+---
 
 ## Performance Metrics
 
-**Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 hours
+| Metric | Value |
+|--------|-------|
+| Phases total | 6 |
+| Phases complete | 0 |
+| Requirements total (v1) | 29 |
+| Requirements mapped | 29 |
+| Requirements complete | 0 |
+| Plans created | 0 |
+| Plans complete | 0 |
 
-**By Phase:**
+---
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
+## Key Decisions (Accumulated)
 
-**Recent Trend:**
-- Last 5 plans: —
-- Trend: —
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Phaser 3 + TypeScript + Vite | Community standard for HTML5 casual; official TS types; fastest dev loop | Phase 1 |
+| Pure logic tier before rendering | FlowerFSM, Grid, ComboSystem testable without browser; prevents logic-in-renderer | Phase 2 |
+| Timestamp-based state derivation | Prevents timer drift over 120s session; must be architected in Phase 2, cannot retrofit | Phase 2 |
+| Object pools for all 64 flower slots | Prevents GC spikes during Phase 3 heavy spawning; must be in Phase 3 before load testing | Phase 3 |
+| StorageService abstraction over localStorage | Enables clean FB Instant Games swap later; implement at Phase 6, not retrofitted | Phase 6 |
+| Juice deferred to Phase 5 | Juice without stable mechanics is wasted work; every effect has a parent mechanic | Phase 5 |
+| FB Instant Games deferred to post-v1 | Different init architecture; isolated swap if codebase structured correctly | Post-v1 |
 
-*Updated after each plan completion*
+---
 
-## Accumulated Context
+## Architecture Notes
 
-### Decisions
+- **FlowerFSM:** Per-cell state machine, 5 states, timing via `performance.now()` spawn timestamp — NOT delta accumulation
+- **Grid:** Flat 64-cell array owning FlowerFSM instances; provides random empty cell picker
+- **SpawnManager:** Phase-table-driven; reads elapsed time to select active phase config
+- **ComboSystem:** Streak counter with multiplier lookup; resets on wrong tap
+- **GameState:** Session state (score, timer, phase, combo); fresh instance per game start
+- **Renderer:** Read-only consumer of state; never mutates
+- **InputHandler:** Translates `pointerdown` canvas coords to (row, col); no game rule knowledge
+- **AnimationSystem:** Pooled short-lived effects (tap pulse, score float, combo flash)
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+---
 
-- [Init]: Cocos Creator chosen as sole engine — single codebase for iOS, Android, FB Instant
-- [Init]: Asset Bundle architecture must be established in Phase 1 before any art assets are produced
-- [Init]: All bloom window boundaries use wall-clock milliseconds (Date.now()), never frame counts
-- [Init]: All SDK calls routed through platform adapter classes — no direct SDK imports in gameplay code
-- [Init]: v1 scope is timing feel validation only — collection, gacha, social, monetization deferred to v2
+## Critical Pitfalls (Must Not Repeat)
 
-### Pending Todos
+1. **Touch on `touchend`/`click` instead of `pointerdown`** — 100-300ms latency on mobile; invalidates all timing balance
+2. **Delta-time accumulation for flower timers** — drifts ±50ms over 120s; use timestamp-based derivation
+3. **Creating/destroying Phaser GameObjects in hot loop** — GC spikes in Phase 3; pre-create all 64 slots at init
+4. **DPR not set at game creation** — blurry on all Retina/high-DPI devices; requires coordinate system recalc to fix later
+5. **Missing `touch-action: none` on canvas** — viewport scroll instead of tap registration on mobile
+6. **AudioContext before user gesture** — silent on iOS Safari; "Tap to Start" splash must unlock audio before game loop
 
-None yet.
+---
 
-### Blockers/Concerns
+## Accumulated TODOs
 
-- Cocos Creator exact version: verify at https://www.cocos.com/en/creator — a 3.9.x may exist as of March 2026; audit breaking changes from 3.8.x before committing
-- FB Instant Games initial payload threshold: research cites 5 MB as community-documented, not an officially published hard limit — test empirically during Phase 1
+- [ ] Verify current Phaser stable version before `npm install` (research used 3.87.x, may be outdated)
+- [ ] Verify FB SDK version (research used 7.1) and 200KB bundle limit before FB port phase
+- [ ] Physical device test for flower state visual differentiation at 375px viewport (iPhone SE) — cannot validate until Phase 3
+- [ ] Phase timing balance (40s/80s/120s boundaries and spawn rate deltas) — validate via playtesting in Phase 4
+
+---
+
+## Blockers
+
+None currently.
+
+---
 
 ## Session Continuity
 
-Last session: 2026-03-07T15:31:20.481Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-save-timing-infrastructure/02-CONTEXT.md
+To resume: run `/gsd:plan-phase 1` to begin planning Phase 1 (Project Foundation).
+
+Phase 1 requirements: FOUND-01 (Phaser 3 + TS + Vite scaffold), FOUND-02 (mobile canvas DPR scaling), FOUND-03 (touch input non-scrolling pointerdown).
+
+Phase 1 success criteria: project boots, canvas fills mobile viewport without blur, touch fires on pointerdown without scrolling page.
+
+---
+
+*State initialized: 2026-03-13*
+*Last updated: 2026-03-13 after roadmap creation*

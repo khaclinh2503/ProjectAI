@@ -90,41 +90,41 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | — | Pending |
-| FOUND-02 | — | Pending |
-| FOUND-03 | — | Pending |
-| GRID-01 | — | Pending |
-| GRID-02 | — | Pending |
-| FLOW-01 | — | Pending |
-| FLOW-02 | — | Pending |
-| FLOW-03 | — | Pending |
-| FLOW-04 | — | Pending |
-| GAME-01 | — | Pending |
-| GAME-02 | — | Pending |
-| GAME-03 | — | Pending |
-| GAME-04 | — | Pending |
-| GAME-05 | — | Pending |
-| SESS-01 | — | Pending |
-| SESS-02 | — | Pending |
-| SESS-03 | — | Pending |
-| SESS-04 | — | Pending |
-| SESS-05 | — | Pending |
-| HUD-01 | — | Pending |
-| HUD-02 | — | Pending |
-| HUD-03 | — | Pending |
-| JUICE-01 | — | Pending |
-| JUICE-02 | — | Pending |
-| JUICE-03 | — | Pending |
-| JUICE-04 | — | Pending |
-| RSLT-01 | — | Pending |
-| RSLT-02 | — | Pending |
-| RSLT-03 | — | Pending |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| GRID-01 | Phase 2 + 3 | Pending |
+| GRID-02 | Phase 2 + 3 | Pending |
+| FLOW-01 | Phase 2 | Pending |
+| FLOW-02 | Phase 2 | Pending |
+| FLOW-03 | Phase 3 | Pending |
+| FLOW-04 | Phase 2 | Pending |
+| GAME-01 | Phase 3 | Pending |
+| GAME-02 | Phase 3 | Pending |
+| GAME-03 | Phase 3 | Pending |
+| GAME-04 | Phase 4 | Pending |
+| GAME-05 | Phase 4 | Pending |
+| SESS-01 | Phase 4 | Pending |
+| SESS-02 | Phase 4 | Pending |
+| SESS-03 | Phase 4 | Pending |
+| SESS-04 | Phase 4 | Pending |
+| SESS-05 | Phase 4 | Pending |
+| HUD-01 | Phase 4 | Pending |
+| HUD-02 | Phase 4 | Pending |
+| HUD-03 | Phase 4 | Pending |
+| JUICE-01 | Phase 5 | Pending |
+| JUICE-02 | Phase 5 | Pending |
+| JUICE-03 | Phase 5 | Pending |
+| JUICE-04 | Phase 5 | Pending |
+| RSLT-01 | Phase 6 | Pending |
+| RSLT-02 | Phase 6 | Pending |
+| RSLT-03 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 29 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 29 ⚠️
+- Mapped to phases: 29
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 after initial definition*
+*Last updated: 2026-03-13 after roadmap creation (traceability populated)*
