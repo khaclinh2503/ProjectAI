@@ -10,6 +10,9 @@ import { ComboSystem } from './ComboSystem';
 /** Points deducted for tapping in the wrong state. */
 export const WRONG_TAP_PENALTY: number = 10;
 
+/** Total session duration in milliseconds (2 minutes). */
+export const SESSION_DURATION_MS: number = 120_000;
+
 export class GameState {
     /** Current accumulated score for this session. */
     score: number = 0;
@@ -56,5 +59,14 @@ export class GameState {
      */
     getElapsedMs(): number {
         return performance.now() - this.sessionStartMs;
+    }
+
+    /**
+     * Returns true when the session has reached or exceeded SESSION_DURATION_MS.
+     *
+     * @param nowMs - Current timestamp in ms (e.g. performance.now())
+     */
+    isGameOver(nowMs: number): boolean {
+        return (nowMs - this.sessionStartMs) >= SESSION_DURATION_MS;
     }
 }

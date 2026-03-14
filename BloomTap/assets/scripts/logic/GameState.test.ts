@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GameState, WRONG_TAP_PENALTY } from './GameState';
+import { GameState, WRONG_TAP_PENALTY, SESSION_DURATION_MS } from './GameState';
 import { ComboSystem } from './ComboSystem';
 
 describe('GameState', () => {
@@ -124,6 +124,33 @@ describe('GameState', () => {
             const elapsed = state.getElapsedMs();
             expect(elapsed).toBe(500);
             nowSpy.mockRestore();
+        });
+    });
+
+    describe('isGameOver()', () => {
+        it('returns false when elapsed < 120_000ms', () => {
+            const nowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+            state.reset(); // sessionStartMs = 0
+            nowSpy.mockRestore();
+            expect(state.isGameOver(119_999)).toBe(false);
+        });
+
+        it('returns true at exactly 120_000ms elapsed', () => {
+            const nowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+            state.reset();
+            nowSpy.mockRestore();
+            expect(state.isGameOver(120_000)).toBe(true);
+        });
+
+        it('returns true after 120_000ms elapsed', () => {
+            const nowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+            state.reset();
+            nowSpy.mockRestore();
+            expect(state.isGameOver(121_000)).toBe(true);
+        });
+
+        it('SESSION_DURATION_MS equals 120_000', () => {
+            expect(SESSION_DURATION_MS).toBe(120_000);
         });
     });
 });
