@@ -96,6 +96,7 @@ export class GridRenderer extends Component {
     private _cellViews: CellView[] = [];
     private _grid: Grid | null = null;
     private _controller: GameController | null = null;
+    private _inputEnabled: boolean = false;
 
     /**
      * Called by GameController.onLoad() after scene wiring is ready.
@@ -104,6 +105,15 @@ export class GridRenderer extends Component {
     init(grid: Grid, controller: GameController): void {
         this._grid = grid;
         this._controller = controller;
+    }
+
+    /**
+     * Enable or disable tap input for all 64 cells.
+     * Called by GameController when transitioning session phases.
+     * Uses flag pattern (not listener add/remove) to avoid duplicate listener risk.
+     */
+    setInputEnabled(enabled: boolean): void {
+        this._inputEnabled = enabled;
     }
 
     onLoad(): void {
@@ -174,6 +184,7 @@ export class GridRenderer extends Component {
      *      - COLLECTED             → unreachable here (isFlashing guard at top catches it)
      */
     private _onCellTapped(view: CellView): void {
+        if (!this._inputEnabled) return;                      // session gate: input disabled outside PLAYING phase
         if (view.isFlashing) return;                          // guard: no double-flash
         if (!this._grid || !this._controller) return;        // guard: must be initialized
 
