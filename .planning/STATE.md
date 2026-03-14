@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 02-core-game-logic
 current_plan: Plan 02 next (02-01 complete)
-status: planning
-stopped_at: Completed 02-01-PLAN.md — FlowerFSM/Grid pure logic tier with 34 tests
-last_updated: "2026-03-14T05:19:08.228Z"
+status: executing
+stopped_at: Completed 02-02-PLAN.md — ComboSystem + SpawnManager with 39 new tests (73 total)
+last_updated: "2026-03-14T07:51:05.520Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 50
 ---
 
@@ -35,11 +35,11 @@ progress:
 ## Current Position
 
 **Current phase:** 02-core-game-logic
-**Current plan:** Plan 02 next (02-01 complete)
-**Status:** In progress
+**Current plan:** Phase 2 complete (02-01 and 02-02 done)
+**Status:** Phase 2 complete
 
 ```
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
            |___________|___________|___________|___________|___________|
            Foundation  CoreLogic   Renderer    Session     Juice       Results
 ```
@@ -61,6 +61,7 @@ Progress: [█████░░░░░] 50%
 ---
 | Phase 01-project-foundation P01 | 15 | 2 tasks | 5 files |
 | Phase 02-core-game-logic P01 | 4 | 3 tasks | 11 files |
+| Phase 02-core-game-logic P02 | 3min | 2 tasks | 4 files |
 
 ## Key Decisions (Accumulated)
 
@@ -80,6 +81,9 @@ Progress: [█████░░░░░] 50%
 | npm project root at workspace root (not BloomTap/) | BloomTap/package.json is Cocos Creator metadata file, not npm package | Phase 2 |
 | getScore() uses inclusive tap window [0, tapWindowMs] | Plan test requires getScore(budMs+tapWindowMs) ≈ scoreFull; getState() returns WILTING at that point, so score must compute independently | Phase 2 |
 | tsconfig.test.json standalone (no Cocos extends) | Extending Cocos tsconfig causes cc virtual module resolution errors in Vitest/Node | Phase 2 |
+| ComboSystem._step as mutable instance variable | Resets to 0.5 on onWrongTap(); computing step from tapCount range breaks after reset (RESEARCH.md Pitfall 4) | Phase 2 |
+| PHASE_CONFIGS as module-level constant in SpawnManager | Immutable, shared, initialized once — not a class field that could be mutated or re-instantiated | Phase 2 |
+| getPhaseConfig fallback at >= 120000ms returns Phase 3 | Session loop calls at exact boundary; defensive fallback prevents crash at session end | Phase 2 |
 
 ---
 
@@ -124,11 +128,11 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-14T05:19:08.224Z
-Stopped at: Completed 02-01-PLAN.md — FlowerFSM/Grid pure logic tier with 34 tests
+Last session: 2026-03-14T07:51:05.517Z
+Stopped at: Completed 02-02-PLAN.md — ComboSystem + SpawnManager with 39 new tests (73 total)
 Resume file: None
 
-Phase 2 Plan 01 complete (FlowerFSM/Grid pure logic tier, 34 tests). Phase 2 Plan 02 next.
+Phase 2 complete: FlowerFSM/Grid (Plan 01, 34 tests) + ComboSystem/SpawnManager (Plan 02, 39 tests) = 73 tests passing. Phase 3 (renderer) next.
 
 ---
 

@@ -9,7 +9,7 @@
 ## Phases
 
 - [x] **Phase 1: Project Foundation** — Cocos Creator scaffold, mobile canvas, touch input baseline (completed 2026-03-14)
-- [ ] **Phase 2: Core Game Logic** — FlowerFSM, Grid, ComboSystem, SpawnManager — pure, no canvas
+- [x] **Phase 2: Core Game Logic** — FlowerFSM, Grid, ComboSystem, SpawnManager — pure, no canvas (completed 2026-03-14)
 - [ ] **Phase 3: Renderer and Input** — Cocos Creator Nodes wired to logic; playable grid on screen
 - [ ] **Phase 4: Session Loop and Scoring** — 120s timer, 3-phase escalation, full scoring pipeline, HUD
 - [ ] **Phase 5: Juice and Polish** — Tap pulse, score float, combo break flash, timer urgency
@@ -22,7 +22,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation | 2/2 | Complete   | 2026-03-14 |
-| 2. Core Game Logic | 1/2 | In Progress|  |
+| 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
 | 3. Renderer and Input | 0/? | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
 | 5. Juice and Polish | 0/? | Not started | — |

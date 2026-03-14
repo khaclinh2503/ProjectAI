@@ -21,7 +21,7 @@
 - [x] **FLOW-01**: 5 loại hoa, mỗi loại có tốc độ chu kỳ và điểm gốc khác nhau
 - [x] **FLOW-02**: Mỗi hoa có 5 trạng thái: Nụ → Nở Hé → Nở Rực Rỡ → Tàn → Chết
 - [ ] **FLOW-03**: 5 trạng thái nhìn là phân biệt được ngay, không cần đọc text
-- [ ] **FLOW-04**: Hoa nảy mầm ở ô trống với tốc độ spawn có thể cấu hình theo phase
+- [x] **FLOW-04**: Hoa nảy mầm ở ô trống với tốc độ spawn có thể cấu hình theo phase
 
 ### Gameplay
 
@@ -98,7 +98,7 @@
 | FLOW-01 | Phase 2 | Complete |
 | FLOW-02 | Phase 2 | Complete |
 | FLOW-03 | Phase 3 | Pending |
-| FLOW-04 | Phase 2 | Pending |
+| FLOW-04 | Phase 2 | Complete |
 | GAME-01 | Phase 3 | Pending |
 | GAME-02 | Phase 3 | Pending |
 | GAME-03 | Phase 3 | Pending |
