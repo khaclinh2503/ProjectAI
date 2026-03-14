@@ -24,7 +24,7 @@
 | 1. Project Foundation | 2/2 | Complete   | 2026-03-14 |
 | 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
 | 3. Renderer and Input | 2/4 | In Progress|  |
-| 4. Session Loop and Scoring | 0/? | Not started | — |
+| 4. Session Loop and Scoring | 0/4 | Not started | — |
 | 5. Juice and Polish | 0/? | Not started | — |
 | 6. Results and Persistence | 0/? | Not started | — |
 
@@ -97,7 +97,13 @@ Plans:
   3. A wrong tap resets the combo multiplier to 1; the HUD combo display updates immediately
   4. Flower spawn rate is visibly slower in Phase 1 (0–40s), moderate in Phase 2 (40–80s), and fast/dense in Phase 3 (80–120s) — observable during a test session
   5. Score, countdown timer, and combo multiplier are all visible and updating in real time throughout the session
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Logic additions TDD: GameState.isGameOver() + SESSION_DURATION_MS; Grid.clearAll()
+- [ ] 04-02-PLAN.md — Session state machine on GameController (SessionPhase enum, countdown, game-over, restart, HUD update) + GridRenderer.setInputEnabled()
+- [ ] 04-03-PLAN.md — Scene nodes: HUD row (score/timer/combo) + Start/Countdown/GameOver overlays + @property wiring
+- [ ] 04-04-PLAN.md — Human verification: full 120s session playthrough, all 5 success criteria
 
 ---
 
@@ -170,4 +176,4 @@ Note on FLOW-03: Visual differentiation of flower states (distinguishable appear
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-14 — Phase 3 planned: 4 plans (03-00 through 03-03) across 4 waves*
+*Last updated: 2026-03-14 — Phase 4 planned: 4 plans (04-01 through 04-04) across 4 waves*
