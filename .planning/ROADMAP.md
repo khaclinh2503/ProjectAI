@@ -52,7 +52,7 @@ Plans:
 ### Phase 2: Core Game Logic
 **Goal**: All game rules exist as pure, testable TypeScript with no canvas dependency
 **Depends on**: Phase 1
-**Requirements**: GRID-01, GRID-02, FLOW-01, FLOW-02, FLOW-03, FLOW-04
+**Requirements**: GRID-01, GRID-02, FLOW-01, FLOW-02, FLOW-04
 **Success Criteria** (what must be TRUE):
   1. A FlowerFSM instance, given a spawn timestamp, returns the correct state (Bud/Blooming/FullBloom/Wilting/Dead) for any elapsed-time query — verifiable via unit test without a browser
   2. A Grid instance exposes 64 cells; `getRandomEmptyCell()` returns a cell or null; `spawnFlower(cell, type)` and `clearCell(cell)` mutate state correctly
@@ -70,7 +70,7 @@ Plans:
 ### Phase 3: Renderer and Input
 **Goal**: The 8x8 grid is visible on screen and tapping a cell produces a visual response wired to the logic tier
 **Depends on**: Phase 2
-**Requirements**: GRID-01, GRID-02, GAME-01, GAME-02, GAME-03
+**Requirements**: GRID-01, GRID-02, FLOW-03, GAME-01, GAME-02, GAME-03
 **Success Criteria** (what must be TRUE):
   1. All 64 grid cells render as Phaser GameObjects pre-created at scene init; no cells are created or destroyed during gameplay
   2. Each flower cell displays a visually distinct appearance for all 5 growth states — distinguishable without reading any text label
@@ -159,7 +159,9 @@ Plans:
 
 Note on GRID-01 / GRID-02: Grid data model is defined in Phase 2 (pure logic); grid rendering is wired in Phase 3. Both phases share these requirements because the grid spans both tiers. The authoritative coverage assignment is Phase 2 (data) and Phase 3 (render). No requirement is orphaned.
 
+Note on FLOW-03: Visual differentiation of flower states (distinguishable appearance per growth state) is a renderer concern — belongs in Phase 3 where Cocos Creator nodes are wired to logic. Phase 2 delivers the FlowerState enum and FSM logic only; Phase 3 consumes these to render distinct visuals.
+
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-14 — Phase 2 plans created (02-01, 02-02)*
+*Last updated: 2026-03-14 — Fix FLOW-03 placement: removed from Phase 2 requirements list (documentation inconsistency), added to Phase 3 requirements list where it belongs*
