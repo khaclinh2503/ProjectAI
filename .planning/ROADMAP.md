@@ -23,7 +23,7 @@
 |-------|----------------|--------|-----------|
 | 1. Project Foundation | 2/2 | Complete   | 2026-03-14 |
 | 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
-| 3. Renderer and Input | 0/? | Not started | — |
+| 3. Renderer and Input | 0/4 | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
 | 5. Juice and Polish | 0/? | Not started | — |
 | 6. Results and Persistence | 0/? | Not started | — |
@@ -72,12 +72,18 @@ Plans:
 **Depends on**: Phase 2
 **Requirements**: GRID-01, GRID-02, FLOW-03, GAME-01, GAME-02, GAME-03
 **Success Criteria** (what must be TRUE):
-  1. All 64 grid cells render as Phaser GameObjects pre-created at scene init; no cells are created or destroyed during gameplay
+  1. All 64 grid cells render as Cocos Creator Nodes pre-created at scene init; no cells are created or destroyed during gameplay
   2. Each flower cell displays a visually distinct appearance for all 5 growth states — distinguishable without reading any text label
   3. Tapping a cell in Blooming or FullBloom state triggers the correct-tap path and removes the flower from the grid
   4. Tapping a cell in Bud or Wilting/Dead state triggers the wrong-tap path; a visual indicator (red flash or similar) plays immediately
   5. The grid scales correctly to fit the screen on a 375px-wide viewport (iPhone SE) and a 430px-wide viewport (iPhone 14 Pro Max)
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-00-PLAN.md — GameState TDD (score accumulation, wrong-tap penalty — pure TypeScript, Vitest testable)
+- [ ] 03-01-PLAN.md — GridRenderer + GameController scaffold (64 pooled cell nodes, per-frame color poll, SpawnManager tick)
+- [ ] 03-02-PLAN.md — Touch input wiring + tap logic (TOUCH_START per cell, correct/wrong tap paths, flash effects)
+- [ ] 03-03-PLAN.md — Human verification checkpoint (visual + functional, all 5 ROADMAP success criteria)
 
 ---
 
@@ -164,4 +170,4 @@ Note on FLOW-03: Visual differentiation of flower states (distinguishable appear
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-14 — Fix FLOW-03 placement: removed from Phase 2 requirements list (documentation inconsistency), added to Phase 3 requirements list where it belongs*
+*Last updated: 2026-03-14 — Phase 3 planned: 4 plans (03-00 through 03-03) across 4 waves*
