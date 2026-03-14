@@ -1,10 +1,13 @@
-import { _decorator, Component, Label } from 'cc';
-import { Grid } from './logic/Grid';
+import { _decorator, Component, Label, Color } from 'cc';
+import { Grid, Cell } from './logic/Grid';
 import { ComboSystem } from './logic/ComboSystem';
 import { SpawnManager } from './logic/SpawnManager';
 import { GameState } from './logic/GameState';
 import { FLOWER_CONFIGS } from './logic/FlowerTypes';
+import { FlowerFSM } from './logic/FlowerFSM';
+import { FlowerState } from './logic/FlowerState';
 import { GridRenderer } from './GridRenderer';
+import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 
 const { ccclass, property } = _decorator;
 
@@ -59,5 +62,43 @@ export class GameController extends Component {
         if (this.debugScoreLabel) {
             this.debugScoreLabel.string = `Score: ${Math.floor(this.gameState.score)}  x${this.comboSystem.multiplier.toFixed(2)}`;
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Tap handler API (called by GridRenderer TOUCH_START handlers)
+    // These methods contain NO Cocos scene-graph code — pure logic delegation.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Handle a correct tap (BLOOMING or FULL_BLOOM state).
+     *
+     * CRITICAL ordering (RESEARCH.md Pitfall 1):
+     *   1. Read state via getState(nowMs) — BEFORE collect()
+     *   2. Read score via getScore(nowMs) — BEFORE collect()
+     *   3. Call collect() — after this, getState() returns COLLECTED and getScore() returns null
+     *   4. Apply score to game state
+     *
+     * @param cell   - Grid cell containing the flower
+     * @param flower - FlowerFSM instance (must be non-null, verified by caller)
+     * @param nowMs  - Current timestamp from performance.now()
+     * @returns      - { flashColor } to pass to GridRenderer.paintFlashAndClear()
+     */
+    public handleCorrectTap(cell: Cell, flower: FlowerFSM, nowMs: number): { flashColor: Color } {
+        const state    = flower.getState(nowMs);          // 1. Read state before collect()
+        const rawScore = flower.getScore(nowMs) ?? 0;     // 2. Read score before collect()
+        flower.collect();                                  // 3. Mark collected
+        this.gameState.applyCorrectTap(rawScore, this.comboSystem);
+        const flashColor = state === FlowerState.FULL_BLOOM
+            ? CORRECT_FLASH_WHITE
+            : CORRECT_FLASH_YELLOW;
+        return { flashColor };
+    }
+
+    /**
+     * Handle a wrong tap (BUD, WILTING, or DEAD state).
+     * Deducts WRONG_TAP_PENALTY from score and resets combo streak.
+     */
+    public handleWrongTap(): void {
+        this.gameState.applyWrongTap(this.comboSystem);
     }
 }
