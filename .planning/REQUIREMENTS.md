@@ -25,9 +25,9 @@
 
 ### Gameplay
 
-- [ ] **GAME-01**: Tap "Nở Hé" thu thập hoa và cộng điểm gốc của loại hoa đó
-- [ ] **GAME-02**: Tap "Nở Rực Rỡ" cộng nhiều điểm hơn "Nở Hé" cùng loại hoa
-- [ ] **GAME-03**: Tap "Nụ" hoặc "Tàn/Chết" bị trừ điểm
+- [x] **GAME-01**: Tap "Nở Hé" thu thập hoa và cộng điểm gốc của loại hoa đó
+- [x] **GAME-02**: Tap "Nở Rực Rỡ" cộng nhiều điểm hơn "Nở Hé" cùng loại hoa
+- [x] **GAME-03**: Tap "Nụ" hoặc "Tàn/Chết" bị trừ điểm
 - [ ] **GAME-04**: Tap đúng liên tiếp tăng combo multiplier; điểm tap đó được nhân với multiplier hiện tại
 - [ ] **GAME-05**: Tap sai reset combo multiplier về 1
 
@@ -99,9 +99,9 @@
 | FLOW-02 | Phase 2 | Complete |
 | FLOW-03 | Phase 3 | Pending |
 | FLOW-04 | Phase 2 | Complete |
-| GAME-01 | Phase 3 | Pending |
-| GAME-02 | Phase 3 | Pending |
-| GAME-03 | Phase 3 | Pending |
+| GAME-01 | Phase 3 | Complete |
+| GAME-02 | Phase 3 | Complete |
+| GAME-03 | Phase 3 | Complete |
 | GAME-04 | Phase 4 | Pending |
 | GAME-05 | Phase 4 | Pending |
 | SESS-01 | Phase 4 | Pending |

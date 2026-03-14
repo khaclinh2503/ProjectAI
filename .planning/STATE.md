@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 02-core-game-logic
-current_plan: Phase 2 complete (02-01 and 02-02 done)
-status: planning
-stopped_at: Completed 02-02-PLAN.md — ComboSystem + SpawnManager with 39 new tests (73 total)
-last_updated: "2026-03-14T07:54:31.026Z"
+current_phase: 03-renderer-and-input
+current_plan: 03-00 complete
+status: in-progress
+stopped_at: Completed 03-00-PLAN.md — GameState scoring model with 15 new tests (88 total)
+last_updated: "2026-03-14T09:41:59.027Z"
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 5
   percent: 100
 ---
 
@@ -34,12 +34,12 @@ progress:
 
 ## Current Position
 
-**Current phase:** 02-core-game-logic
-**Current plan:** Phase 2 complete (02-01 and 02-02 done)
-**Status:** Ready to plan
+**Current phase:** 03-renderer-and-input
+**Current plan:** 03-00 complete (GameState scoring model)
+**Status:** In Progress — 1/4 plans done
 
 ```
-Progress: [██████████] 100%
+Progress: [██████░░░░] 63%
            |___________|___________|___________|___________|___________|
            Foundation  CoreLogic   Renderer    Session     Juice       Results
 ```
@@ -62,6 +62,7 @@ Progress: [██████████] 100%
 | Phase 01-project-foundation P01 | 15 | 2 tasks | 5 files |
 | Phase 02-core-game-logic P01 | 4 | 3 tasks | 11 files |
 | Phase 02-core-game-logic P02 | 3min | 2 tasks | 4 files |
+| Phase 03-renderer-and-input P00 | 3 | 1 tasks | 2 files |
 
 ## Key Decisions (Accumulated)
 
@@ -84,6 +85,9 @@ Progress: [██████████] 100%
 | ComboSystem._step as mutable instance variable | Resets to 0.5 on onWrongTap(); computing step from tapCount range breaks after reset (RESEARCH.md Pitfall 4) | Phase 2 |
 | PHASE_CONFIGS as module-level constant in SpawnManager | Immutable, shared, initialized once — not a class field that could be mutated or re-instantiated | Phase 2 |
 | getPhaseConfig fallback at >= 120000ms returns Phase 3 | Session loop calls at exact boundary; defensive fallback prevents crash at session end | Phase 2 |
+| ComboSystem passed per-method to GameState (not constructor injection) | GameController owns combo instance; test isolation — pass fresh ComboSystem per test case without resetting | Phase 3 |
+| Score can go negative (no floor at 0 on wrong-tap) | Intentional game design per plan spec: applyWrongTap subtracts penalty without floor | Phase 3 |
+| Math.round() on rawScore * multiplier delta | Prevents float accumulation (e.g., 80*1.5=119.9999 → rounds to 120) in score display | Phase 3 |
 
 ---
 
@@ -128,11 +132,11 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-14T07:51:05.517Z
-Stopped at: Completed 02-02-PLAN.md — ComboSystem + SpawnManager with 39 new tests (73 total)
+Last session: 2026-03-14T09:41:59.024Z
+Stopped at: Completed 03-00-PLAN.md — GameState scoring model with 15 new tests (88 total)
 Resume file: None
 
-Phase 2 complete: FlowerFSM/Grid (Plan 01, 34 tests) + ComboSystem/SpawnManager (Plan 02, 39 tests) = 73 tests passing. Phase 3 (renderer) next.
+Phase 3 Plan 00 complete: GameState scoring model with 15 new tests (88 total). Plans 03-01 (GridRenderer), 03-02 (InputHandler), 03-03 (GameController wiring) remaining.
 
 ---
 
