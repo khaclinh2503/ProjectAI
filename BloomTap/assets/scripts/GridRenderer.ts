@@ -2,6 +2,12 @@ import { _decorator, Component, Node, Graphics, Color, UITransform } from 'cc';
 import { Grid, Cell } from './logic/Grid';
 import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
+import { WRONG_FLASH_COLOR } from './FlowerColors';
+
+// Forward-declare to avoid circular: GameController imports GridRenderer,
+// GridRenderer imports GameController only for the type (erased at runtime).
+// Cocos resolves these at scene-load — the actual reference comes through init().
+import type { GameController } from './GameController';
 
 const { ccclass } = _decorator;
 
@@ -64,11 +70,8 @@ const FLOWER_COLORS: Record<FlowerTypeId, Record<FlowerState, Color>> = {
 };
 
 // Shared constants — each is a distinct Color object.
-const EMPTY_FILL          = new Color( 30,  30,  35, 255);
-const EMPTY_STROKE        = new Color( 60,  60,  70, 255);
-const WRONG_FLASH_COLOR   = new Color(220,  50,  50, 255);
-const CORRECT_FLASH_YELLOW = new Color(255, 220,  60, 255);
-const CORRECT_FLASH_WHITE  = new Color(255, 255, 255, 255);
+const EMPTY_FILL   = new Color( 30,  30,  35, 255);
+const EMPTY_STROKE = new Color( 60,  60,  70, 255);
 
 // ---------------------------------------------------------------------------
 // CellView — per-cell runtime state for the renderer.
@@ -86,15 +89,21 @@ interface CellView {
 // GridRenderer — Cocos Component
 // Owns 64 pooled cell nodes (pre-created once in onLoad, never destroyed).
 // Polls FlowerFSM state each frame via update() and repaints cell colors.
+// Registers TOUCH_START on every cell node to route taps to GameController.
 // ---------------------------------------------------------------------------
 @ccclass('GridRenderer')
 export class GridRenderer extends Component {
     private _cellViews: CellView[] = [];
     private _grid: Grid | null = null;
+    private _controller: GameController | null = null;
 
-    // Set by GameController.onLoad() after this component is ready
-    init(grid: Grid, _controller: unknown): void {
+    /**
+     * Called by GameController.onLoad() after scene wiring is ready.
+     * Stores references needed by the TOUCH_START handler.
+     */
+    init(grid: Grid, controller: GameController): void {
         this._grid = grid;
+        this._controller = controller;
     }
 
     onLoad(): void {
@@ -111,7 +120,8 @@ export class GridRenderer extends Component {
 
             const cellNode = new Node(`cell_${row}_${col}`);
 
-            // Add UITransform first so touch hit-testing works (Pitfall 4)
+            // Add UITransform first so touch hit-testing works (Pitfall 4 from RESEARCH.md:
+            // UITransform required for per-node TOUCH_START to fire on the correct cell).
             const uiT = cellNode.addComponent(UITransform);
             uiT.setContentSize(CELL_SIZE, CELL_SIZE);
 
@@ -123,11 +133,70 @@ export class GridRenderer extends Component {
             cellNode.setPosition(x, y, 0);
 
             this.node.addChild(cellNode);
-            this._cellViews.push({ node: cellNode, graphics: g, row, col, typeId: null, isFlashing: false });
+
+            const view: CellView = { node: cellNode, graphics: g, row, col, typeId: null, isFlashing: false };
+            this._cellViews.push(view);
 
             // Paint initial empty state
-            this._paintEmpty(this._cellViews[i]);
+            this._paintEmpty(view);
+
+            // Register TOUCH_START for tap input (plan 03-02)
+            this._registerCellTouch(view);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Touch input handlers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Register TOUCH_START on a single cell node.
+     * Using per-node registration (not canvas) ensures correct cell identity
+     * without coordinate math, and UITransform provides hit-testing bounds.
+     */
+    private _registerCellTouch(view: CellView): void {
+        view.node.on(Node.EventType.TOUCH_START, () => {
+            this._onCellTapped(view);
+        }, this);
+    }
+
+    /**
+     * Handle a TOUCH_START on a cell.
+     *
+     * Guard order (critical for correctness):
+     *   1. isFlashing guard — prevents double-flash and NaN score (Pitfall 2 + 6 from RESEARCH.md)
+     *   2. Null guards — controller and grid must be wired before taps arrive
+     *   3. Empty cell — silently ignore (cell.flower === null)
+     *   4. Route by state:
+     *      - BLOOMING or FULL_BLOOM → handleCorrectTap → paintFlashAndClear (300ms)
+     *      - BUD, WILTING, DEAD    → handleWrongTap   → paintFlash (150ms red)
+     *      - COLLECTED             → unreachable here (isFlashing guard at top catches it)
+     */
+    private _onCellTapped(view: CellView): void {
+        if (view.isFlashing) return;                          // guard: no double-flash
+        if (!this._grid || !this._controller) return;        // guard: must be initialized
+
+        const nowMs = performance.now();
+        const cell = this._grid.getCell(view.row, view.col);
+        if (!cell.flower) return;                            // empty cell — silently ignore
+
+        const state = cell.flower.getState(nowMs);
+
+        if (state === FlowerState.BLOOMING || state === FlowerState.FULL_BLOOM) {
+            // Correct tap: handleCorrectTap reads state+score BEFORE collect() internally
+            const { flashColor } = this._controller.handleCorrectTap(cell, cell.flower, nowMs);
+            this.paintFlashAndClear(view.row, view.col, flashColor, cell, 0.30); // 300ms per CONTEXT.md
+        } else if (
+            state === FlowerState.BUD     ||
+            state === FlowerState.WILTING ||
+            state === FlowerState.DEAD
+        ) {
+            // Wrong tap: penalty + combo reset, red flash 150ms
+            this._controller.handleWrongTap();
+            this.paintFlash(view.row, view.col, WRONG_FLASH_COLOR, 0.15); // 150ms per CONTEXT.md
+        }
+        // COLLECTED: flower.collect() was called → isFlashing was set true simultaneously
+        //            → the isFlashing guard at top prevents reaching this branch.
     }
 
     // -----------------------------------------------------------------------
@@ -142,7 +211,7 @@ export class GridRenderer extends Component {
         this._cellViews[row * GRID_COLS + col].typeId = typeId;
     }
 
-    /** Returns CellView for (row, col) — used by tap handlers in plan 03-02. */
+    /** Returns CellView for (row, col) — used by tap handlers and tests. */
     getCellView(row: number, col: number): CellView {
         return this._cellViews[row * GRID_COLS + col];
     }
@@ -159,7 +228,7 @@ export class GridRenderer extends Component {
         this._paintCellColor(view, flashColor);
         this.scheduleOnce(() => {
             view.isFlashing = false;
-            // update() repaints on next frame
+            // update() repaints on next frame from FSM state
         }, durationS);
     }
 
@@ -180,11 +249,8 @@ export class GridRenderer extends Component {
     }
 
     // -----------------------------------------------------------------------
-    // Constants exposed for tap handlers in plan 03-02
+    // Constants exposed for external use (e.g., plan 03-03 verification)
     // -----------------------------------------------------------------------
-    static readonly WRONG_FLASH_COLOR    = WRONG_FLASH_COLOR;
-    static readonly CORRECT_FLASH_YELLOW = CORRECT_FLASH_YELLOW;
-    static readonly CORRECT_FLASH_WHITE  = CORRECT_FLASH_WHITE;
     static readonly WRONG_FLASH_DURATION_S   = 0.15;
     static readonly CORRECT_FLASH_DURATION_S = 0.30;
 
@@ -213,13 +279,7 @@ export class GridRenderer extends Component {
                     // COLLECTED flash is managed by paintFlashAndClear() — skip until cleared
                     continue;
                 }
-                if (state === FlowerState.DEAD && view.typeId !== null) {
-                    // Dead flowers should still show their dead color, not be auto-cleared here.
-                    // GameController or InputHandler decides when to clearCell on DEAD flowers.
-                    this._paintState(view, state);
-                } else {
-                    this._paintState(view, state);
-                }
+                this._paintState(view, state);
             }
         }
     }
