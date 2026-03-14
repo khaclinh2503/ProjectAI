@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 02-core-game-logic
-current_plan: Plan 01 next (Phase 1 complete)
+current_plan: Plan 02 next (02-01 complete)
 status: planning
-stopped_at: Completed 01-02-PLAN.md — Phase 1 all plans done, Phase 2 next
-last_updated: "2026-03-14T05:06:18.146Z"
+stopped_at: Completed 02-01-PLAN.md — FlowerFSM/Grid pure logic tier with 34 tests
+last_updated: "2026-03-14T05:19:08.228Z"
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 50
 ---
 
@@ -35,8 +35,8 @@ progress:
 ## Current Position
 
 **Current phase:** 02-core-game-logic
-**Current plan:** Plan 01 next (Phase 1 complete)
-**Status:** Ready to plan
+**Current plan:** Plan 02 next (02-01 complete)
+**Status:** In progress
 
 ```
 Progress: [█████░░░░░] 50%
@@ -60,6 +60,7 @@ Progress: [█████░░░░░] 50%
 
 ---
 | Phase 01-project-foundation P01 | 15 | 2 tasks | 5 files |
+| Phase 02-core-game-logic P01 | 4 | 3 tasks | 11 files |
 
 ## Key Decisions (Accumulated)
 
@@ -76,6 +77,9 @@ Progress: [█████░░░░░] 50%
 | FB Instant Games deferred to post-v1 | Different init architecture; isolated swap if codebase structured correctly | Post-v1 |
 | build-templates/ at BloomTap/ (Cocos project root) | Cocos Creator reads build-templates relative to project.json location, not workspace root | Phase 1 |
 | director.loadScene in onLoad() for BootController | Fires before first render — no delay, no dependency on other components | Phase 1 |
+| npm project root at workspace root (not BloomTap/) | BloomTap/package.json is Cocos Creator metadata file, not npm package | Phase 2 |
+| getScore() uses inclusive tap window [0, tapWindowMs] | Plan test requires getScore(budMs+tapWindowMs) ≈ scoreFull; getState() returns WILTING at that point, so score must compute independently | Phase 2 |
+| tsconfig.test.json standalone (no Cocos extends) | Extending Cocos tsconfig causes cc virtual module resolution errors in Vitest/Node | Phase 2 |
 
 ---
 
@@ -120,11 +124,11 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-14T04:59:59.529Z
-Stopped at: Completed 01-02-PLAN.md — Phase 1 all plans done, Phase 2 next
+Last session: 2026-03-14T05:19:08.224Z
+Stopped at: Completed 02-01-PLAN.md — FlowerFSM/Grid pure logic tier with 34 tests
 Resume file: None
 
-Phase 1 complete (both plans done, all requirements verified). Phase 2 ready: `/gsd:execute-phase 2`
+Phase 2 Plan 01 complete (FlowerFSM/Grid pure logic tier, 34 tests). Phase 2 Plan 02 next.
 
 ---
 

@@ -13,13 +13,13 @@
 
 ### Grid
 
-- [ ] **GRID-01**: 8x8 grid render với 64 ô tap riêng biệt
-- [ ] **GRID-02**: Grid scale responsive theo màn hình mobile
+- [x] **GRID-01**: 8x8 grid render với 64 ô tap riêng biệt
+- [x] **GRID-02**: Grid scale responsive theo màn hình mobile
 
 ### Flower
 
-- [ ] **FLOW-01**: 5 loại hoa, mỗi loại có tốc độ chu kỳ và điểm gốc khác nhau
-- [ ] **FLOW-02**: Mỗi hoa có 5 trạng thái: Nụ → Nở Hé → Nở Rực Rỡ → Tàn → Chết
+- [x] **FLOW-01**: 5 loại hoa, mỗi loại có tốc độ chu kỳ và điểm gốc khác nhau
+- [x] **FLOW-02**: Mỗi hoa có 5 trạng thái: Nụ → Nở Hé → Nở Rực Rỡ → Tàn → Chết
 - [ ] **FLOW-03**: 5 trạng thái nhìn là phân biệt được ngay, không cần đọc text
 - [ ] **FLOW-04**: Hoa nảy mầm ở ô trống với tốc độ spawn có thể cấu hình theo phase
 
@@ -93,10 +93,10 @@
 | FOUND-01 | Phase 1 | Complete |
 | FOUND-02 | Phase 1 | Complete |
 | FOUND-03 | Phase 1 | Complete |
-| GRID-01 | Phase 2 + 3 | Pending |
-| GRID-02 | Phase 2 + 3 | Pending |
-| FLOW-01 | Phase 2 | Pending |
-| FLOW-02 | Phase 2 | Pending |
+| GRID-01 | Phase 2 + 3 | Complete |
+| GRID-02 | Phase 2 + 3 | Complete |
+| FLOW-01 | Phase 2 | Complete |
+| FLOW-02 | Phase 2 | Complete |
 | FLOW-03 | Phase 3 | Pending |
 | FLOW-04 | Phase 2 | Pending |
 | GAME-01 | Phase 3 | Pending |

@@ -22,7 +22,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation | 2/2 | Complete   | 2026-03-14 |
-| 2. Core Game Logic | 0/2 | Not started | — |
+| 2. Core Game Logic | 1/2 | In Progress|  |
 | 3. Renderer and Input | 0/? | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
 | 5. Juice and Polish | 0/? | Not started | — |
