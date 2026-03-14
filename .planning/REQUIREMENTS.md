@@ -7,8 +7,8 @@
 
 ### Foundation
 
-- [ ] **FOUND-01**: Project chạy được trên browser với Cocos Creator + TypeScript
-- [ ] **FOUND-02**: Game canvas scale đúng trên mobile (DPR scaling, viewport lock)
+- [x] **FOUND-01**: Project chạy được trên browser với Cocos Creator + TypeScript
+- [x] **FOUND-02**: Game canvas scale đúng trên mobile (DPR scaling, viewport lock)
 - [ ] **FOUND-03**: Touch input chuẩn (không scroll trang, pointerdown events, touch-action: none)
 
 ### Grid
@@ -90,8 +90,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
+| FOUND-02 | Phase 1 | Complete |
 | FOUND-03 | Phase 1 | Pending |
 | GRID-01 | Phase 2 + 3 | Pending |
 | GRID-02 | Phase 2 + 3 | Pending |

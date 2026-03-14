@@ -21,7 +21,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Foundation | 0/2 | Not started | — |
+| 1. Project Foundation | 1/2 | In Progress|  |
 | 2. Core Game Logic | 0/2 | Not started | — |
 | 3. Renderer and Input | 0/? | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
