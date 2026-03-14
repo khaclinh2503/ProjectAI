@@ -119,6 +119,7 @@ export class GridRenderer extends Component {
             const col = i % GRID_COLS;
 
             const cellNode = new Node(`cell_${row}_${col}`);
+            cellNode.layer = this.node.layer; // inherit UI layer so 2D camera renders it
 
             // Add UITransform first so touch hit-testing works (Pitfall 4 from RESEARCH.md:
             // UITransform required for per-node TOUCH_START to fire on the correct cell).
@@ -178,7 +179,12 @@ export class GridRenderer extends Component {
 
         const nowMs = performance.now();
         const cell = this._grid.getCell(view.row, view.col);
-        if (!cell.flower) return;                            // empty cell — silently ignore
+        if (!cell.flower) {
+            // Empty cell — treat as wrong tap (penalty + combo reset, red flash)
+            this._controller.handleWrongTap();
+            this.paintFlash(view.row, view.col, WRONG_FLASH_COLOR, 0.15);
+            return;
+        }
 
         const state = cell.flower.getState(nowMs);
 
@@ -277,6 +283,13 @@ export class GridRenderer extends Component {
                 const state = cell.flower.getState(nowMs);
                 if (state === FlowerState.COLLECTED) {
                     // COLLECTED flash is managed by paintFlashAndClear() — skip until cleared
+                    continue;
+                }
+                if (state === FlowerState.DEAD) {
+                    // Auto-clear dead flowers so grid slots are reused
+                    this._grid.clearCell(cell);
+                    view.typeId = null;
+                    this._paintEmpty(view);
                     continue;
                 }
                 this._paintState(view, state);
