@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: None started (roadmap just created)
-current_plan: None
-status: Ready to begin Phase 1
-stopped_at: Completed 01-01-PLAN.md — Phase 1 Plan 01 done
-last_updated: "2026-03-14T04:15:29.714Z"
+current_phase: 01-project-foundation
+current_plan: Plan 01 complete — Plan 02 next
+status: executing
+stopped_at: "Completed 01-02-PLAN.md (Tasks 1-2); awaiting checkpoint:human-verify at Task 3"
+last_updated: "2026-03-14T04:22:25.692Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 25
 ---
 
@@ -35,11 +35,11 @@ progress:
 ## Current Position
 
 **Current phase:** 01-project-foundation
-**Current plan:** Plan 01 complete — Plan 02 next
-**Status:** Phase 1 in progress (1/2 plans complete)
+**Current plan:** Plan 02 Tasks 1-2 complete — awaiting checkpoint:human-verify (Task 3)
+**Status:** Phase 1 in progress (2/2 plans tasks complete, checkpoint pending)
 
 ```
-Progress: [███░░░░░░░] 25%
+Progress: [█████░░░░░] 50%
            |___________|___________|___________|___________|___________|
            Foundation  CoreLogic   Renderer    Session     Juice       Results
 ```
@@ -74,6 +74,8 @@ Progress: [███░░░░░░░] 25%
 | StorageService abstraction over localStorage | Enables clean FB Instant Games swap later; implement at Phase 6, not retrofitted | Phase 6 |
 | Juice deferred to Phase 5 | Juice without stable mechanics is wasted work; every effect has a parent mechanic | Phase 5 |
 | FB Instant Games deferred to post-v1 | Different init architecture; isolated swap if codebase structured correctly | Post-v1 |
+| build-templates/ at BloomTap/ (Cocos project root) | Cocos Creator reads build-templates relative to project.json location, not workspace root | Phase 1 |
+| director.loadScene in onLoad() for BootController | Fires before first render — no delay, no dependency on other components | Phase 1 |
 
 ---
 
@@ -118,8 +120,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-14T04:15:29.711Z
-Stopped at: Completed 01-01-PLAN.md — Phase 1 Plan 01 done
+Last session: 2026-03-14T04:22:25.689Z
+Stopped at: Completed 01-02-PLAN.md (Tasks 1-2); awaiting checkpoint:human-verify at Task 3
 Resume file: None
 
 Phase 1 Plan 01 complete. Phase 1 Plan 02 next: `/gsd:execute-phase 1`

@@ -8,7 +8,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Project Foundation** — Cocos Creator scaffold, mobile canvas, touch input baseline
+- [x] **Phase 1: Project Foundation** — Cocos Creator scaffold, mobile canvas, touch input baseline (completed 2026-03-14)
 - [ ] **Phase 2: Core Game Logic** — FlowerFSM, Grid, ComboSystem, SpawnManager — pure, no canvas
 - [ ] **Phase 3: Renderer and Input** — Cocos Creator Nodes wired to logic; playable grid on screen
 - [ ] **Phase 4: Session Loop and Scoring** — 120s timer, 3-phase escalation, full scoring pipeline, HUD
@@ -21,7 +21,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Foundation | 1/2 | In Progress|  |
+| 1. Project Foundation | 2/2 | Complete   | 2026-03-14 |
 | 2. Core Game Logic | 0/2 | Not started | — |
 | 3. Renderer and Input | 0/? | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
