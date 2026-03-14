@@ -22,7 +22,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation | 0/2 | Not started | — |
-| 2. Core Game Logic | 0/? | Not started | — |
+| 2. Core Game Logic | 0/2 | Not started | — |
 | 3. Renderer and Input | 0/? | Not started | — |
 | 4. Session Loop and Scoring | 0/? | Not started | — |
 | 5. Juice and Polish | 0/? | Not started | — |
@@ -59,7 +59,11 @@ Plans:
   3. All 5 flower type configs exist (cycle speed, base score) and are referenced by FlowerFSM
   4. ComboSystem increments the multiplier on correct-tap calls and resets to 1 on wrong-tap calls
   5. SpawnManager reads elapsed session time and returns the spawn-rate config for the active phase (0–40s, 40–80s, 80–120s)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Vitest setup + FlowerTypes + FlowerState + FlowerFSM + Grid (TDD)
+- [ ] 02-02-PLAN.md — ComboSystem + SpawnManager (TDD)
 
 ---
 
@@ -158,4 +162,4 @@ Note on GRID-01 / GRID-02: Grid data model is defined in Phase 2 (pure logic); g
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-14 — Phase 1 plans created (01-01, 01-02)*
+*Last updated: 2026-03-14 — Phase 2 plans created (02-01, 02-02)*
