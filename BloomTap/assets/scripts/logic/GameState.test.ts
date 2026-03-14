@@ -117,8 +117,10 @@ describe('GameState', () => {
         });
 
         it('returns performance.now() - sessionStartMs', () => {
+            const fixedStart = 1000;
+            const nowSpy = vi.spyOn(performance, 'now').mockReturnValue(fixedStart);
             state.reset();
-            const nowSpy = vi.spyOn(performance, 'now').mockReturnValue(state.sessionStartMs + 500);
+            nowSpy.mockReturnValue(fixedStart + 500);
             const elapsed = state.getElapsedMs();
             expect(elapsed).toBe(500);
             nowSpy.mockRestore();
