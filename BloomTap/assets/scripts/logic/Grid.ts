@@ -62,6 +62,16 @@ export class Grid {
     }
 
     /**
+     * Clears all 64 cells — sets every cell.flower to null.
+     * Used by restart flow to reset the grid without recreating it.
+     */
+    clearAll(): void {
+        for (const cell of this._cells) {
+            cell.flower = null;
+        }
+    }
+
+    /**
      * Returns count of cells where flower is not null and not in DEAD state.
      * COLLECTED flowers are counted as alive (brief window before Phase 3 clears them).
      */

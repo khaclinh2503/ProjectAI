@@ -114,6 +114,33 @@ describe('Grid.clearCell()', () => {
     });
 });
 
+describe('Grid.clearAll()', () => {
+    it('sets all 64 cells to flower=null on a full grid', () => {
+        const grid = new Grid();
+        const cells = grid.getCells();
+        // Fill all 64 cells
+        for (const cell of cells) {
+            grid.spawnFlower(cell, cherryConfig, 0);
+        }
+        // Verify grid is full
+        expect(grid.getRandomEmptyCell()).toBeNull();
+        grid.clearAll();
+        for (const cell of cells) {
+            expect(cell.flower).toBeNull();
+        }
+    });
+
+    it('after clearAll(), getRandomEmptyCell() returns non-null', () => {
+        const grid = new Grid();
+        // Fill all cells
+        for (const cell of grid.getCells()) {
+            grid.spawnFlower(cell, cherryConfig, 0);
+        }
+        grid.clearAll();
+        expect(grid.getRandomEmptyCell()).not.toBeNull();
+    });
+});
+
 describe('Grid.getAliveCount()', () => {
     it('returns count of cells with non-null, non-DEAD flowers', () => {
         const grid = new Grid();
