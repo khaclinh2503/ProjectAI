@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 04-session-loop
-current_plan: none
-status: planning
-stopped_at: Completed 03-03-PLAN.md — Phase 3 human verification passed (all 6 tests), 4 bugs found and fixed
-last_updated: "2026-03-14T15:00:00.000Z"
+current_plan: none — Phase 3 complete, Phase 4 planning next
+status: completed
+stopped_at: Completed 04-01-PLAN.md — isGameOver() + SESSION_DURATION_MS added to GameState, clearAll() added to Grid; 111 tests passing
+last_updated: "2026-03-14T16:11:57.611Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
-  percent: 75
+  total_plans: 12
+  completed_plans: 9
+  percent: 88
 ---
 
 # Project State: Bloom Tap
@@ -35,8 +35,8 @@ progress:
 ## Current Position
 
 **Current phase:** 04-session-loop
-**Current plan:** none — Phase 3 complete, Phase 4 planning next
-**Status:** Phase 3 complete — ready for Phase 4
+**Current plan:** 04-01 complete — ready for 04-02
+**Status:** Phase 4 in progress — logic foundations done, Cocos session state machine next
 
 ```
 Progress: [█████████░] 88%
@@ -65,6 +65,7 @@ Progress: [█████████░] 88%
 | Phase 03-renderer-and-input P00 | 3 | 1 tasks | 2 files |
 | Phase 03-renderer-and-input P01 | 2 | 2 tasks | 3 files |
 | Phase 03-renderer-and-input P02 | 269 | 2 tasks | 4 files |
+| Phase 04 P01 | 5 | 2 tasks | 4 files |
 
 ## Key Decisions (Accumulated)
 
@@ -92,6 +93,8 @@ Progress: [█████████░] 88%
 | Math.round() on rawScore * multiplier delta | Prevents float accumulation (e.g., 80*1.5=119.9999 → rounds to 120) in score display | Phase 3 |
 | type-only import for GameController in GridRenderer | Avoids circular runtime dependency while preserving compile-time type safety; actual instance arrives via init() | Phase 3 |
 | FlowerColors.ts as neutral flash-color module | Prevents circular dep: GridRenderer and GameController both import CORRECT_FLASH_YELLOW/WHITE/WRONG_FLASH_COLOR from it | Phase 3 |
+| isGameOver uses inclusive boundary (>=) | Session ends at exactly 120_000ms elapsed, matching plan spec and getPhaseConfig fallback pattern | Phase 4 |
+| clearAll() iterates _cells directly | Avoids readonly cast on getCells(); consistent with existing clearCell() pattern | Phase 4 |
 
 ---
 
@@ -136,8 +139,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-14T15:00:00.000Z
-Stopped at: Completed 03-03-PLAN.md — Phase 3 human verification passed, Phase 3 fully complete
+Last session: 2026-03-14T16:11:57.608Z
+Stopped at: Completed 04-01-PLAN.md — isGameOver() + SESSION_DURATION_MS added to GameState, clearAll() added to Grid; 111 tests passing
 Resume file: None
 
 Phase 3 complete: All 4 plans executed (03-00 through 03-03). 64-cell grid renders, touch input wired, tap dispatch functional, 5 flower states visually distinct. Ready to plan Phase 4 (Session Loop).

@@ -24,7 +24,7 @@
 | 1. Project Foundation | 2/2 | Complete   | 2026-03-14 |
 | 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
 | 3. Renderer and Input | 2/4 | In Progress|  |
-| 4. Session Loop and Scoring | 0/4 | Not started | — |
+| 4. Session Loop and Scoring | 1/4 | In Progress|  |
 | 5. Juice and Polish | 0/? | Not started | — |
 | 6. Results and Persistence | 0/? | Not started | — |
 
