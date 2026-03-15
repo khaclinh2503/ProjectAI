@@ -28,15 +28,15 @@
 - [x] **GAME-01**: Tap "Nở Hé" thu thập hoa và cộng điểm gốc của loại hoa đó
 - [x] **GAME-02**: Tap "Nở Rực Rỡ" cộng nhiều điểm hơn "Nở Hé" cùng loại hoa
 - [x] **GAME-03**: Tap "Nụ" hoặc "Tàn/Chết" bị trừ điểm
-- [ ] **GAME-04**: Tap đúng liên tiếp tăng combo multiplier; điểm tap đó được nhân với multiplier hiện tại
-- [ ] **GAME-05**: Tap sai reset combo multiplier về 1
+- [x] **GAME-04**: Tap đúng liên tiếp tăng combo multiplier; điểm tap đó được nhân với multiplier hiện tại
+- [x] **GAME-05**: Tap sai reset combo multiplier về 1
 
 ### Session
 
 - [x] **SESS-01**: Mỗi ván chính xác 120 giây
-- [ ] **SESS-02**: Giai đoạn 1 (0–40s): spawn ngẫu nhiên chậm — học luật tự nhiên
-- [ ] **SESS-03**: Giai đoạn 2 (40–80s): spawn đều ở tốc độ vừa, combo chain xuất hiện
-- [ ] **SESS-04**: Giai đoạn 3 (80–120s): làn sóng spawn nhanh dồn dập
+- [x] **SESS-02**: Giai đoạn 1 (0–40s): spawn ngẫu nhiên chậm — học luật tự nhiên
+- [x] **SESS-03**: Giai đoạn 2 (40–80s): spawn đều ở tốc độ vừa, combo chain xuất hiện
+- [x] **SESS-04**: Giai đoạn 3 (80–120s): làn sóng spawn nhanh dồn dập
 - [x] **SESS-05**: Ván kết thúc khi timer về 0
 
 ### HUD
@@ -102,12 +102,12 @@
 | GAME-01 | Phase 3 | Complete |
 | GAME-02 | Phase 3 | Complete |
 | GAME-03 | Phase 3 | Complete |
-| GAME-04 | Phase 4 | Pending |
-| GAME-05 | Phase 4 | Pending |
+| GAME-04 | Phase 4 | Complete |
+| GAME-05 | Phase 4 | Complete |
 | SESS-01 | Phase 4 | Complete |
-| SESS-02 | Phase 4 | Pending |
-| SESS-03 | Phase 4 | Pending |
-| SESS-04 | Phase 4 | Pending |
+| SESS-02 | Phase 4 | Complete |
+| SESS-03 | Phase 4 | Complete |
+| SESS-04 | Phase 4 | Complete |
 | SESS-05 | Phase 4 | Complete |
 | HUD-01 | Phase 4 | Pending |
 | HUD-02 | Phase 4 | Pending |
