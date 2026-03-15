@@ -48,7 +48,7 @@ export function getUrgencyStage(remainingSecs: number): 0 | 1 | 2 | 3 {
  * Returns null if tapCount is not a milestone, or if already triggered.
  */
 export function getMilestoneLabel(tapCount: number, triggered: Set<number>): string | null {
-    if (!MILESTONE_THRESHOLDS.includes(tapCount)) return null;
+    if (MILESTONE_THRESHOLDS.indexOf(tapCount) === -1) return null;
     if (triggered.has(tapCount)) return null;
     triggered.add(tapCount);
     return `COMBO x${tapCount}!`;

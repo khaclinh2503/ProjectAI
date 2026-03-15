@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Color, Node, Button } from 'cc';
+import { _decorator, Component, Label, Color, Node, Button, tween, Tween, Vec3, UIOpacity } from 'cc';
 import { Grid, Cell } from './logic/Grid';
 import { ComboSystem } from './logic/ComboSystem';
 import { SpawnManager } from './logic/SpawnManager';
@@ -59,6 +59,15 @@ export class GameController extends Component {
     @property(Button)
     restartButton: Button | null = null;
 
+    @property(Node)
+    redFlashOverlay: Node | null = null;
+
+    @property(Node)
+    milestoneNode: Node | null = null;
+
+    @property(Label)
+    milestoneLabel: Label | null = null;
+
     public readonly grid = new Grid();
     public readonly comboSystem = new ComboSystem();
     public readonly spawnManager = new SpawnManager();
@@ -67,6 +76,10 @@ export class GameController extends Component {
     private _nextSpawnMs: number = 0;
     private _phase: SessionPhase = SessionPhase.WAITING;
     private _lastDisplayedSecond: number = -1;
+    private _triggeredMilestones = new Set<number>();
+    private _urgencyStage: number = 0;
+    private _blinkVisible: boolean = true;
+    private _blinkCallback: (() => void) | null = null;
 
     onLoad(): void {
         // DO NOT call gameState.reset() here — reset happens in _beginSession() after countdown.
@@ -136,15 +149,19 @@ export class GameController extends Component {
      * @param nowMs  - Current timestamp from performance.now()
      * @returns      - { flashColor } to pass to GridRenderer.paintFlashAndClear()
      */
-    public handleCorrectTap(cell: Cell, flower: FlowerFSM, nowMs: number): { flashColor: Color } {
+    public handleCorrectTap(
+        cell: Cell,
+        flower: FlowerFSM,
+        nowMs: number,
+    ): { flashColor: Color; rawScore: number; multiplier: number; isFullBloom: boolean } {
         const state    = flower.getState(nowMs);          // 1. Read state before collect()
         const rawScore = flower.getScore(nowMs) ?? 0;     // 2. Read score before collect()
         flower.collect();                                  // 3. Mark collected
         this.gameState.applyCorrectTap(rawScore, this.comboSystem);
-        const flashColor = state === FlowerState.FULL_BLOOM
-            ? CORRECT_FLASH_WHITE
-            : CORRECT_FLASH_YELLOW;
-        return { flashColor };
+        const isFullBloom = state === FlowerState.FULL_BLOOM;
+        const flashColor = isFullBloom ? CORRECT_FLASH_WHITE : CORRECT_FLASH_YELLOW;
+        const multiplier = this.comboSystem.multiplier;
+        return { flashColor, rawScore: Math.round(rawScore), multiplier, isFullBloom };
     }
 
     /**
@@ -158,6 +175,28 @@ export class GameController extends Component {
     // -----------------------------------------------------------------------
     // Session state machine — private methods
     // -----------------------------------------------------------------------
+
+    private _stopAllJuiceAnimations(): void {
+        if (this.milestoneNode) Tween.stopAllByTarget(this.milestoneNode);
+        if (this.redFlashOverlay) Tween.stopAllByTarget(this.redFlashOverlay);
+        if (this.comboLabel) Tween.stopAllByTarget(this.comboLabel.node);
+        if (this.timerLabel) Tween.stopAllByTarget(this.timerLabel.node);
+        if (this._blinkCallback) {
+            this.unschedule(this._blinkCallback);
+            this._blinkCallback = null;
+        }
+        this._urgencyStage = 0;
+        this._blinkVisible = true;
+        this._triggeredMilestones.clear();
+        if (this.milestoneNode) this.milestoneNode.active = false;
+        if (this.redFlashOverlay) this.redFlashOverlay.active = false;
+        if (this.timerLabel) {
+            this.timerLabel.node.active = true;
+            this.timerLabel.color = new Color(255, 255, 255, 255);
+            this.timerLabel.node.setScale(1, 1, 1);
+        }
+        if (this.gridRenderer) this.gridRenderer.stopAllFloatAnimations();
+    }
 
     private _showStartScreen(): void {
         this._phase = SessionPhase.WAITING;
@@ -190,6 +229,7 @@ export class GameController extends Component {
     }
 
     private _beginSession(): void {
+        this._stopAllJuiceAnimations();
         if (this.countdownOverlay) this.countdownOverlay.active = false;
         if (this.hudNode) this.hudNode.active = true;
 
@@ -209,6 +249,7 @@ export class GameController extends Component {
     }
 
     private _triggerGameOver(): void {
+        this._stopAllJuiceAnimations();
         this._phase = SessionPhase.GAME_OVER;
         if (this.gridRenderer) this.gridRenderer.setInputEnabled(false);
         // Clear all flowers from logic tier (grid shows empty state visually on next update frame)
