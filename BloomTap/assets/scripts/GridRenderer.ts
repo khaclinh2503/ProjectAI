@@ -347,8 +347,17 @@ export class GridRenderer extends Component {
         const worldPos = cellNode.worldPosition;
 
         slot.inUse = true;
-        slot.node.setWorldPosition(worldPos.x, worldPos.y, 0);
         slot.node.active = true;
+
+        // Stop any in-flight tweens before resetting values — prevents a running
+        // opacity tween from overwriting the opacity=255 reset we're about to apply.
+        Tween.stopAllByTarget(slot.node);
+        Tween.stopAllByTarget(slot.opacity);
+
+        slot.node.setWorldPosition(worldPos.x, worldPos.y, 0);
+
+        // Reset opacity — must come AFTER stopAllByTarget so no in-flight tween overwrites it.
+        slot.opacity.opacity = 255;
 
         // Text content
         slot.label.string = getFloatLabelString(amount);
@@ -363,12 +372,6 @@ export class GridRenderer extends Component {
         const duration = getFloatDuration(multiplier);
         const riseY = 80 + multiplier * 10;
         const wobbleX = 14;
-
-        // Reset opacity
-        slot.opacity.opacity = 255;
-
-        Tween.stopAllByTarget(slot.node);
-        Tween.stopAllByTarget(slot.opacity);
 
         // Position animation: zigzag wobble while rising
         tween(slot.node)
