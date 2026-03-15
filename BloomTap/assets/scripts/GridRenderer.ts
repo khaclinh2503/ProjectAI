@@ -12,6 +12,10 @@ import type { GameController } from './GameController';
 
 const { ccclass } = _decorator;
 
+// Matches GameState.WRONG_TAP_PENALTY — display value for wrong/empty tap floats.
+// Do NOT import GameState here (violates pure-logic tier separation).
+const WRONG_TAP_DISPLAY_PENALTY = -10; // matches GameState.WRONG_TAP_PENALTY = 10
+
 // ---------------------------------------------------------------------------
 // Grid layout constants
 // Design resolution: 720px wide. Grid = 80% = 576px.
@@ -230,6 +234,11 @@ export class GridRenderer extends Component {
             // Empty cell — treat as wrong tap (penalty + combo reset, red flash)
             this._controller.handleWrongTap();
             this.paintFlash(view.row, view.col, WRONG_FLASH_COLOR, 0.15);
+
+            // JUICE-01: wrong tap pulse (no ripple)
+            this.playTapPulse(view.row, view.col, false);
+            // JUICE-02: score float for empty tap penalty
+            this.spawnScoreFloat(view.row, view.col, WRONG_TAP_DISPLAY_PENALTY, 1);
             return;
         }
 
@@ -237,8 +246,15 @@ export class GridRenderer extends Component {
 
         if (state === FlowerState.BLOOMING || state === FlowerState.FULL_BLOOM) {
             // Correct tap: handleCorrectTap reads state+score BEFORE collect() internally
-            const { flashColor } = this._controller.handleCorrectTap(cell, cell.flower, nowMs);
+            const { flashColor, rawScore, multiplier, isFullBloom } =
+                this._controller.handleCorrectTap(cell, cell.flower, nowMs);
             this.paintFlashAndClear(view.row, view.col, flashColor, cell, 0.30); // 300ms per CONTEXT.md
+
+            // JUICE-01: tap pulse
+            this.playTapPulse(view.row, view.col, isFullBloom);
+
+            // JUICE-02: score float
+            this.spawnScoreFloat(view.row, view.col, rawScore, multiplier);
         } else if (
             state === FlowerState.BUD     ||
             state === FlowerState.WILTING ||
@@ -247,6 +263,12 @@ export class GridRenderer extends Component {
             // Wrong tap: penalty + combo reset, red flash 150ms
             this._controller.handleWrongTap();
             this.paintFlash(view.row, view.col, WRONG_FLASH_COLOR, 0.15); // 150ms per CONTEXT.md
+
+            // JUICE-01: wrong tap also gets pulse (80ms, no ripple — CONTEXT.md decision)
+            this.playTapPulse(view.row, view.col, false);
+
+            // JUICE-02: score float for wrong tap penalty
+            this.spawnScoreFloat(view.row, view.col, WRONG_TAP_DISPLAY_PENALTY, 1);
         }
         // COLLECTED: flower.collect() was called → isFlashing was set true simultaneously
         //            → the isFlashing guard at top prevents reaching this branch.
