@@ -47,10 +47,10 @@
 
 ### Juice / Game Feel
 
-- [ ] **JUICE-01**: Ô tap scale phồng lên rồi về khi nhấn (scale pulse ~100ms)
-- [ ] **JUICE-02**: Điểm nổi lên từ ô hoa vừa tap ("+120 x3" float animation)
-- [ ] **JUICE-03**: Visual flash khi tap sai và combo bị reset
-- [ ] **JUICE-04**: Timer đổi màu hoặc nhấp nháy trong 15 giây cuối
+- [x] **JUICE-01**: Ô tap scale phồng lên rồi về khi nhấn (scale pulse ~100ms)
+- [x] **JUICE-02**: Điểm nổi lên từ ô hoa vừa tap ("+120 x3" float animation)
+- [x] **JUICE-03**: Visual flash khi tap sai và combo bị reset
+- [x] **JUICE-04**: Timer đổi màu hoặc nhấp nháy trong 15 giây cuối
 
 ### Results
 
@@ -112,10 +112,10 @@
 | HUD-01 | Phase 4 | Complete |
 | HUD-02 | Phase 4 | Complete |
 | HUD-03 | Phase 4 | Complete |
-| JUICE-01 | Phase 5 | Pending |
-| JUICE-02 | Phase 5 | Pending |
-| JUICE-03 | Phase 5 | Pending |
-| JUICE-04 | Phase 5 | Pending |
+| JUICE-01 | Phase 5 | Complete |
+| JUICE-02 | Phase 5 | Complete |
+| JUICE-03 | Phase 5 | Complete |
+| JUICE-04 | Phase 5 | Complete |
 | RSLT-01 | Phase 6 | Pending |
 | RSLT-02 | Phase 6 | Pending |
 | RSLT-03 | Phase 6 | Pending |

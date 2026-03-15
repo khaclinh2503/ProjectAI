@@ -25,7 +25,7 @@
 | 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
 | 3. Renderer and Input | 2/4 | In Progress|  |
 | 4. Session Loop and Scoring | 3/4 | In Progress|  |
-| 5. Juice and Polish | 0/2 | Not started | — |
+| 5. Juice and Polish | 1/3 | In Progress|  |
 | 6. Results and Persistence | 0/? | Not started | — |
 
 ---
