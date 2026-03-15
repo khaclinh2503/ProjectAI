@@ -12,7 +12,7 @@
 - [x] **Phase 2: Core Game Logic** — FlowerFSM, Grid, ComboSystem, SpawnManager — pure, no canvas (completed 2026-03-14)
 - [ ] **Phase 3: Renderer and Input** — Cocos Creator Nodes wired to logic; playable grid on screen
 - [ ] **Phase 4: Session Loop and Scoring** — 120s timer, 3-phase escalation, full scoring pipeline, HUD
-- [ ] **Phase 5: Juice and Polish** — Tap pulse, score float, combo break flash, timer urgency
+- [x] **Phase 5: Juice and Polish** — Tap pulse, score float, combo break flash, timer urgency (completed 2026-03-15)
 - [ ] **Phase 6: Results and Persistence** — Results screen, highscore, restart flow
 
 ---
@@ -25,7 +25,7 @@
 | 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
 | 3. Renderer and Input | 2/4 | In Progress|  |
 | 4. Session Loop and Scoring | 3/4 | In Progress|  |
-| 5. Juice and Polish | 1/3 | In Progress|  |
+| 5. Juice and Polish | 3/3 | Complete   | 2026-03-15 |
 | 6. Results and Persistence | 0/? | Not started | — |
 
 ---
