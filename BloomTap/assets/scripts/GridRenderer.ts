@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Graphics, Color, UITransform, tween, Tween, Vec3, Label, UIOpacity } from 'cc';
+import { _decorator, Component, Node, Graphics, Color, UITransform, tween, Tween, Vec3, Vec2, Label, UIOpacity } from 'cc';
 import { Grid, Cell } from './logic/Grid';
 import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
@@ -183,6 +183,7 @@ export class GridRenderer extends Component {
             n.layer = this.node.layer;
             const uiT = n.addComponent(UITransform);
             uiT.setContentSize(160, 50);
+            uiT.anchorPoint = new Vec2(0.5, 0.5); // center anchor — prevents off-center scale during multiplier pulse
             const lbl = n.addComponent(Label);
             lbl.fontSize = 24;
             lbl.isBold = true;
