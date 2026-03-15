@@ -281,6 +281,74 @@ export class GameController extends Component {
     }
 
     // -----------------------------------------------------------------------
+    // Juice animation methods — JUICE-04 timer urgency
+    // -----------------------------------------------------------------------
+
+    /**
+     * Determine urgency stage from remaining seconds and apply if changed.
+     * Called on each second boundary in _updateHUD().
+     * Instant transitions (no color tween) per CONTEXT.md.
+     */
+    private _updateTimerUrgency(remainingSecs: number): void {
+        let newStage: number;
+        if      (remainingSecs > 60) newStage = 0;
+        else if (remainingSecs > 30) newStage = 1;
+        else if (remainingSecs > 10) newStage = 2;
+        else                          newStage = 3;
+
+        if (newStage === this._urgencyStage) return; // no change — skip all work
+
+        this._urgencyStage = newStage;
+        this._applyUrgencyStage(newStage);
+    }
+
+    /**
+     * Apply visual styling for the given urgency stage.
+     * Stage 0: normal (white, 1.0x)
+     * Stage 1: yellow (≤60s, 1.2x)
+     * Stage 2: orange (≤30s, 1.4x)
+     * Stage 3: red + blink every 250ms (≤10s, 1.6x)
+     */
+    private _applyUrgencyStage(stage: number): void {
+        if (!this.timerLabel) return;
+
+        // Stop any existing blink before applying new stage
+        if (this._blinkCallback) {
+            this.unschedule(this._blinkCallback);
+            this._blinkCallback = null;
+            this._blinkVisible = true;
+            this.timerLabel.node.active = true; // restore if it was hidden mid-blink
+        }
+
+        switch (stage) {
+            case 0:
+                this.timerLabel.color = TIMER_COLOR_NORMAL;
+                this.timerLabel.node.setScale(1.0, 1.0, 1);
+                break;
+            case 1:
+                this.timerLabel.color = TIMER_COLOR_URGENCY1;
+                this.timerLabel.node.setScale(1.2, 1.2, 1);
+                break;
+            case 2:
+                this.timerLabel.color = TIMER_COLOR_URGENCY2;
+                this.timerLabel.node.setScale(1.4, 1.4, 1);
+                break;
+            case 3:
+                this.timerLabel.color = TIMER_COLOR_URGENCY3;
+                this.timerLabel.node.setScale(1.6, 1.6, 1);
+                // Start blink: toggle timer node visibility every 250ms.
+                // Store callback as instance field — anonymous arrow = new object each call,
+                // unschedule would fail (RESEARCH.md Pitfall 4).
+                this._blinkCallback = () => {
+                    this._blinkVisible = !this._blinkVisible;
+                    if (this.timerLabel) this.timerLabel.node.active = this._blinkVisible;
+                };
+                this.schedule(this._blinkCallback, 0.25);
+                break;
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Session state machine — private methods
     // -----------------------------------------------------------------------
 
@@ -395,6 +463,7 @@ export class GameController extends Component {
         if (remainingSecs !== this._lastDisplayedSecond) {
             this._lastDisplayedSecond = remainingSecs;
             if (this.timerLabel) this.timerLabel.string = `${remainingSecs}`;
+            this._updateTimerUrgency(remainingSecs);  // JUICE-04: timer urgency escalation
         }
     }
 }
