@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 04-session-loop
 current_plan: 04-03 complete — ready for 04-04
 status: planning
-stopped_at: Completed 05-01-PLAN.md — tap pulse + score float pool; scene infrastructure
-last_updated: "2026-03-15T10:22:44.164Z"
+stopped_at: Completed 05-02-PLAN.md — awaiting human verification checkpoint
+last_updated: "2026-03-15T10:30:01.868Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
   percent: 92
 ---
 
@@ -70,6 +70,7 @@ Progress: [█████████░] 92%
 | Phase 04-session-loop-and-scoring P03 | 8 | 1 tasks | 1 files |
 | Phase 05-juice-and-polish P00 | 5 | 1 tasks | 2 files |
 | Phase 05-juice-and-polish P01 | 25 | 3 tasks | 4 files |
+| Phase 05-juice-and-polish P05-02 | 6 | 3 tasks | 2 files |
 
 ## Key Decisions (Accumulated)
 
@@ -102,6 +103,8 @@ Progress: [█████████░] 92%
 | SessionPhase enum at module scope (not class field) | Accessible in scheduleOnce arrow closures without 'this' binding issues | Phase 4 |
 | Input gate uses flag pattern not listener add/remove | Avoids duplicate TOUCH_START listener risk on repeat sessions; listeners registered once in _buildCellViews() | Phase 4 |
 | Button @property refs target Button-component-node (not Label child) | GameController.onLoad() registers CLICK via node.on(Button.EventType.CLICK) — the node bearing cc.Button is what resolves the event | Phase 4 |
+| WRONG_TAP_DISPLAY_PENALTY = -10 (not -30) | Verified against actual GameState.WRONG_TAP_PENALTY = 10; plan's example used wrong value | Phase 5 |
+| Timer urgency stage transitions are instant | No color tween between stages per CONTEXT.md; blink interval 250ms; scale factors 1.0x/1.2x/1.4x/1.6x | Phase 5 |
 
 ---
 
@@ -146,8 +149,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-15T10:22:44.161Z
-Stopped at: Completed 05-01-PLAN.md — tap pulse + score float pool; scene infrastructure
+Last session: 2026-03-15T10:30:01.865Z
+Stopped at: Completed 05-02-PLAN.md — awaiting human verification checkpoint
 Resume file: None
 
 Phase 3 complete: All 4 plans executed (03-00 through 03-03). 64-cell grid renders, touch input wired, tap dispatch functional, 5 flower states visually distinct. Ready to plan Phase 4 (Session Loop).
