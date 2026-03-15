@@ -176,8 +176,8 @@ export class GridRenderer extends Component {
 
     /** Pre-create 8 score float label nodes parented to Canvas — NEVER create during gameplay. */
     private _buildFloatPool(): void {
-        // GridRenderer.node.parent is GridContainer; GridContainer.parent is Canvas
-        const canvasNode = this.node.parent?.parent ?? this.node.parent ?? this.node;
+        // GridRenderer component is on GridContainer; GridContainer.parent is Canvas
+        const canvasNode = this.node.parent ?? this.node;
         for (let i = 0; i < 8; i++) {
             const n = new Node(`scoreFloat_${i}`);
             n.layer = this.node.layer;

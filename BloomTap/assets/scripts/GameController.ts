@@ -458,10 +458,10 @@ export class GameController extends Component {
         if (this.scoreLabel) {
             this.scoreLabel.string = `${Math.floor(this.gameState.score)}`;
         }
-        // Combo: update every frame (only changes on tap).
-        // Always show multiplier (never blank) — display "x1.0" when no streak yet.
+        // Combo: only show when streak > 1
         if (this.comboLabel) {
-            this.comboLabel.string = `Combo x${this.comboSystem.multiplier.toFixed(1)}`;
+            const streak = this.comboSystem.tapCount;
+            this.comboLabel.string = streak > 1 ? `Combo x${streak}` : '';
         }
         // Timer: throttled — only write string when second boundary crosses
         const remainingSecs = Math.max(0, Math.floor((SESSION_DURATION_MS - elapsedMs) / 1000));
