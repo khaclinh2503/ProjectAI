@@ -25,7 +25,7 @@
 | 2. Core Game Logic | 2/2 | Complete   | 2026-03-14 |
 | 3. Renderer and Input | 2/4 | In Progress|  |
 | 4. Session Loop and Scoring | 3/4 | In Progress|  |
-| 5. Juice and Polish | 0/? | Not started | — |
+| 5. Juice and Polish | 0/2 | Not started | — |
 | 6. Results and Persistence | 0/? | Not started | — |
 
 ---
@@ -116,7 +116,11 @@ Plans:
   2. A score label (e.g., "+120 x3") floats upward from the tapped cell and fades out after a correct tap
   3. A wrong tap (or combo reset) produces a distinct visual indicator — a red flash or similar — that is immediately noticeable without reading text
   4. In the final 15 seconds of a session, the timer display changes color or enters a blinking state to signal urgency
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Scene setup + core animation engine (UIOpacity on HUD nodes, RedFlashOverlay + MilestoneLabelNode in scene, tap pulse in GridRenderer, score float pool in GridRenderer)
+- [ ] 05-02-PLAN.md — Game event wiring + timer urgency (tap events call pulse + float, wrong tap triggers red flash + combo break, milestone x10/x25/x50 celebration, 3-stage timer urgency + blink, human verification checkpoint)
 
 ---
 
@@ -176,4 +180,4 @@ Note on FLOW-03: Visual differentiation of flower states (distinguishable appear
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-14 — Phase 4 planned: 4 plans (04-01 through 04-04) across 4 waves*
+*Last updated: 2026-03-15 — Phase 5 planned: 2 plans (05-01 through 05-02) across 2 waves*
