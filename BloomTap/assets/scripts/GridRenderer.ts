@@ -1,8 +1,9 @@
-import { _decorator, Component, Node, Graphics, Color, UITransform } from 'cc';
+import { _decorator, Component, Node, Graphics, Color, UITransform, tween, Tween, Vec3, Label, UIOpacity } from 'cc';
 import { Grid, Cell } from './logic/Grid';
 import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
 import { WRONG_FLASH_COLOR } from './FlowerColors';
+import { getFloatLabelString, getFloatFontSize, getFloatDuration } from './logic/JuiceHelpers';
 
 // Forward-declare to avoid circular: GameController imports GridRenderer,
 // GridRenderer imports GameController only for the type (erased at runtime).
@@ -17,6 +18,7 @@ const { ccclass } = _decorator;
 // CELL_SIZE = floor((576 - 7 * 4) / 8) = floor(548 / 8) = 68px
 // ---------------------------------------------------------------------------
 const GRID_COLS = 8;
+const GRID_ROWS = 8;
 const CELL_GAP  = 4;
 const CELL_SIZE = Math.floor((576 - 7 * CELL_GAP) / GRID_COLS); // 68px
 const CELL_RADIUS = 6;
@@ -86,6 +88,16 @@ interface CellView {
 }
 
 // ---------------------------------------------------------------------------
+// FloatSlot — pool entry for score float labels
+// ---------------------------------------------------------------------------
+interface FloatSlot {
+    node: Node;
+    label: Label;
+    opacity: UIOpacity;
+    inUse: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // GridRenderer — Cocos Component
 // Owns 64 pooled cell nodes (pre-created once in onLoad, never destroyed).
 // Polls FlowerFSM state each frame via update() and repaints cell colors.
@@ -97,6 +109,7 @@ export class GridRenderer extends Component {
     private _grid: Grid | null = null;
     private _controller: GameController | null = null;
     private _inputEnabled: boolean = false;
+    private _floatPool: FloatSlot[] = [];
 
     /**
      * Called by GameController.onLoad() after scene wiring is ready.
@@ -118,6 +131,7 @@ export class GridRenderer extends Component {
 
     onLoad(): void {
         this._buildCellViews();
+        this._buildFloatPool();
     }
 
     /** Pre-create all 64 cell nodes — NEVER create nodes after this point. */
@@ -153,6 +167,28 @@ export class GridRenderer extends Component {
 
             // Register TOUCH_START for tap input (plan 03-02)
             this._registerCellTouch(view);
+        }
+    }
+
+    /** Pre-create 8 score float label nodes parented to Canvas — NEVER create during gameplay. */
+    private _buildFloatPool(): void {
+        // GridRenderer.node.parent is GridContainer; GridContainer.parent is Canvas
+        const canvasNode = this.node.parent?.parent ?? this.node.parent ?? this.node;
+        for (let i = 0; i < 8; i++) {
+            const n = new Node(`scoreFloat_${i}`);
+            n.layer = this.node.layer;
+            const uiT = n.addComponent(UITransform);
+            uiT.setContentSize(160, 50);
+            const lbl = n.addComponent(Label);
+            lbl.fontSize = 24;
+            lbl.isBold = true;
+            lbl.horizontalAlign = Label.HorizontalAlign.CENTER;
+            lbl.verticalAlign = Label.VerticalAlign.CENTER;
+            const uiOp = n.addComponent(UIOpacity);
+            uiOp.opacity = 0;
+            n.active = false;
+            canvasNode.addChild(n);
+            this._floatPool.push({ node: n, label: lbl, opacity: uiOp, inUse: false });
         }
     }
 
@@ -231,6 +267,115 @@ export class GridRenderer extends Component {
     /** Returns CellView for (row, col) — used by tap handlers and tests. */
     getCellView(row: number, col: number): CellView {
         return this._cellViews[row * GRID_COLS + col];
+    }
+
+    /**
+     * Play a scale pulse on the tapped cell (JUICE-01).
+     * FULL_BLOOM: 120ms pulse + ripple to 4 orthogonal neighbors.
+     * Normal:     80ms pulse.
+     */
+    public playTapPulse(row: number, col: number, isFullBloom: boolean): void {
+        const view = this._cellViews[row * GRID_COLS + col];
+        const cellNode = view.node;
+        const halfDuration = isFullBloom ? 0.06 : 0.04; // 120ms or 80ms total
+
+        // Stop any in-flight pulse — prevents scale jitter on fast tap
+        Tween.stopAllByTarget(cellNode);
+
+        tween(cellNode)
+            .to(halfDuration, { scale: new Vec3(1.1, 1.1, 1) }, { easing: 'cubicOut' })
+            .to(halfDuration, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
+            .start();
+
+        if (isFullBloom) {
+            this._rippleNeighbors(row, col);
+        }
+    }
+
+    private _rippleNeighbors(row: number, col: number): void {
+        const neighbors: [number, number][] = [
+            [row - 1, col],
+            [row + 1, col],
+            [row, col - 1],
+            [row, col + 1],
+        ];
+        for (const [r, c] of neighbors) {
+            if (r < 0 || r >= GRID_ROWS || c < 0 || c >= GRID_COLS) continue;
+            const neighborNode = this._cellViews[r * GRID_COLS + c].node;
+            // Neighbor ripple: lighter scale (1.07x), 30ms delay for wave feel
+            tween(neighborNode)
+                .delay(0.03)
+                .to(0.06, { scale: new Vec3(1.07, 1.07, 1) }, { easing: 'cubicOut' })
+                .to(0.06, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
+                .start();
+        }
+    }
+
+    /**
+     * Spawn a score float label from pool (JUICE-02).
+     * Label rises with zigzag wobble and fades out.
+     */
+    public spawnScoreFloat(row: number, col: number, amount: number, multiplier: number): void {
+        const slot = this._floatPool.find(s => !s.inUse);
+        if (!slot) return; // pool exhausted — skip silently
+
+        // Position at cell world position
+        const cellNode = this._cellViews[row * GRID_COLS + col].node;
+        const worldPos = cellNode.worldPosition;
+
+        slot.inUse = true;
+        slot.node.setWorldPosition(worldPos.x, worldPos.y, 0);
+        slot.node.active = true;
+
+        // Text content
+        slot.label.string = getFloatLabelString(amount);
+        const isWrong = amount < 0;
+        slot.label.color = isWrong
+            ? new Color(220, 60, 60, 255)    // red for wrong tap
+            : new Color(255, 255, 255, 255); // white for correct tap
+
+        // Font size and duration from pure helpers
+        slot.label.fontSize = getFloatFontSize(multiplier);
+
+        const duration = getFloatDuration(multiplier);
+        const riseY = 80 + multiplier * 10;
+        const wobbleX = 14;
+
+        // Reset opacity
+        slot.opacity.opacity = 255;
+
+        Tween.stopAllByTarget(slot.node);
+        Tween.stopAllByTarget(slot.opacity);
+
+        // Position animation: zigzag wobble while rising
+        tween(slot.node)
+            .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) }, { easing: 'sineOut' })
+            .by(duration / 3, { position: new Vec3(-wobbleX * 2, riseY / 3, 0) })
+            .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) })
+            .start();
+
+        // Fade: hold fully opaque for first half, then fade out
+        tween(slot.opacity)
+            .delay(duration * 0.5)
+            .to(duration * 0.5, { opacity: 0 })
+            .call(() => {
+                slot.node.active = false;
+                slot.inUse = false;
+            })
+            .start();
+    }
+
+    /**
+     * Stop all float animations and return all slots to pool.
+     * Called by GameController._stopAllJuiceAnimations() on session reset/game over.
+     */
+    public stopAllFloatAnimations(): void {
+        for (const slot of this._floatPool) {
+            Tween.stopAllByTarget(slot.node);
+            Tween.stopAllByTarget(slot.opacity);
+            slot.node.active = false;
+            slot.inUse = false;
+        }
     }
 
     /**
