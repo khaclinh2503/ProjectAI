@@ -230,6 +230,10 @@ export class GameController extends Component {
     private _pulseComboLabel(): void {
         if (!this.comboLabel) return;
         const labelNode = this.comboLabel.node;
+        // Ensure anchor is centered so scale pulse expands evenly from the label's center.
+        // Set here (not just onLoad) to be safe regardless of inspector wiring order.
+        labelNode.anchorX = 0.5;
+        labelNode.anchorY = 0.5;
         Tween.stopAllByTarget(labelNode);
         labelNode.setScale(1, 1, 1); // reset before pulse in case previous was interrupted
         tween(labelNode)
