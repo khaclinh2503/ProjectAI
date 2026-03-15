@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 04-session-loop
-current_plan: 04-01 complete — ready for 04-02
+current_plan: 04-03 complete — ready for 04-04
 status: executing
-stopped_at: Completed 04-02-PLAN.md — SessionPhase state machine on GameController, setInputEnabled on GridRenderer; 111 tests passing
-last_updated: "2026-03-14T16:16:33.252Z"
+stopped_at: Completed 04-03-PLAN.md — HUD + overlays in GameScene.scene, 11 @property fields wired; 111 tests passing
+last_updated: "2026-03-15T06:21:30.241Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 12
-  completed_plans: 10
-  percent: 88
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State: Bloom Tap
@@ -35,11 +35,11 @@ progress:
 ## Current Position
 
 **Current phase:** 04-session-loop
-**Current plan:** 04-02 complete — ready for 04-03
-**Status:** Phase 4 in progress — session state machine done, scene node wiring (04-03) next
+**Current plan:** 04-03 complete — ready for 04-04
+**Status:** Phase 4 in progress — scene node wiring done, human verification checkpoint (04-04) next
 
 ```
-Progress: [█████████░] 88%
+Progress: [█████████░] 92%
            |___________|___________|___________|___________|___________|
            Foundation  CoreLogic   Renderer    Session     Juice       Results
 ```
@@ -67,6 +67,7 @@ Progress: [█████████░] 88%
 | Phase 03-renderer-and-input P02 | 269 | 2 tasks | 4 files |
 | Phase 04 P01 | 5 | 2 tasks | 4 files |
 | Phase 04-session-loop-and-scoring P02 | 8 | 2 tasks | 2 files |
+| Phase 04-session-loop-and-scoring P03 | 8 | 1 tasks | 1 files |
 
 ## Key Decisions (Accumulated)
 
@@ -98,6 +99,7 @@ Progress: [█████████░] 88%
 | clearAll() iterates _cells directly | Avoids readonly cast on getCells(); consistent with existing clearCell() pattern | Phase 4 |
 | SessionPhase enum at module scope (not class field) | Accessible in scheduleOnce arrow closures without 'this' binding issues | Phase 4 |
 | Input gate uses flag pattern not listener add/remove | Avoids duplicate TOUCH_START listener risk on repeat sessions; listeners registered once in _buildCellViews() | Phase 4 |
+| Button @property refs target Button-component-node (not Label child) | GameController.onLoad() registers CLICK via node.on(Button.EventType.CLICK) — the node bearing cc.Button is what resolves the event | Phase 4 |
 
 ---
 
@@ -142,8 +144,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-14T16:16:33.246Z
-Stopped at: Completed 04-02-PLAN.md — SessionPhase state machine on GameController, setInputEnabled on GridRenderer; 111 tests passing
+Last session: 2026-03-15T06:21:30.235Z
+Stopped at: Completed 04-03-PLAN.md — HUD + overlays in GameScene.scene, 11 @property fields wired; 111 tests passing
 Resume file: None
 
 Phase 3 complete: All 4 plans executed (03-00 through 03-03). 64-cell grid renders, touch input wired, tap dispatch functional, 5 flower states visually distinct. Ready to plan Phase 4 (Session Loop).

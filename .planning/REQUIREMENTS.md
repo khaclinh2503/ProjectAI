@@ -41,9 +41,9 @@
 
 ### HUD
 
-- [ ] **HUD-01**: Điểm số hiển thị và cập nhật realtime
-- [ ] **HUD-02**: Countdown timer hiển thị suốt ván
-- [ ] **HUD-03**: Combo multiplier hiện trên màn và có animation khi tăng
+- [x] **HUD-01**: Điểm số hiển thị và cập nhật realtime
+- [x] **HUD-02**: Countdown timer hiển thị suốt ván
+- [x] **HUD-03**: Combo multiplier hiện trên màn và có animation khi tăng
 
 ### Juice / Game Feel
 
@@ -109,9 +109,9 @@
 | SESS-03 | Phase 4 | Complete |
 | SESS-04 | Phase 4 | Complete |
 | SESS-05 | Phase 4 | Complete |
-| HUD-01 | Phase 4 | Pending |
-| HUD-02 | Phase 4 | Pending |
-| HUD-03 | Phase 4 | Pending |
+| HUD-01 | Phase 4 | Complete |
+| HUD-02 | Phase 4 | Complete |
+| HUD-03 | Phase 4 | Complete |
 | JUICE-01 | Phase 5 | Pending |
 | JUICE-02 | Phase 5 | Pending |
 | JUICE-03 | Phase 5 | Pending |
