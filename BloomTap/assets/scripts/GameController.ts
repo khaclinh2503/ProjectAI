@@ -11,6 +11,12 @@ import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 
 const { ccclass, property } = _decorator;
 
+// Pre-allocated color constants — no per-frame allocation (CONTEXT.md decision)
+const TIMER_COLOR_NORMAL   = new Color(255, 255, 255, 255); // white
+const TIMER_COLOR_URGENCY1 = new Color(255, 220,  50, 255); // yellow  (≤60s)
+const TIMER_COLOR_URGENCY2 = new Color(255, 140,  30, 255); // orange  (≤30s)
+const TIMER_COLOR_URGENCY3 = new Color(220,  50,  50, 255); // red     (≤10s)
+
 enum SessionPhase {
     WAITING,
     COUNTDOWN,
@@ -161,6 +167,11 @@ export class GameController extends Component {
         const isFullBloom = state === FlowerState.FULL_BLOOM;
         const flashColor = isFullBloom ? CORRECT_FLASH_WHITE : CORRECT_FLASH_YELLOW;
         const multiplier = this.comboSystem.multiplier;
+
+        // JUICE-03: combo label pulse + milestone check
+        this._pulseComboLabel();
+        this._checkMilestone(this.comboSystem.tapCount);
+
         return { flashColor, rawScore: Math.round(rawScore), multiplier, isFullBloom };
     }
 
@@ -170,6 +181,103 @@ export class GameController extends Component {
      */
     public handleWrongTap(): void {
         this.gameState.applyWrongTap(this.comboSystem);
+        // JUICE-03: full-screen red flash + combo label blink
+        this._playRedFlash();
+        this._playComboBreak();
+    }
+
+    // -----------------------------------------------------------------------
+    // Juice animation methods — JUICE-03 combo events
+    // -----------------------------------------------------------------------
+
+    /** Full-screen red overlay flash (150ms) on wrong tap (JUICE-03). */
+    private _playRedFlash(): void {
+        if (!this.redFlashOverlay) return;
+        const uiOp = this.redFlashOverlay.getComponent(UIOpacity);
+        if (!uiOp) return;
+        uiOp.opacity = 0;
+        this.redFlashOverlay.active = true;
+        Tween.stopAllByTarget(uiOp);
+        tween(uiOp)
+            .to(0.05, { opacity: 51 })   // 20% of 255 = 51 (CONTEXT.md: ~20% opacity)
+            .to(0.10, { opacity: 0 })    // fade out — total 150ms
+            .call(() => {
+                if (this.redFlashOverlay) this.redFlashOverlay.active = false;
+            })
+            .start();
+    }
+
+    /** Combo label blink + fade on wrong tap (JUICE-03). */
+    private _playComboBreak(): void {
+        if (!this.comboLabel) return;
+        const uiOp = this.comboLabel.node.getComponent(UIOpacity);
+        if (!uiOp) return;
+        uiOp.opacity = 255;
+        Tween.stopAllByTarget(uiOp);
+        tween(uiOp)
+            .to(0.05, { opacity: 0 })
+            .to(0.05, { opacity: 255 })
+            .repeat(3)                   // 3 blink cycles
+            .to(0.15, { opacity: 0 })    // final fade
+            .call(() => {
+                // Restore opacity — _updateHUD() will update the label string to "Combo x0"
+                uiOp.opacity = 255;
+            })
+            .start();
+    }
+
+    /** Combo label scale pulse on correct tap (JUICE-03). */
+    private _pulseComboLabel(): void {
+        if (!this.comboLabel) return;
+        const labelNode = this.comboLabel.node;
+        Tween.stopAllByTarget(labelNode);
+        labelNode.setScale(1, 1, 1); // reset before pulse in case previous was interrupted
+        tween(labelNode)
+            .to(0.08, { scale: new Vec3(1.25, 1.25, 1) }, { easing: 'cubicOut' })
+            .to(0.10, { scale: new Vec3(1.0,  1.0,  1) }, { easing: 'cubicIn' })
+            .start();
+    }
+
+    /** Check if tapCount crossed a milestone threshold — triggers celebration exactly once per session. */
+    private _checkMilestone(tapCount: number): void {
+        // Only x10, x25, x50 — each triggers exactly once per session (CONTEXT.md decision)
+        for (const m of [10, 25, 50]) {
+            if (tapCount >= m && !this._triggeredMilestones.has(m)) {
+                this._triggeredMilestones.add(m);
+                this._playMilestoneCelebration(m);
+                break; // one milestone per tap maximum
+            }
+        }
+    }
+
+    /** Mid-screen combo milestone celebration (scale punch + fade). */
+    private _playMilestoneCelebration(count: number): void {
+        if (!this.milestoneNode || !this.milestoneLabel) return;
+        this.milestoneLabel.string = `COMBO x${count}!`;
+        this.milestoneNode.setScale(0.5, 0.5, 1);
+        this.milestoneNode.active = true;
+
+        const uiOp = this.milestoneNode.getComponent(UIOpacity);
+        if (!uiOp) return;
+        uiOp.opacity = 255;
+
+        Tween.stopAllByTarget(this.milestoneNode);
+        Tween.stopAllByTarget(uiOp);
+
+        // Scale punch: 0.5 → 1.3 → 1.0 (backOut gives a satisfying overshoot)
+        tween(this.milestoneNode)
+            .to(0.15, { scale: new Vec3(1.3, 1.3, 1) }, { easing: 'backOut' })
+            .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicOut' })
+            .start();
+
+        // Fade out after 0.6s hold
+        tween(uiOp)
+            .delay(0.6)
+            .to(0.3, { opacity: 0 })
+            .call(() => {
+                if (this.milestoneNode) this.milestoneNode.active = false;
+            })
+            .start();
     }
 
     // -----------------------------------------------------------------------
