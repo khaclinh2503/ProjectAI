@@ -13,7 +13,7 @@
 - [ ] **Phase 3: Renderer and Input** — Cocos Creator Nodes wired to logic; playable grid on screen
 - [ ] **Phase 4: Session Loop and Scoring** — 120s timer, 3-phase escalation, full scoring pipeline, HUD
 - [x] **Phase 5: Juice and Polish** — Tap pulse, score float, combo break flash, timer urgency (completed 2026-03-15)
-- [ ] **Phase 6: Results and Persistence** — Results screen, highscore, restart flow
+- [x] **Phase 6: Results and Persistence** — Results screen, highscore, restart flow (completed 2026-03-16)
 
 ---
 
@@ -26,7 +26,7 @@
 | 3. Renderer and Input | 2/4 | In Progress|  |
 | 4. Session Loop and Scoring | 3/4 | In Progress|  |
 | 5. Juice and Polish | 3/3 | Complete   | 2026-03-15 |
-| 6. Results and Persistence | 2/3 | In Progress|  |
+| 6. Results and Persistence | 3/3 | Complete   | 2026-03-16 |
 
 ---
 
