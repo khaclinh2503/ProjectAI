@@ -26,7 +26,7 @@
 | 3. Renderer and Input | 2/4 | In Progress|  |
 | 4. Session Loop and Scoring | 3/4 | In Progress|  |
 | 5. Juice and Polish | 3/3 | Complete   | 2026-03-15 |
-| 6. Results and Persistence | 0/? | Not started | — |
+| 6. Results and Persistence | 0/3 | Not started | — |
 
 ---
 
@@ -133,7 +133,12 @@ Plans:
   2. If the session score exceeds the stored highscore, the highscore updates to the new value and the results screen reflects this
   3. The highscore persists across browser refreshes and new sessions — closing and reopening the tab does not reset it
   4. A restart button on the results screen starts a new 120-second session with all state reset (score 0, combo 1, fresh grid)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — StorageService (TDD) + GameState stats extension: correctTaps, wrongTaps, peakStreak (TDD)
+- [ ] 06-02-PLAN.md — GameController _triggerGameOver + onRestartTapped wiring + 4 new Label nodes in GameScene
+- [ ] 06-03-PLAN.md — Human verification: full results flow, NEW BEST! celebration, persistence across refresh
 
 ---
 
@@ -180,4 +185,4 @@ Note on FLOW-03: Visual differentiation of flower states (distinguishable appear
 ---
 
 *Roadmap created: 2026-03-13*
-*Last updated: 2026-03-15 — Phase 5 planned: 2 plans (05-01 through 05-02) across 2 waves*
+*Last updated: 2026-03-16 — Phase 6 planned: 3 plans (06-01 through 06-03) across 3 waves*
