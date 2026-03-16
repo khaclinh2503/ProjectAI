@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Color, Node, Button, tween, Tween, Vec3, UIOpacity } from 'cc';
+import { _decorator, Component, Label, Color, Node, Button, tween, Tween, Vec3, UIOpacity, UITransform } from 'cc';
 import { Grid, Cell } from './logic/Grid';
 import { ComboSystem } from './logic/ComboSystem';
 import { SpawnManager } from './logic/SpawnManager';
@@ -245,8 +245,8 @@ export class GameController extends Component {
         const labelNode = this.comboLabel.node;
         // Ensure anchor is centered so scale pulse expands evenly from the label's center.
         // Set here (not just onLoad) to be safe regardless of inspector wiring order.
-        labelNode.anchorX = 0.5;
-        labelNode.anchorY = 0.5;
+        const uiT = labelNode.getComponent(UITransform);
+        if (uiT) { uiT.anchorX = 0.5; uiT.anchorY = 0.5; }
         Tween.stopAllByTarget(labelNode);
         labelNode.setScale(1, 1, 1); // reset before pulse in case previous was interrupted
         tween(labelNode)
