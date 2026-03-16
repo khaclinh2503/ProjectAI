@@ -54,9 +54,9 @@
 
 ### Results
 
-- [ ] **RSLT-01**: Màn kết quả hiển thị điểm ván vừa chơi + highscore all-time
-- [ ] **RSLT-02**: Người chơi có thể restart ngay từ màn kết quả
-- [ ] **RSLT-03**: Highscore lưu giữ giữa các session qua localStorage
+- [x] **RSLT-01**: Màn kết quả hiển thị điểm ván vừa chơi + highscore all-time
+- [x] **RSLT-02**: Người chơi có thể restart ngay từ màn kết quả
+- [x] **RSLT-03**: Highscore lưu giữ giữa các session qua localStorage
 
 ## v2 Requirements
 
@@ -116,9 +116,9 @@
 | JUICE-02 | Phase 5 | Complete |
 | JUICE-03 | Phase 5 | Complete |
 | JUICE-04 | Phase 5 | Complete |
-| RSLT-01 | Phase 6 | Pending |
-| RSLT-02 | Phase 6 | Pending |
-| RSLT-03 | Phase 6 | Pending |
+| RSLT-01 | Phase 6 | Complete |
+| RSLT-02 | Phase 6 | Complete |
+| RSLT-03 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 29 total

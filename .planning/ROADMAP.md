@@ -26,7 +26,7 @@
 | 3. Renderer and Input | 2/4 | In Progress|  |
 | 4. Session Loop and Scoring | 3/4 | In Progress|  |
 | 5. Juice and Polish | 3/3 | Complete   | 2026-03-15 |
-| 6. Results and Persistence | 1/3 | In Progress|  |
+| 6. Results and Persistence | 2/3 | In Progress|  |
 
 ---
 
