@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 04-session-loop
 current_plan: 04-03 complete — ready for 04-04
 status: planning
-stopped_at: 05-02 post-verification fixes applied (score float label + combo anchorPoint)
-last_updated: "2026-03-15T15:45:06.266Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-03-16T15:32:56.652Z"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 18
+  completed_plans: 16
   percent: 92
 ---
 
@@ -71,6 +71,7 @@ Progress: [█████████░] 92%
 | Phase 05-juice-and-polish P00 | 5 | 1 tasks | 2 files |
 | Phase 05-juice-and-polish P01 | 25 | 3 tasks | 4 files |
 | Phase 05-juice-and-polish P05-02 | 6 | 3 tasks | 2 files |
+| Phase 06-results-and-persistence P01 | 2 | 2 tasks | 4 files |
 
 ## Key Decisions (Accumulated)
 
@@ -105,6 +106,8 @@ Progress: [█████████░] 92%
 | Button @property refs target Button-component-node (not Label child) | GameController.onLoad() registers CLICK via node.on(Button.EventType.CLICK) — the node bearing cc.Button is what resolves the event | Phase 4 |
 | WRONG_TAP_DISPLAY_PENALTY = -10 (not -30) | Verified against actual GameState.WRONG_TAP_PENALTY = 10; plan's example used wrong value | Phase 5 |
 | Timer urgency stage transitions are instant | No color tween between stages per CONTEXT.md; blink interval 250ms; scale factors 1.0x/1.2x/1.4x/1.6x | Phase 5 |
+| jsdom devDependency added at Phase 6 | Required by vitest for localStorage in jsdom environment override (// @vitest-environment jsdom header in test files) | Phase 6 |
+| peakStreak captured AFTER combo.onCorrectTap() | tapCount is incremented inside onCorrectTap(); must capture peak after the call so count reflects the new tap | Phase 6 |
 
 ---
 
@@ -149,8 +152,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-15T14:34:55.385Z
-Stopped at: 05-02 post-verification fixes applied (score float label + combo anchorPoint)
+Last session: 2026-03-16T15:32:56.649Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None
 
 Phase 3 complete: All 4 plans executed (03-00 through 03-03). 64-cell grid renders, touch input wired, tap dispatch functional, 5 flower states visually distinct. Ready to plan Phase 4 (Session Loop).
