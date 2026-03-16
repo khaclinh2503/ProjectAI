@@ -8,6 +8,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "jsdom": "^29.0.0",
     "vitest": "^3.2.4"
   }
 }
