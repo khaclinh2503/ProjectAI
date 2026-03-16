@@ -14,12 +14,13 @@ export function getFloatLabelString(amount: number): string {
 }
 
 /**
- * Returns the font size for a score float label proportional to multiplier.
- * Formula: Math.min(24 + (multiplier - 1) * 4, 48)
- * x1 → 24px, x2 → 28px, x7+ → 48px (capped)
+ * Returns the font size for a score float label based on raw score value.
+ * Higher raw score = bigger text (reflects both flower type and tap timing).
+ * Formula: 32 + round(clamp(rawScore - 15, 0, 105) * 24 / 105), capped at 56.
+ * rawScore=0 (wrong tap) or ≤15 → 32px, rawScore=120 (CHERRY full bloom) → 56px.
  */
-export function getFloatFontSize(multiplier: number): number {
-    return Math.min(24 + (multiplier - 1) * 4, 48);
+export function getFloatFontSize(rawScore: number): number {
+    return Math.min(32 + Math.round(Math.max(rawScore - 15, 0) * 24 / 105), 56);
 }
 
 /**

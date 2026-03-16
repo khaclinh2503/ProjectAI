@@ -25,20 +25,26 @@ describe('getFloatLabelString', () => {
 });
 
 describe('getFloatFontSize', () => {
-    it('returns 24 at multiplier 1', () => {
-        expect(getFloatFontSize(1)).toBe(24);
+    it('returns 32 for rawScore=0 (wrong tap base)', () => {
+        expect(getFloatFontSize(0)).toBe(32);
     });
-    it('returns 28 at multiplier 2', () => {
-        expect(getFloatFontSize(2)).toBe(28);
+    it('returns 32 for rawScore=15 (SUNFLOWER BLOOMING start)', () => {
+        expect(getFloatFontSize(15)).toBe(32);
     });
-    it('returns 40 at multiplier 5', () => {
-        expect(getFloatFontSize(5)).toBe(40);
+    it('returns 38 for rawScore=40 (CHRYSANTHEMUM BLOOMING / ROSE full bloom)', () => {
+        expect(getFloatFontSize(40)).toBe(38);
     });
-    it('caps at 48 when formula exceeds cap (multiplier 7)', () => {
-        expect(getFloatFontSize(7)).toBe(48);
+    it('returns 42 for rawScore=60 (LOTUS BLOOMING / CHRYSANTHEMUM full bloom)', () => {
+        expect(getFloatFontSize(60)).toBe(42);
     });
-    it('caps at 48 when multiplier is very high (10)', () => {
-        expect(getFloatFontSize(10)).toBe(48);
+    it('returns 47 for rawScore=80 (CHERRY BLOOMING start)', () => {
+        expect(getFloatFontSize(80)).toBe(47);
+    });
+    it('returns 56 for rawScore=120 (CHERRY full bloom — max)', () => {
+        expect(getFloatFontSize(120)).toBe(56);
+    });
+    it('caps at 56 for rawScore above 120', () => {
+        expect(getFloatFontSize(200)).toBe(56);
     });
 });
 

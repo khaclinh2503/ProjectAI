@@ -366,8 +366,8 @@ export class GridRenderer extends Component {
             ? new Color(220, 60, 60, 255)    // red for wrong tap
             : new Color(255, 255, 255, 255); // white for correct tap
 
-        // Font size and duration from pure helpers
-        slot.label.fontSize = getFloatFontSize(multiplier);
+        // Font size: based on raw score (flower type + tap timing), wrong taps → base size
+        slot.label.fontSize = getFloatFontSize(Math.max(amount, 0));
 
         const duration = getFloatDuration(multiplier);
         const riseY = 80 + multiplier * 10;
