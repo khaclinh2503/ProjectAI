@@ -8,6 +8,7 @@ import { FlowerFSM } from './logic/FlowerFSM';
 import { FlowerState } from './logic/FlowerState';
 import { GridRenderer } from './GridRenderer';
 import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
+import { StorageService } from './logic/StorageService';
 
 const { ccclass, property } = _decorator;
 
@@ -73,6 +74,18 @@ export class GameController extends Component {
 
     @property(Label)
     milestoneLabel: Label | null = null;
+
+    @property(Label)
+    highscoreLabel: Label | null = null;
+
+    @property(Label)
+    bestComboLabel: Label | null = null;
+
+    @property(Label)
+    accuracyLabel: Label | null = null;
+
+    @property(Label)
+    newBestLabel: Label | null = null;
 
     public readonly grid = new Grid();
     public readonly comboSystem = new ComboSystem();
@@ -432,23 +445,76 @@ export class GameController extends Component {
         this._stopAllJuiceAnimations();
         this._phase = SessionPhase.GAME_OVER;
         if (this.gridRenderer) this.gridRenderer.setInputEnabled(false);
-        // Clear all flowers from logic tier (grid shows empty state visually on next update frame)
         this.grid.clearAll();
         if (this.hudNode) this.hudNode.active = false;
+
+        const finalScore = Math.floor(this.gameState.score);
+        const stored = StorageService.get('highscore');
+        const currentBest = stored ? parseInt(stored, 10) : null;
+
+        // Save highscore if new best — guard: score must be > 0
+        const isNewBest = finalScore > 0 && (currentBest === null || finalScore > currentBest);
+        if (isNewBest) {
+            StorageService.set('highscore', String(finalScore));
+        }
+
+        // Show overlay
         if (this.gameOverOverlay) this.gameOverOverlay.active = true;
         if (this.finalScoreLabel) {
-            this.finalScoreLabel.string = `Score: ${Math.floor(this.gameState.score)}`;
+            this.finalScoreLabel.string = `Score: ${finalScore}`;
+        }
+
+        // Highscore label — only show when a highscore value exists
+        const newBestValue = isNewBest ? finalScore : currentBest;
+        if (this.highscoreLabel) {
+            if (newBestValue !== null) {
+                this.highscoreLabel.node.active = true;
+                this.highscoreLabel.string = `Highscore: ${newBestValue}`;
+            } else {
+                this.highscoreLabel.node.active = false;
+            }
+        }
+
+        // Best combo + accuracy
+        const totalTaps = this.gameState.correctTaps + this.gameState.wrongTaps;
+        const accuracy = totalTaps > 0
+            ? Math.round((this.gameState.correctTaps / totalTaps) * 100)
+            : 0;
+        if (this.bestComboLabel) {
+            this.bestComboLabel.string = `Best combo: ${this.gameState.peakStreak}`;
+        }
+        if (this.accuracyLabel) {
+            this.accuracyLabel.string =
+                `${this.gameState.correctTaps} / ${totalTaps} taps (${accuracy}%)`;
+        }
+
+        // "NEW BEST!" celebration — 0.5s delay, scale-pop tween
+        if (isNewBest && this.newBestLabel) {
+            this.newBestLabel.node.active = false;
+            this.scheduleOnce(() => {
+                if (!this.newBestLabel) return;
+                this.newBestLabel.node.active = true;
+                const labelNode = this.newBestLabel.node;
+                labelNode.setScale(0, 0, 1);
+                tween(labelNode)
+                    .to(0.15, { scale: new Vec3(1.2, 1.2, 1) }, { easing: 'backOut' })
+                    .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicOut' })
+                    .start();
+            }, 0.5);
         }
     }
 
     public onRestartTapped(): void {
-        // In-place reset — no scene reload (locked decision from CONTEXT.md)
+        // In-place reset — no scene reload (locked decision from Phase 4)
         this.gameState.score = 0;
+        this.gameState.correctTaps = 0;
+        this.gameState.wrongTaps = 0;
+        this.gameState.peakStreak = 0;
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
-        this.grid.clearAll();          // clear logic tier — Pitfall 3 from RESEARCH.md
+        this.grid.clearAll();
+        if (this.newBestLabel) this.newBestLabel.node.active = false;
         if (this.gridRenderer) {
             this.gridRenderer.setInputEnabled(false);
-            // GridRenderer.update() will repaint empty cells on next frame automatically
         }
         this._showStartScreen();
     }
