@@ -20,6 +20,15 @@ export class GameState {
     /** Timestamp (ms) when the session started, set by reset(). */
     sessionStartMs: number = 0;
 
+    /** Number of correct taps in this session. */
+    correctTaps: number = 0;
+
+    /** Number of wrong taps in this session. */
+    wrongTaps: number = 0;
+
+    /** Highest consecutive correct tap streak achieved this session. */
+    peakStreak: number = 0;
+
     /**
      * Resets scoring state for a new session.
      * Sets score=0 and records the current timestamp as sessionStartMs.
@@ -27,28 +36,37 @@ export class GameState {
     reset(): void {
         this.score = 0;
         this.sessionStartMs = performance.now();
+        this.correctTaps = 0;
+        this.wrongTaps = 0;
+        this.peakStreak = 0;
     }
 
     /**
-     * Applies a correct tap: adds Math.round(rawScore * combo.multiplier) to
-     * score, then calls combo.onCorrectTap() to advance the streak.
+     * Applies a correct tap: increments correctTaps, adds Math.round(rawScore *
+     * combo.multiplier) to score, then calls combo.onCorrectTap() to advance
+     * the streak, and updates peakStreak after the increment.
      *
      * @param rawScore - Base score value from FlowerFSM.getScore()
      * @param combo    - Active ComboSystem instance
      */
     applyCorrectTap(rawScore: number, combo: ComboSystem): void {
+        this.correctTaps += 1;
         this.score += Math.round(rawScore * combo.multiplier);
-        combo.onCorrectTap();
+        combo.onCorrectTap();                           // increments tapCount FIRST
+        if (combo.tapCount > this.peakStreak) {
+            this.peakStreak = combo.tapCount;           // capture peak AFTER increment
+        }
     }
 
     /**
-     * Applies a wrong tap: subtracts WRONG_TAP_PENALTY from score (score can
-     * go negative — no floor applied), then calls combo.onWrongTap() to reset
-     * the streak.
+     * Applies a wrong tap: increments wrongTaps, subtracts WRONG_TAP_PENALTY
+     * from score (score can go negative — no floor applied), then calls
+     * combo.onWrongTap() to reset the streak.
      *
      * @param combo - Active ComboSystem instance
      */
     applyWrongTap(combo: ComboSystem): void {
+        this.wrongTaps += 1;
         this.score -= WRONG_TAP_PENALTY;
         combo.onWrongTap();
     }

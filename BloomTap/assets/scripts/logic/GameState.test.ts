@@ -153,4 +153,43 @@ describe('GameState', () => {
             expect(SESSION_DURATION_MS).toBe(120_000);
         });
     });
+
+    describe('Phase 6 stats', () => {
+        it('correctTaps starts at 0', () => {
+            expect(state.correctTaps).toBe(0);
+        });
+
+        it('applyCorrectTap increments correctTaps', () => {
+            state.applyCorrectTap(80, combo);
+            expect(state.correctTaps).toBe(1);
+        });
+
+        it('applyWrongTap increments wrongTaps', () => {
+            state.applyWrongTap(combo);
+            expect(state.wrongTaps).toBe(1);
+        });
+
+        it('peakStreak tracks highest combo.tapCount after onCorrectTap', () => {
+            state.applyCorrectTap(80, combo); // tapCount becomes 1
+            state.applyCorrectTap(80, combo); // tapCount becomes 2
+            state.applyCorrectTap(80, combo); // tapCount becomes 3
+            expect(state.peakStreak).toBe(3);
+        });
+
+        it('peakStreak does not decrease after wrong tap', () => {
+            state.applyCorrectTap(80, combo); // tapCount 1
+            state.applyCorrectTap(80, combo); // tapCount 2
+            state.applyWrongTap(combo);       // tapCount resets to 0
+            expect(state.peakStreak).toBe(2);
+        });
+
+        it('reset() zeroes correctTaps, wrongTaps, peakStreak', () => {
+            state.applyCorrectTap(80, combo);
+            state.applyWrongTap(combo);
+            state.reset();
+            expect(state.correctTaps).toBe(0);
+            expect(state.wrongTaps).toBe(0);
+            expect(state.peakStreak).toBe(0);
+        });
+    });
 });
