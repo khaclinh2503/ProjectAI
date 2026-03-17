@@ -43,7 +43,10 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
   2. Designer can change spawn parameters (initial count, max alive per phase, interval per phase) in the JSON file and see the change in the next session
   3. If the JSON file contains a malformed or missing field, the game displays a clear error message at startup and does not silently corrupt gameplay with NaN values
   4. All 150 existing tests continue to pass; new Vitest tests cover GameConfig.parse() valid and invalid inputs
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 07-01-PLAN.md — TDD: GameConfig.parse() pure function + JSON config files + comprehensive tests
+- [ ] 07-02-PLAN.md — Wire config into FlowerTypes/SpawnManager/GameState + BootController async loading + error popup
 
 ### Phase 8: Spawn Fix
 **Goal**: Flowers appear on the board the moment the game session begins — no empty 3-second opening — with the initial burst count read from config
@@ -108,7 +111,7 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
 | 4. Session Loop and Scoring | v1.0 | 4/4 | Complete | 2026-03-15 |
 | 5. Juice and Polish | v1.0 | 3/3 | Complete | 2026-03-15 |
 | 6. Results and Persistence | v1.0 | 3/3 | Complete | 2026-03-16 |
-| 7. Config Infrastructure | v1.1 | 0/? | Not started | - |
+| 7. Config Infrastructure | v1.1 | 0/2 | Planning | - |
 | 8. Spawn Fix | v1.1 | 0/? | Not started | - |
 | 9. Pause System | v1.1 | 0/? | Not started | - |
 | 10. Special Flowers | v1.1 | 0/? | Not started | - |
@@ -117,4 +120,4 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
 
 ---
 
-*Last updated: 2026-03-17 — v1.1 roadmap created (phases 7–12)*
+*Last updated: 2026-03-17 — Phase 7 plans created (2 plans)*
