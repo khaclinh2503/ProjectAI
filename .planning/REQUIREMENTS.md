@@ -67,31 +67,29 @@
 
 ## Traceability
 
-*Populated by roadmapper after ROADMAP.md is created.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | — | Pending |
-| CFG-02 | — | Pending |
-| CFG-03 | — | Pending |
-| SPAWN-01 | — | Pending |
-| PAUSE-01 | — | Pending |
-| SPECIAL-01 | — | Pending |
-| SPECIAL-02 | — | Pending |
-| SPECIAL-03 | — | Pending |
-| SPECIAL-04 | — | Pending |
-| FIX-01 | — | Pending |
-| FIX-02 | — | Pending |
-| FIX-03 | — | Pending |
-| ART-01 | — | Pending |
-| ART-02 | — | Pending |
-| ART-03 | — | Pending |
+| CFG-01 | Phase 7 | Pending |
+| CFG-02 | Phase 7 | Pending |
+| CFG-03 | Phase 7 | Pending |
+| SPAWN-01 | Phase 8 | Pending |
+| PAUSE-01 | Phase 9 | Pending |
+| SPECIAL-01 | Phase 10 | Pending |
+| SPECIAL-02 | Phase 10 | Pending |
+| SPECIAL-03 | Phase 10 | Pending |
+| SPECIAL-04 | Phase 10 | Pending |
+| FIX-01 | Phase 11 | Pending |
+| FIX-02 | Phase 11 | Pending |
+| FIX-03 | Phase 11 | Pending |
+| ART-01 | Phase 12 | Pending |
+| ART-02 | Phase 12 | Pending |
+| ART-03 | Phase 12 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 15 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after initial v1.1 definition*
+*Last updated: 2026-03-17 after v1.1 roadmap creation — traceability complete*

@@ -3,6 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1–6 (shipped 2026-03-16)
+- 🚧 **v1.1 Polish & Power-ups** — Phases 7–12 (in progress)
 
 ## Phases
 
@@ -20,6 +21,83 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
 
 </details>
 
+### 🚧 v1.1 Polish & Power-ups (In Progress)
+
+**Milestone Goal:** Config-driven gameplay, special power-up flowers, pause system, and art refresh — nâng cấp toàn diện trải nghiệm từ nền tảng v1.0 vững chắc.
+
+- [ ] **Phase 7: Config Infrastructure** — Flower types and spawn parameters read from JSON; schema validation at load time
+- [ ] **Phase 8: Spawn Fix** — Flowers appear immediately when the game starts; initial count configurable
+- [ ] **Phase 9: Pause System** — Player can pause and resume with full state preservation
+- [ ] **Phase 10: Special Flowers** — Power-up flowers spawn with distinct visuals and three effect types
+- [ ] **Phase 11: Bug Fixes and Refactors** — Combo display fix, screen shake, JuiceHelpers decoupling
+- [ ] **Phase 12: Art Refresh** — Sprite flowers, background/board, and UI element visuals
+
+## Phase Details
+
+### Phase 7: Config Infrastructure
+**Goal**: Flower types and spawn parameters are data-driven — loaded from JSON at startup with validated schema, enabling balance tuning without recompile
+**Depends on**: Phase 6 (v1.0 foundation)
+**Requirements**: CFG-01, CFG-02, CFG-03
+**Success Criteria** (what must be TRUE):
+  1. Designer can change a flower's cycle speed or base score in the JSON file and see the change reflected in the next game session without recompiling
+  2. Designer can change spawn parameters (initial count, max alive per phase, interval per phase) in the JSON file and see the change in the next session
+  3. If the JSON file contains a malformed or missing field, the game displays a clear error message at startup and does not silently corrupt gameplay with NaN values
+  4. All 150 existing tests continue to pass; new Vitest tests cover GameConfig.parse() valid and invalid inputs
+**Plans**: TBD
+
+### Phase 8: Spawn Fix
+**Goal**: Flowers appear on the board the moment the game session begins — no empty 3-second opening — with the initial burst count read from config
+**Depends on**: Phase 7
+**Requirements**: SPAWN-01
+**Success Criteria** (what must be TRUE):
+  1. When the player taps Start, flowers are visible on the board within the first game frame — no empty-board wait
+  2. The number of flowers in the opening burst matches the initialCount value set in the spawn config JSON
+**Plans**: TBD
+
+### Phase 9: Pause System
+**Goal**: Player can pause the game at any moment and resume to the exact state they left — timer, live flowers, and combo all preserved with no time-drift artifacts
+**Depends on**: Phase 8
+**Requirements**: PAUSE-01
+**Success Criteria** (what must be TRUE):
+  1. Tapping the pause button stops the countdown timer visibly and freezes all flower state progression
+  2. Tapping Resume restores the countdown from the exact second it was paused — no time lost, no time gained
+  3. Live flowers that were mid-cycle when paused continue from their correct state on resume — no instant deaths or skipped stages
+  4. Urgency blink (timer pulse) stops while paused and resumes at correct rate after resume
+**Plans**: TBD
+
+### Phase 10: Special Flowers
+**Goal**: Special power-up flowers appear randomly on the board with a distinct visual; tapping one activates one of three timed effects — score multiplier, freeze timer, or slow flower growth
+**Depends on**: Phase 9
+**Requirements**: SPECIAL-01, SPECIAL-02, SPECIAL-03, SPECIAL-04
+**Success Criteria** (what must be TRUE):
+  1. A special flower appears on the board during normal play, is visually distinct from regular flowers, and can be tapped at the correct bloom stage to activate an effect
+  2. Tapping a special flower during Score Multiplier effect causes all subsequent scored taps to award x2–x5 points for approximately 6 seconds; a HUD indicator shows the effect and remaining duration
+  3. Tapping a special flower during Freeze Time effect visibly stops the countdown timer for approximately 5 seconds; the timer resumes from the frozen value when the effect ends
+  4. Tapping a special flower during Slow Growth effect causes newly spawned flowers to cycle more slowly for approximately 8 seconds — the bloom window is observably wider
+  5. Activating a second power-up while one is active replaces the first effect immediately — effects never stack
+**Plans**: TBD
+
+### Phase 11: Bug Fixes and Refactors
+**Goal**: Three known issues are resolved — combo label shows correct multiplier from session start, wrong taps trigger screen shake, and GameController no longer duplicates JuiceHelpers logic inline
+**Depends on**: Phase 10
+**Requirements**: FIX-01, FIX-02, FIX-03
+**Success Criteria** (what must be TRUE):
+  1. The combo label shows "x1.0" from the very first frame of a session and increments to "x1.5", "x2.0" etc. as the multiplier rises — it never shows a raw tap count
+  2. Tapping an empty cell or a dead/wilted flower triggers a visible screen shake effect on the board
+  3. GameController no longer contains inline copies of getUrgencyStage() or getMilestoneLabel() — it calls the JuiceHelpers exports directly
+**Plans**: TBD
+
+### Phase 12: Art Refresh
+**Goal**: All placeholder color-coded Graphics cells are replaced with real sprite assets — flowers, board background, and UI elements all have polished visuals
+**Depends on**: Phase 11
+**Requirements**: ART-01, ART-02, ART-03
+**Success Criteria** (what must be TRUE):
+  1. Each of the 5 flower types renders a distinct sprite image at each of the 5 growth stages — no colored rectangles remain for regular flowers
+  2. Special flowers have a visually distinct sprite variant (e.g., gold glow overlay) that makes them identifiable at a glance
+  3. The game board background and grid lines have an improved visual that looks like a designed game, not a developer placeholder
+  4. Buttons, HUD elements, and the results screen use styled sprite assets rather than default Cocos Creator UI primitives
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -30,7 +108,13 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
 | 4. Session Loop and Scoring | v1.0 | 4/4 | Complete | 2026-03-15 |
 | 5. Juice and Polish | v1.0 | 3/3 | Complete | 2026-03-15 |
 | 6. Results and Persistence | v1.0 | 3/3 | Complete | 2026-03-16 |
+| 7. Config Infrastructure | v1.1 | 0/? | Not started | - |
+| 8. Spawn Fix | v1.1 | 0/? | Not started | - |
+| 9. Pause System | v1.1 | 0/? | Not started | - |
+| 10. Special Flowers | v1.1 | 0/? | Not started | - |
+| 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
+| 12. Art Refresh | v1.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-03-17 — v1.0 milestone archived*
+*Last updated: 2026-03-17 — v1.1 roadmap created (phases 7–12)*
