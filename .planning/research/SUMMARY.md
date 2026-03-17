@@ -1,17 +1,17 @@
 # Project Research Summary
 
-**Project:** Bloom Tap
-**Domain:** HTML5 casual grid-based tapping game — mobile web + Facebook Instant Games
-**Researched:** 2026-03-13
-**Confidence:** MEDIUM
+**Project:** Bloom Tap v1.1
+**Domain:** Cocos Creator 3.8.8 casual tap game — config-driven gameplay, power-up flowers, pause system, sprite art refresh
+**Researched:** 2026-03-17
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Bloom Tap is a 120-second, time-limited casual tapping game played on an 8x8 grid. Players harvest flowers in specific growth states (Blooming, Full Bloom) to earn points, with a wrong-tap penalty, a combo multiplier system, and a 3-phase difficulty escalation that drives the emotional arc of each session. The established approach for this class of game is Phaser 3 on a Vite + TypeScript scaffold — this combination has the lowest friction, the richest community, and is explicitly supported by Facebook Instant Games. Architecture centers on a fixed-rate game loop driving per-cell Flower FSMs, a decoupled renderer, and a data-driven spawn config that supports difficulty phases without hardcoded logic.
+Bloom Tap v1.1 adds four categories of work to an already-shipped v1.0 core: config-driven parameters (CFG-01, CFG-02), a special power-up flower system (SPECIAL-01 through SPECIAL-04), a pause/resume system (PAUSE-01), and a sprite art refresh (ART-01 through ART-03). The codebase uses a strict two-tier architecture — a pure logic tier (no `cc` imports, Vitest-testable) sitting below a Cocos renderer tier. Every v1.1 feature fits cleanly within this existing pattern. No new npm packages or engine upgrades are required; all capabilities are built into Cocos Creator 3.8.8.
 
-The primary technical risks are performance-related: GC spikes during Phase 3 heavy spawning (prevented by object pooling from the start), flower timer drift over a 120-second session (prevented by timestamp-based state derivation, not delta accumulation), and canvas rendering cost on mid-range Android (prevented by using Phaser's WebGL renderer and avoiding canvas shadowBlur). A secondary structural risk is the dependency chain: the flower growth cycle must exist and be visually readable before any tap-timing or scoring work is valid, and the spawn system must be parameterized from day one to support 3-phase escalation — neither can be retrofitted cheaply.
+The single highest-risk area across all four feature categories is timestamp management. `FlowerFSM`, `GameState`, and the spawn scheduler all use absolute `performance.now()` timestamps as anchors. Pause, freeze-time power-up, and slow-growth power-up must all participate in a unified timestamp-offset strategy or they will corrupt each other. The solution is a centralized `_applyPauseOffset(ms)` method in `GameController` that shifts every time-anchored value (session clock, spawn scheduler, live flower FSMs, power-up expiry) in a single pass. This is not optional — implementing any one of these features without the others in mind will require a partial rewrite later.
 
-The recommended build sequence is: foundation (rendering, input, viewport, DPR) → pure game logic (FlowerFSM, Grid, ComboSystem as code with no canvas) → wired gameplay (Renderer + InputHandler connecting logic to screen) → session loop (timer, spawn escalation, scoring pipeline) → results and persistence → juice and polish. Facebook Instant Games integration is explicitly deferred to post-v1 because it requires a different initialization architecture and storage layer, but the codebase must abstract these from day one to avoid a costly retrofit.
+The recommended build order is: config infrastructure first (pure tier, zero risk, unlocks balance tuning), then immediate spawn fix (low risk), then pause system (establishes the offset pattern that everything else depends on), then power-up system (consumes the pause offset pattern), then bug fixes and refactors, then art refresh last (renderer-only, no logic impact). This ordering respects the dependency graph and ensures each phase builds on verified foundations.
 
 ---
 
@@ -19,147 +19,144 @@ The recommended build sequence is: foundation (rendering, input, viewport, DPR) 
 
 ### Recommended Stack
 
-The standard stack for a shipped HTML5 casual game in this domain is Phaser 3 (3.87.x) + TypeScript 5.4.x + Vite 5.x. Phaser 3 is the dominant choice because it provides Canvas/WebGL rendering with automatic fallback, a built-in scene system, a pointer event model correctly mapped to `touchstart`, and an official Facebook Instant Games plugin. TypeScript is justified by the complexity of the state machine — catching enum and state transition bugs at compile time rather than runtime saves significant debugging time. Vite provides the fastest dev loop and is the community standard replacement for Webpack in new Phaser projects. The Facebook Instant Games SDK (v7.1) is loaded via CDN script tag, not npm, and must be initialized before any Phaser boot.
+The v1.0 stack (Cocos Creator 3.8.8, TypeScript strict, Vitest 3.2.4, Web Mobile export) is locked and needs no changes. V1.1 adds only engine-native capabilities: `JsonAsset` for config loading via synchronous `@property` Inspector wiring (no async callbacks required), `Sprite` + `SpriteFrame` components to replace `Graphics`-drawn placeholder colors, and Cocos Creator's built-in Auto Atlas for sprite atlasing (zero cost, no external tools). Two new pure-logic modules are required: `ConfigLoader.ts` / `GameConfig.ts` (JSON parse + validation) and `PowerUpManager.ts` / `PowerUpState.ts` (timestamp-based active effects tracking). Both are Vitest-testable without any Cocos dependency.
 
-Three technologies are explicitly forbidden: React/Vue for any in-game UI (60fps tap feedback is incompatible with DOM reflow), Unity WebGL export (5-50MB bundle violates FB's 200KB initial payload limit), and the `npm install fbinstant` unofficial packages (stale, not maintained by Meta).
+**Core technologies (additions only — v1.0 stack unchanged):**
+- `JsonAsset` (`@property` wired, CC built-in): Config loading — synchronous, matches existing Inspector wiring pattern for all other assets; avoids async callback lifecycle complexity
+- `Sprite` + `SpriteFrame` (CC built-in): Sprite rendering — replaces `Graphics` color-coded cells; `UITransform` stays unchanged on the same node
+- CC Auto Atlas (CC built-in): Texture atlasing — packs 25+ flower frames at build time; avoids 25 separate GPU texture uploads on mobile WebGL
+- `GameConfig.ts` (new pure module): JSON parse + schema validation — pure tier, Vitest-testable, no cc imports; mirrors existing `StorageService` pattern
+- `PowerUpState.ts` (new pure module): Active effect tracking — timestamp-based (not duration countdown), immune to pause drift
 
-**Core technologies:**
-- **Phaser 3 (3.87.x):** Game engine — rendering, input, scene management, animations — industry standard for HTML5 casual/Instant Games with official TS types
-- **TypeScript (5.4.x):** Type safety and refactor confidence — Phaser ships official definitions; catches state machine bugs at compile time
-- **Vite (5.x):** Dev server and production bundler — fastest dev loop for Phaser; community standard since 2023
-- **Facebook Instant Games SDK (7.1, CDN):** Platform API for FB distribution — must load before Phaser; never install via npm
+**What NOT to use:**
+- `director.pause()`: Confirmed CC engine bug #11144 — breaks UI scale/tween animations; closed as intentional with no fix
+- `game.pause()`: Blocks entire event manager including touch input; Resume button becomes non-functional
+- `resources.load()` for game config: Async callback adds lifecycle complexity; `@property` JsonAsset is synchronous and simpler for a once-at-startup load
+- TexturePacker 3.x: Generates `.plist` format incompatible with CC 3.8 importer; use 4.x if ever adopting TexturePacker
 
 ### Expected Features
 
-The game's core value lies at the intersection of timing skill (harvest window) and spatial scanning (8x8 grid) — features absent from pure idle tappers and pure reflex games. Every table-stakes feature must be in place before any timing balance work is valid, because missing feedback (visual, score, combo) invalidates player behavior during testing.
+**Must have (P1 — define the v1.1 milestone):**
+- CFG-01 + CFG-02: Flower and spawn configs from JSON — designer can tune balance without code changes
+- SPAWN-01: Immediate flower spawn at game start — 3-second dead opening feels broken to players
+- SPECIAL-01 through SPECIAL-04: Special power-up flower with all three effect types (score multiplier, freeze timer, slow growth)
+- PAUSE-01: Pause button + clean resume — any mobile game without pause is unshippable
+- HUD-03 fix: Combo label shows `multiplier.toFixed(1)` from session start, not raw `tapCount`
+- ART-01: Sprite flowers replace placeholder colored rectangles
 
-**Must have (table stakes — v1 launch):**
-- Responsive tap registration on `pointerdown` — any latency breaks timing feel
-- Visual feedback on every tap (correct and wrong) — silent taps feel broken
-- 5 flower growth states (Bud / Blooming / Full Bloom / Wilting / Dead) with visually distinct rendering — this IS the game
-- Real-time score display and countdown timer with urgency escalation
-- Wrong-tap point deduction with immediate feedback (screen shake, red flash)
-- Combo counter with multiplier (resets on wrong tap) — the accuracy pressure mechanism
-- 3-phase round escalation (0-40s / 40-80s / 80-120s) with parameterized spawn rates
-- Results screen with local highscore (localStorage) and instant restart
-- Essential juice: tap scale pulse, score float pop-up, combo break flash, timer urgency color
+**Should have (P2 — include if time allows):**
+- ART-02 + ART-03: Background/board visual and UI element sprites
+- JuiceHelpers refactor: GameController calls JuiceHelpers exports instead of duplicating logic inline
+- JUICE-01: Screen shake on wrong tap
 
-**Should have (v1.x after core validation):**
-- Phase transition visual/audio cue
-- Sound effects (tap, combo break, wrong tap, phase change, game over)
-- Flower cycle micro-animations (sprite sheet transitions between states)
-- Results screen score count-up animation
-- Screen shake on wrong tap
+**Defer to post-v1.1 validation:**
+- Audio effects for power-up activation (requires audio system first)
+- Pity mechanic: guarantee 1 special flower per 30s if none has appeared (validate first whether players actually notice)
 
-**Defer (v2+):**
-- Meta-progression / flower unlocks — requires validated replay loop first
-- Online leaderboard — requires backend infra and confirmed audience
-- Multiple game modes — dilutes focus before core is proven
-- Facebook Instant Games packaging — separate integration architecture
+**Defer to v2+:**
+- Meta-progression, power-up upgrades, power-up inventory/choice — confirmed out of v1 scope
+- Multiple special flower types with different rarity tiers
+- Hot-reload JSON config (requires file watcher or WebSocket, unavailable in HTML5 export runtime)
+
+**Anti-features (explicitly excluded):**
+- Multiple simultaneous power-up effects stacking: Exponential score explosion breaks leaderboard; replacement semantics only (one active effect at a time, new tap replaces old)
+- Sprite animation frames per flower cell: 64 simultaneously animated cells spikes render cost on mobile; static sprite-per-state (swap on state change) is the correct approach
 
 ### Architecture Approach
 
-The architecture separates pure game logic (FlowerFSM, Grid, ComboSystem, GameState, SpawnManager — all platform-independent) from rendering (Phaser GameObjects, Renderer, AnimationSystem) and input (InputHandler translating canvas coords to grid coordinates). This separation allows the entire logic tier to be unit-tested without a browser, isolates the rendering layer so switching renderer strategies requires only one folder, and makes FB Instant Games integration a storage/init swap rather than a logic rewrite.
+The existing two-tier architecture requires only additive changes. All new pure-logic modules (`GameConfig.ts`, `SpecialFlowerDef.ts`, `PowerUpState.ts`, `PauseState.ts`) stay below the cc-import boundary and are fully Vitest-testable. The renderer tier changes are confined to `GameController.ts` (pause/resume handlers, power-up routing, config injection) and `GridRenderer.ts` (sprite render path alongside existing Graphics fallback, `_useSprites` toggle flag). `FlowerFSM.ts` receives one additive field (`_pauseOffset: number = 0`) and one additive method (`addPauseOffset(ms)`); all 150 existing tests continue to pass because offset defaults to 0.
 
-The critical architectural decisions are: (1) fixed-rate game loop with delta-time accumulator to decouple flower timer accuracy from frame rate; (2) per-cell Flower FSMs with timestamp-based state derivation (not delta accumulation) to prevent timer drift; (3) object pools for all frequently created/destroyed objects (flower slots, score pop-up Text objects) to prevent GC spikes in Phase 3; (4) data-driven spawn config with phase tables from day one — hardcoded spawn logic cannot be extended to 3 phases.
+**Major components and their v1.1 roles:**
+1. `GameConfig.ts` (NEW, pure): JSON parse + validation; outputs typed `FlowerTypeConfig[]` and `SpawnPhaseConfig[]`; Vitest-testable; no cc imports
+2. `PowerUpState.ts` (NEW, pure): Active effect data record with `isActive(nowMs)` and `applyOffset(ms)`; session-scoped, separate from FlowerFSM
+3. `PauseState.ts` (NEW, pure): Data record only — `isPaused`, `pauseStartMs`, `totalPausedMs`; no methods needed
+4. `FlowerFSM.ts` (MODIFIED, pure): Add `_pauseOffset` + `addPauseOffset(ms)`; elapsed becomes `(nowMs - spawnTimestamp) - pauseOffset`
+5. `Grid.ts` (MODIFIED, pure): Add `_specialTypes: Map<number, SpecialFlowerType>` + three new methods; fully additive, no existing test impact
+6. `SpawnManager.ts` (MODIFIED, pure): Constructor injection for phases array; add `pickSpecialSpawn()` and `specialSpawnChance` config field
+7. `GameController.ts` (MODIFIED, renderer): Pause/resume handlers, power-up activation routing, config injection, initial burst spawn, HUD-03 fix, JuiceHelpers wiring
+8. `GridRenderer.ts` (MODIFIED, renderer): Sprite render path with `_useSprites` flag; Graphics fallback preserved; `playScreenShake()` added; `setCellTypeId()` gains optional `specialType` param
 
-**Major components:**
-1. **FlowerFSM** — per-cell state machine managing the 5-stage growth lifecycle; all timing derived from `performance.now()` spawn timestamp
-2. **Grid** — flat 64-cell array owning FlowerFSM instances; provides random empty cell picker for SpawnManager
-3. **SpawnManager** — phase-table-driven spawn rate controller; reads elapsed time to select active phase config
-4. **ComboSystem** — streak counter with multiplier lookup; resets on wrong tap or gap timeout
-5. **GameState** — session state (score, timer, phase, combo); fresh instance per game start, never global
-6. **Renderer** — Phaser GameObjects drawing from current state; never mutates state
-7. **InputHandler** — translates `pointerdown` canvas coords to (row, col); calls `onTap` callback; knows nothing about game rules
-8. **AnimationSystem** — pooled short-lived effects (tap pulse, score float, combo break flash); runs independently of game state
+**Key architectural constraints that must not be violated:**
+- `GameConfig.parse()` is pure and synchronous; Cocos asset loading lives in `GameController.onLoad()` (renderer tier) only — never add cc imports to the parse function
+- SLOW_GROWTH is applied via spawn-time config copy (newly spawned flowers get modified `cycleDurationMs`), NOT by mutating live FlowerFSM timestamps
+- Power-up state lives in `GameController._powerUpState`, NOT inside `FlowerFSM` — session-scoped effects do not belong in a flower-scoped FSM
 
 ### Critical Pitfalls
 
-1. **Touch input on `touchend`/`click` instead of `pointerdown`** — introduces 100-300ms latency on mobile; all timing balance collected with wrong event binding is invalid. Use Phaser's `pointerdown` event from the first line of input code. Set `canvas { touch-action: none }` in CSS. This must be correct before any tap-timing balance testing.
+1. **Timestamp pause offset not applied to ALL anchors** — A boolean `_isPaused` flag alone causes all live flowers to skip forward in their lifecycle the moment the game resumes (e.g., a 2-second pause causes flowers 800ms into a 900ms BUD phase to die instantly). Must apply `pauseDurationMs` to `gameState.sessionStartMs`, all live `FlowerFSM` instances via `addPauseOffset()`, `_nextSpawnMs`, and all power-up `expiresAtMs` in a single centralized `_applyPauseOffset()` call. Never scatter these adjustments across call sites.
 
-2. **Flower timer drift from delta-time accumulation** — floating-point accumulation over 120 seconds causes state transitions to drift ±50ms, making the game feel inconsistent. Use timestamp-based state derivation: store `spawnTimestamp = performance.now()`, compute `state = getStateForElapsed(now - spawnTimestamp)` as a pure function. Must be the architecture from day one — retrofitting is HIGH cost.
+2. **Config JSON async load race condition** — `resources.load()` is async. Reading config values on the line immediately after the call returns `undefined` because the callback has not fired yet. Works on localhost (fast disk), fails silently on physical device (network latency). Must gate all game startup — including enabling the Start button — on the config load callback completing.
 
-3. **GC spikes during Phase 3 from per-spawn object allocation** — creating and destroying Phaser GameObjects in the hot loop causes stop-the-world GC pauses of 30-100ms precisely during the game's most intense moment. Pre-create all 64 flower slots at game init; activate/deactivate instead of create/destroy. Pool score pop-up Text objects (8-10 is sufficient). Must be in place before Phase 3 performance testing.
+3. **Config schema validation absent** — TypeScript interfaces are compile-time only; `JSON.parse()` performs no type checking. A `"budMs": "string"` value propagates NaN into FlowerFSM score math, producing "Infinity" in the score label and corrupting localStorage. Validator must run at load time with descriptive errors, not silently at runtime.
 
-4. **Canvas not scaled for device pixel ratio** — sprites appear blurry on all Retina and high-DPI Android devices. Set `resolution: window.devicePixelRatio` in Phaser config at game creation. Changing this later requires recalculating all coordinate systems. Must be set during project foundation.
+4. **Sprite + Graphics on same node render conflict** — Adding a `Sprite` component alongside an existing `Graphics` component on the same cell node produces undefined draw order; one silently overdraw the other. Must choose either replace strategy (remove Graphics, add Sprite on same node) or layer strategy (keep Graphics on parent, add child node with Sprite) before starting ART-01.
 
-5. **Mobile viewport scroll conflicts** — without `touch-action: none` on canvas and `position: fixed` on body, vertical swipes scroll the page instead of registering taps; Android browser chrome hide/show resizes the canvas. These CSS rules must be in place before any mobile UX testing.
+5. **Power-up expiry drains during pause** — If power-up `expiresAtMs` is not included in `_applyPauseOffset()`, the effect timer continues counting down during pause. Players who pause immediately after tapping a rare power-up return to find it already expired. Power-up expiry must be part of the same offset adjustment pass as session clock and flower FSMs.
 
-6. **iOS AudioContext silence** — `AudioContext` created before user gesture is suspended on iOS Safari; all sound is silently absent on iPhone. Use a "Tap to Start" splash screen as the first scene to unlock audio before the game loop starts. Must be built alongside the first audio effects.
+6. **TIME_FREEZE must freeze the session clock, not just stop spawns** — A naive implementation stops the spawn scheduler but leaves `gameState.sessionStartMs` advancing normally. The countdown visibly continues during "freeze" — the player paid for a power-up that does not freeze the game timer. The correct mechanism advances `sessionStartMs` by `dt` each frame during the freeze effect — a continuous rolling offset identical to pause offset but applied incrementally per frame.
 
 ---
 
 ## Implications for Roadmap
 
-Based on the dependency graph across all four research files, the build order is forced by architecture, not preference. The key constraint is that visual readability of flower states is a gameplay prerequisite (players cannot test timing if they cannot read states), and the entire tap-timing pipeline (FSM → input → score → combo) must be wired before any balance work is meaningful.
+Based on the dependency graph in FEATURES.md and the build order confirmed in ARCHITECTURE.md, the following 6-phase structure is recommended.
 
-### Phase 1: Project Foundation
+### Phase 1: Config Infrastructure
+**Rationale:** Config is the foundation for all balance tuning and is a prerequisite for power-up spawn chance to be configurable. It is pure-tier work with zero risk to existing gameplay behavior — the game runs identically to v1.0 after this phase because hardcoded constants are replaced with JSON-loaded equivalents. Establishing `GameConfig.parse()` and schema validation here before any feature code touches config prevents the async race condition and silent NaN corruption pitfalls from ever appearing in subsequent phases.
+**Delivers:** JSON-driven flower types and spawn phases; schema validation at load time with descriptive errors; Vitest test coverage for `GameConfig.parse()`; `SpawnManager` constructor injection; `FlowerTypes.ts` constant removed
+**Addresses:** CFG-01, CFG-02 (P1)
+**Avoids:** Pitfall 5 (async load race), Pitfall 6 (schema validation missing) — both solved here before any downstream consumer exists
 
-**Rationale:** Three pitfalls (DPR scaling, viewport scroll, touch-action CSS) must be resolved before any mobile testing is possible. Getting them right at foundation cost is LOW; retrofitting them costs MEDIUM-HIGH due to coordinate system and layout cascade. This phase has no game logic — it just makes the environment correct.
-**Delivers:** Phaser 3 + TypeScript + Vite scaffold; canvas sized correctly for DPR; viewport locked against browser chrome; touch events non-passive and non-scrolling; FB SDK mock wired for local dev; "Tap to Start" splash for iOS audio unlock.
-**Addresses:** Grid rendering surface (prerequisite for all subsequent phases)
-**Avoids:** DPR blurriness (Pitfall 4), viewport scroll conflicts (Pitfall 7), iOS audio silence foundation (Pitfall 6), touch latency from wrong event binding (Pitfall 1)
+### Phase 2: Spawn Fix
+**Rationale:** Trivially low risk, high first-impression impact. The 3-second dead opening at game start is fixed by setting `_nextSpawnMs = performance.now()` and running an initial burst in `_beginSession()`. Done immediately after config is in place so `initialCount` is read from JSON rather than hardcoded.
+**Delivers:** Flowers spawn immediately at game start; initial burst count configurable in spawn config JSON
+**Addresses:** SPAWN-01 (P1)
+**Avoids:** No pitfalls — pure additive change to session startup path; zero regression risk
 
-### Phase 2: Core Game Logic (Pure, No Canvas)
+### Phase 3: Pause System
+**Rationale:** Pause establishes the `_applyPauseOffset()` pattern that power-up expiry (SPECIAL-03 freeze timer, all SPECIAL effects) must reuse. Implementing pause after power-ups would require retrofitting the offset mechanism across already-written feature code. Pause first means the pattern is tested and proven in isolation before power-ups add complexity. Also unblocks Cocos `schedule()`/`unschedule()` behavior verification for urgency blink — a MEDIUM-confidence gap that must be resolved before power-up implementation.
+**Delivers:** Pause button, dim overlay (Resume + Restart buttons), timestamp offset propagated to all live FSMs and session clock on resume, urgency blink explicitly unscheduled on pause, `PAUSED` added to `SessionPhase` enum
+**Addresses:** PAUSE-01 (P1)
+**Avoids:** Pitfall 1 (timestamp offset missing — establishes the centralized offset API), Pitfall 2 (Cocos schedule continues during pause — `unschedule()` verified here), Pitfall 3 (power-up expiry drains during pause — `_applyPauseOffset()` designed to accept new anchors when power-ups are added)
 
-**Rationale:** The architecture research explicitly maps a build order with Tier 1-2 components (FlowerFSM, Grid, ComboSystem, GameState, SpawnManager) as platform-independent pure logic. Building and unit-testing these before adding rendering prevents the worst anti-pattern: putting game logic in the renderer. Timer drift (Pitfall 5) must be architected here — timestamp-based derivation cannot be retrofitted.
-**Delivers:** FlowerFSM with 5 states and timestamp-based timing; Grid (64 cells, spawn/clear helpers); ComboSystem with multiplier table; GameState (score, timer, phase); SpawnManager with phase config tables; all logic unit-testable without a browser.
-**Implements:** FlowerFSM, Grid, ComboSystem, GameState, SpawnManager, flowerTypes data, difficultyPhases data
-**Avoids:** Timer drift (Pitfall 5), mutable global state anti-pattern, hardcoded spawn rates that can't support 3 phases
+### Phase 4: Power-Up Flower System
+**Rationale:** Depends on Phase 1 (spawn chance in config) and Phase 3 (pause offset API already in place and tested). All four SPECIAL tasks are grouped because SPECIAL-01 (spawn + visual) is a hard prerequisite for SPECIAL-02/03/04 (effects), and all three effect types share the same `PowerUpState` infrastructure and HUD countdown indicator — building them together avoids duplicate HUD work and ensures the one-active-effect-at-a-time replacement policy is designed from the start, not bolted on after two conflicting effects are already implemented.
+**Delivers:** Special flower spawn with distinct visual (gold/glow overlay); all three effect types (score multiplier x2–x5 / 6s, freeze timer / 5s, slow growth / 8s); power-up HUD indicator with countdown bar; replacement-not-stacking semantics; TIME_FREEZE per-frame rolling offset mechanism
+**Addresses:** SPECIAL-01 through SPECIAL-04 (all P1)
+**Avoids:** Pitfall 3 (power-up expiry offset — slots into `_applyPauseOffset()` from Phase 3), Pitfall 4 (stacking edge cases — Map-based model designed from the start, not single-variable), Pitfall 10 (freeze must freeze session clock — per-frame rolling offset implemented here)
 
-### Phase 3: Renderer and Input Wiring
+### Phase 5: Bug Fixes and Refactors
+**Rationale:** HUD-03 fix (combo label) is placed before art refresh because the combo label display area is also where power-up score multiplier feedback is visible. Confirming the label is correct before adding visual noise from the art refresh makes debugging easier. JuiceHelpers refactor and screen shake are low-risk cleanup with no feature dependencies.
+**Delivers:** Combo label shows `multiplier.toFixed(1)` from session start (not blank for first 9 taps); JuiceHelpers decoupled from GameController inline duplicates; screen shake on wrong tap via `GridRenderer.playScreenShake()`
+**Addresses:** HUD-03 fix (P1), JuiceHelpers refactor (P2), JUICE-01 screen shake (P2)
+**Avoids:** Pitfall 9 (combo label display policy must be defined before writing the fix — define "show x1.0 from session start, never hide" and update tests first)
 
-**Rationale:** Rendering depends on the logic tier being stable. Once FlowerFSM and Grid are correct, the Renderer is a read-only consumer of state — no mutation in the render pass. This phase wires InputHandler (translating canvas coords to grid tap events) and makes the game visually playable for the first time. Object pooling (Pitfall 2) must be implemented here — the pool architecture must exist before Phase 3 load testing.
-**Delivers:** Phaser GameObjects for all 64 flower slots (pre-created, pooled); Renderer drawing from game state each frame; InputHandler translating `pointerdown` to `onTap(row, col)`; AnimationSystem with pooled score pop-ups and tap pulse effects; a playable (but un-timed) game loop.
-**Uses:** Phaser 3 GameObjects, Phaser ScaleManager (DPR), Phaser Input Manager (pointerdown)
-**Avoids:** GC spikes from missing object pool (Pitfall 2), logic-in-renderer anti-pattern, full canvas redraw performance trap (Pitfall 8)
-
-### Phase 4: Session Loop and Scoring Pipeline
-
-**Rationale:** With a stable renderer and input layer, the scoring pipeline (tap → FSM → combo → score → animation trigger) can be wired end-to-end. The 120-second timer, 3-phase escalation, and round lifecycle (start → play → end) are implemented here. This is the first phase where the complete game loop is playable and balance testing begins — which is why touch input correctness (Pitfall 1) must have been verified in Phase 1.
-**Delivers:** Complete tap event pipeline (InputHandler → Grid → FlowerFSM.tap() → ComboSystem → GameState.applyScore() → AnimationSystem); 120-second countdown with phase transitions at 40s and 80s marks; parameterized SpawnManager phase switching; real-time score and combo HUD; game-over trigger on timer expiry.
-**Implements:** Event-driven score pipeline (Architecture Pattern 3), Phase-based spawn controller (Architecture Pattern 4)
-**Avoids:** Incorrect tap event binding (must verify `pointerdown` triggers balance test)
-
-### Phase 5: Results Screen and Persistence
-
-**Rationale:** Results screen and local highscore are a single dependency unit (FEATURES.md explicitly notes: implement both together). The storage layer must be abstracted at this point — `utils/storage.js` wrapping localStorage — to enable a clean FB Instant Games swap later. This phase completes the v1 MVP loop.
-**Delivers:** ResultScene with final score, highscore comparison, and restart CTA; localStorage highscore abstracted behind StorageService; score count-up animation on results screen; Phaser scene transition from GameScene to ResultScene.
-**Addresses:** Results screen + local highscore (table stakes feature)
-**Avoids:** localStorage FB incompatibility (Pitfall — storage abstraction makes FB port low-cost instead of MEDIUM)
-
-### Phase 6: Juice and Polish
-
-**Rationale:** Juice elements are explicitly deferred until the mechanic they annotate is stable (FEATURES.md dependency rule: "never implement juice before the mechanic it annotates"). Phase 6 is the payoff phase — it upgrades a mechanically correct but flat game into something that feels good. Audio is implemented here with the iOS AudioContext unlock already in place from Phase 1's splash screen.
-**Delivers:** Phase transition visual/audio cues; sound effects (tap, combo, wrong tap, phase change, game over); flower growth micro-animations (sprite sheet transitions); screen shake on wrong tap; wrong-tap first-play hint text; pause/menu button in HUD.
-**Addresses:** All P2 features from FEATURES.md feature prioritization matrix
-**Avoids:** iOS audio silence (Pitfall 6) — already mitigated by Phase 1 "Tap to Start" screen; audio implementation here just adds SFX
-
-### Phase 7: Facebook Instant Games Integration (Post-v1)
-
-**Rationale:** FB integration is an architectural swap, not a feature addition. The codebase was designed to support this (storage abstraction, no hardcoded DOM UI, no React layer). The async init order (Pitfall 3) must be implemented first — everything else fails if Phaser boots before `FBInstant.initializeAsync()` resolves. This phase is out of scope for v1 but the roadmap must account for it.
-**Delivers:** FB SDK async init gate before Phaser boot; `FBInstant.setLoadingProgress()` wired to Phaser preload; StorageService routing to `FBInstant.player.setDataAsync()` in FB context; FB mock flow verified end-to-end.
-**Avoids:** FB init order error (Pitfall 3), localStorage FB incompatibility, external CDN asset loading rejection
+### Phase 6: Art Refresh
+**Rationale:** Renderer-only work with zero impact on pure logic tier. Placed last because all game logic has been verified against the Graphics color fallback. If sprite assets are not ready at milestone start, the fallback continues working and this phase can be deferred without blocking any other work. The layer-vs-replace architectural decision (Pitfall 7) must be made at the start of this phase before any sprites are assigned.
+**Delivers:** Sprite textures for 5 flower types x 5 states (25 sprites); special flower visual variant; background/board texture; UI element sprites; CC Auto Atlas configured per texture folder
+**Addresses:** ART-01 (P1), ART-02, ART-03 (P2)
+**Avoids:** Pitfall 7 (Graphics + Sprite conflict — layer vs replace decision made before first sprite assigned), Pitfall 8 (25 separate GPU textures — Auto Atlas configured before any SpriteFrames are wired to cell nodes)
 
 ### Phase Ordering Rationale
 
-- **Foundation before logic:** Three mobile pitfalls (DPR, viewport, touch-action) affect every subsequent mobile test session — they must be fixed at zero-cost, not retrofitted.
-- **Logic before rendering:** The architecture research build order (Tier 1-4) explicitly requires FlowerFSM and Grid to be testable without a browser before the Renderer is added. This prevents logic creeping into rendering.
-- **Object pools in Phase 3, not later:** GC spikes from missing pools are worst in Phase 3 (spawn wave) — the pool architecture must exist before any Phase 3 performance testing, which means it must exist before Phase 4 balance work.
-- **Juice deferred to Phase 6:** FEATURES.md dependency rule is clear — juice without function is wasted work. Every juice element has a parent mechanic that must be stable first.
-- **FB deferred to post-v1:** FB integration requires a different initialization order and storage routing. It's an isolated swap if the codebase is structured correctly from the start.
+- **Config before everything:** `SpawnManager` constructor injection and `FlowerTypes.ts` constant removal affect every subsequent phase that touches spawning or flower config; doing this first means no other phase needs to clean up hardcoded constants
+- **Pause before power-ups:** `_applyPauseOffset()` is shared infrastructure; power-up `expiresAtMs` must participate in it from day one — implementing power-ups first would require adding the API later and auditing all existing offset call sites
+- **Power-ups before art:** Logic correctness is easier to verify with Graphics fallback active; sprite-level debugging adds noise to effect timing verification
+- **Art last:** No logic dependencies whatsoever; Graphics fallback is safe; deferring art until logic is verified is the lowest-risk ordering
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 3 (Renderer and Input):** Phaser 3 object pool patterns (Phaser.GameObjects.Group with `maxSize`, `createFromConfig`) should be researched at planning time — the pooling API is version-specific and getting it wrong requires rewriting all spawn callsites.
-- **Phase 7 (FB Instant Games):** FB SDK async init patterns and `setLoadingProgress` integration with Phaser's preload lifecycle need verification against the current SDK version at integration time. Training knowledge is MEDIUM confidence only.
+Phases that may benefit from targeted research or proof-of-concept during planning:
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Foundation):** Phaser Scale config, DPR setup, CSS viewport rules are all well-documented stable patterns.
-- **Phase 2 (Core Logic):** FlowerFSM, delta-time game loop, combo counter — canonical patterns from Game Programming Patterns (Nystrom) and Glenn Fiedler's "Fix Your Timestep." No research needed.
-- **Phase 5 (Results + Persistence):** localStorage abstraction is a trivial wrapper pattern. ResultScene is a standard Phaser scene transition.
-- **Phase 6 (Juice):** Audio unlock, Phaser tween API, screen shake are well-documented. If sound effects need authoring, that's an asset task, not a research task.
+- **Phase 3 (Pause):** Exact behavior of Cocos `schedule()`/`unschedule()` when `_isPaused` flag is set vs. node deactivation has MEDIUM confidence. Verify during Phase 3 planning that `this.unschedule(blinkCallback)` is sufficient to stop the urgency blink without deactivating the entire game node.
+- **Phase 4 (Power-ups, SPECIAL-03):** TIME_FREEZE per-frame rolling offset (advancing `sessionStartMs` by `dt` each frame) is the hardest implementation in v1.1. Recommend a quick proof-of-concept — advance `sessionStartMs` in a test scene and verify `GameState.isGameOver()` reads correctly — before writing the full freeze implementation.
+
+Phases with well-documented patterns (skip `/gsd:research-phase`):
+
+- **Phase 1 (Config):** `JsonAsset` + `@property` pattern fully documented in CC 3.8 official docs (WebFetch verified); `GameConfig.parse()` is pure TypeScript with no unknowns
+- **Phase 2 (Spawn Fix):** One-line change to `_beginSession()`; no new patterns
+- **Phase 5 (Bug Fixes):** All three tasks are in-codebase refactors with defined correct behavior
+- **Phase 6 (Art Refresh):** CC Sprite/SpriteFrame/Auto Atlas are well-documented; Pitfall 7 (layer vs replace decision) is the only decision point before executing
 
 ---
 
@@ -167,47 +164,44 @@ Phases with standard patterns (skip research-phase):
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | MEDIUM | All version numbers from training data (cutoff August 2025); no external verification possible during research. Verify Phaser latest stable and FB SDK version before pinning. Core technology choices (Phaser 3 + Vite + TS) are HIGH confidence — they are the community consensus. |
-| Features | MEDIUM | Core feature set derived from PROJECT.md (PRIMARY source) + well-established casual game design patterns. Competitor analysis is training knowledge, not current App Store verification. The feature set for v1 is well-reasoned and internally consistent. |
-| Architecture | MEDIUM | Architectural patterns (FSM, fixed-rate game loop, event-driven pipeline) are canonical — sourced from "Game Programming Patterns" (Nystrom) and Glenn Fiedler's timestep article. Pattern application to Phaser 3 specifically is training knowledge. No 2026 source verification. |
-| Pitfalls | MEDIUM-HIGH | Touch event behavior, iOS AudioContext policy, canvas performance traps, DPR scaling — these are MDN-sourced and verified. FB Instant Games init order and localStorage gotchas are training knowledge (MEDIUM). The pitfalls listed are real and well-documented in the HTML5 game dev community. |
+| Stack | HIGH | CC 3.8 official docs verified via WebFetch for all new APIs (JsonAsset, Sprite, SpriteFrame, SpriteAtlas, Auto Atlas); engine already in production on this project; CC bug #11144 confirmed |
+| Features | HIGH | Feature list derives directly from PROJECT.md (ground truth); power-up design rationale sourced from game design community; priority order well-reasoned |
+| Architecture | HIGH | Based on full source read of all existing files; all v1.1 changes derived from actual code structure; integration points are direct API calls, not speculation |
+| Pitfalls | HIGH | 6 of 10 pitfalls sourced from direct code inspection of live source files; timestamp offset strategy is a well-established game dev pattern; sprite/Graphics conflict is empirically documented |
 
-**Overall confidence:** MEDIUM
-
-The core technology and architecture decisions are well-grounded in established patterns. The primary uncertainty is version numbers (Phaser, FB SDK) and FB-specific behavior that could not be verified against live documentation. These gaps are low-risk to address: verify versions before `npm install`, test FB SDK init flow with the mock file before submission.
+**Overall confidence: HIGH**
 
 ### Gaps to Address
 
-- **Phaser version:** Confirm latest stable at https://github.com/phaserjs/phaser/releases before pinning. Research used 3.87.x as latest known.
-- **FB SDK version:** Confirm current SDK version at https://developers.facebook.com/docs/games/instant-games/guides/sdk-reference. Research used 7.1 as latest known.
-- **FB bundle size limits:** Verify the 200KB initial payload limit is still current at https://developers.facebook.com/docs/games/instant-games/ — this constraint shapes all asset loading architecture.
-- **Flower visual differentiation:** Research cannot validate that the planned 5 flower state sprites will be distinguishable at 375px-wide viewport (iPhone SE). Requires an actual visual prototype test on a physical device before committing to the art direction.
-- **Phase timing balance:** The 40s/80s/120s phase boundaries and spawn rate deltas are design assumptions, not research findings. These must be validated through playtesting in Phase 4 — no external source can provide them.
+- **`schedule()`/`unschedule()` behavior during pause:** MEDIUM confidence on whether `this.unschedule(blinkCallback)` alone is sufficient or whether node deactivation is required. Verify empirically during Phase 3 — the urgency blink is the specific risk point.
+- **TIME_FREEZE per-frame rolling offset validation:** The mechanism is architecturally sound but novel in this codebase. Validate that advancing `sessionStartMs += dt` each frame during freeze produces correct `isGameOver()` and HUD timer behavior before implementing the full SPECIAL-03 feature.
+- **Auto Atlas frame naming convention:** Research recommends `getSpriteFrame('cherry_bud')` filename-based lookup. Confirm that CC Auto Atlas preserves the original PNG filename (without path or extension) as the frame name before wiring all 25 SpriteFrame assignments.
+- **`GameState.sessionStartMs` access modifier:** Currently `private readonly`. Pause requires it to be mutable. Decide whether to make it `public`, expose a `shiftSessionStart(ms)` method, or change `readonly` to `private` — this affects FlowerFSM pause offset design in Phase 3.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `PROJECT.md` — project requirements, core mechanic decisions (combo, wrong-tap penalty, 3-phase arc)
-- MDN Web Docs — Touch Events, Canvas Optimizing, Web Audio API best practices, Animation performance (verified via WebFetch 2026-03-13)
-- "Game Programming Patterns" (Nystrom) — FSM pattern, game loop pattern (canonical reference)
-- "Fix Your Timestep" (Glenn Fiedler, 2004) — fixed-rate game loop with delta-time accumulator (canonical reference)
-- "Juice It Or Lose It" (Jonasson & Purho, GDC 2012) — game feel / juice principles (canonical for casual game design)
-- Apple HIG — 44px minimum tap target standard (stable, training knowledge)
+- Cocos Creator 3.8 Asset Loading docs (WebFetch verified): https://docs.cocos.com/creator/3.8/manual/en/asset/dynamic-load-resources.html
+- Cocos Creator 3.8 Sprite Frame docs (WebFetch verified): https://docs.cocos.com/creator/3.8/manual/en/asset/sprite-frame.html
+- Cocos Creator 3.8 Atlas docs (WebFetch verified): https://docs.cocos.com/creator/3.8/manual/en/asset/atlas.html
+- Cocos Creator 3.8 Sprite Component docs (WebFetch verified): https://docs.cocos.com/creator/3.8/manual/en/ui-system/components/editor/sprite.html
+- Cocos Creator 3.8 Obtaining and Loading Assets (WebFetch verified): https://docs.cocos.com/creator/3.8/manual/en/scripting/load-assets.html
+- CC engine issue #11144 — `director.pause()` breaks UI scale transitions (WebFetch verified, closed April 2024): https://github.com/cocos/cocos-engine/issues/11144
+- Existing codebase source read: `FlowerFSM.ts`, `GameController.ts`, `GridRenderer.ts`, `GameState.ts`, `SpawnManager.ts`, `ComboSystem.ts`, `Grid.ts`, `JuiceHelpers.ts`, `FlowerTypes.ts`, `StorageService.ts` — ground truth for all architecture and pitfall findings
+- `.planning/PROJECT.md` — v1.1 feature scope and constraints (primary source)
 
 ### Secondary (MEDIUM confidence)
-- Phaser 3 ecosystem — training knowledge through August 2025 (versions, API, community patterns)
-- Facebook Instant Games SDK v7.1 — training knowledge (init order, bundle constraints, storage API)
-- Casual mobile game genre conventions — training knowledge (Cookie Clicker, Fruit Ninja, Tap Titans, Bejeweled Blitz patterns)
-- Phaser 3 Vite template patterns — training knowledge (https://github.com/phaserjs/template-vite-ts not fetched, verify manually)
+- Cocos Creator forums — pause pattern analysis: https://forum.cocosengine.org/t/properly-pause-the-game-in-cocos-creator/40191
+- Cocos Creator forums — pause with UI interaction: https://forum.cocosengine.org/t/how-to-properly-pause-the-game-for-pause-menu-in-cocos-creator/41901
+- Game Developer — status effect stacking algorithm: https://www.gamedeveloper.com/design/a-status-effect-stacking-algorithm
+- `game.pause()` vs `director.pause()` behavior: multiple corroborating community sources; consistent finding that `game.pause()` blocks input
 
-### Tertiary (LOW confidence — needs validation before implementation)
-- FB SDK current version (7.1 as of training data cutoff — verify before FB port phase)
-- FB initial payload limit (200KB figure — verify before FB port phase)
-- Current Phaser stable version (3.87.x — verify at https://github.com/phaserjs/phaser/releases)
+### Tertiary (LOW confidence — design reference only)
+- Medium — power-up duration design: https://medium.com/@pat.x.guillen/power-ups-f60af6cbc217 — design opinion; used only for duration range recommendations (5–10s)
+- TV Tropes — timed power-up patterns: https://tvtropes.org/pmwiki/pmwiki.php/Main/TimedPowerUp — pattern reference only
 
 ---
-
-*Research completed: 2026-03-13*
+*Research completed: 2026-03-17*
 *Ready for roadmap: yes*

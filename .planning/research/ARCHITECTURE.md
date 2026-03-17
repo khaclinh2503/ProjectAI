@@ -1,465 +1,532 @@
 # Architecture Research
 
-**Domain:** HTML5 Casual Grid-Based Tapping Game (Bloom Tap)
-**Researched:** 2026-03-13
-**Confidence:** MEDIUM (training knowledge; WebSearch unavailable for verification — patterns are well-established in HTML5 game dev community)
-
-## Standard Architecture
-
-### System Overview
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Presentation Layer                        │
-├───────────────┬──────────────────┬───────────────────────────────┤
-│  Renderer     │   UI Overlay     │   Animation System            │
-│  (Canvas 2D)  │   (DOM/Canvas)   │   (requestAnimationFrame)     │
-└───────┬───────┴────────┬─────────┴───────────────┬───────────────┘
-        │                │                         │
-┌───────┴────────────────┴─────────────────────────┴───────────────┐
-│                          Game Loop                               │
-│   update(dt) → processInput → updateState → render              │
-└───────┬──────────────────┬──────────────────────────────────────┘
-        │                  │
-┌───────┴───────┐  ┌───────┴─────────────────────────────────────┐
-│ Input Handler │  │               Game State                    │
-│ (Touch/Mouse) │  ├──────────────┬──────────────┬───────────────┤
-└───────────────┘  │  Grid State  │ Session State│  Flower FSMs  │
-                   │  (64 cells)  │ (score,timer,│  (per cell)   │
-                   │              │  phase,combo)│               │
-                   └──────────────┴──────────────┴───────────────┘
-```
-
-### Component Responsibilities
-
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| Game Loop | Drive updates at fixed logical rate; decouple update from render | `requestAnimationFrame` with delta-time accumulator |
-| Renderer | Draw grid, flowers, UI elements each frame from current state | Canvas 2D API; clear → draw background → draw cells → draw UI |
-| Input Handler | Capture touch/click events, translate pixel coords to grid coords | `touchstart` + `mousedown` listeners on canvas; debounce |
-| Grid State | Store which cell holds which flower (or is empty) | Flat array `cells[64]` or `cells[row][col]` |
-| Flower FSM | Manage individual flower lifecycle (5 states + timers) | Per-cell object with `state`, `timer`, `flowerType` |
-| Session State | Track score, combo, elapsed time, current difficulty phase | Plain object; updated by game logic each tick |
-| Spawn Manager | Schedule and place new flowers based on difficulty phase | Rate tables per phase; picks empty cells at random |
-| Combo System | Track consecutive correct taps; apply multiplier | Counter + timeout reset; multiplier lookup table |
-| Animation System | Play visual feedback (bloom burst, wilt, score popup) | Particle array or tween list; independent of game state |
+**Domain:** Casual tap game — Cocos Creator 3.8.8 + TypeScript, pure logic tier + renderer tier
+**Researched:** 2026-03-17
+**Confidence:** HIGH (full codebase read; all integration points derived directly from source)
 
 ---
 
-## Recommended Project Structure
+## System Overview
 
 ```
-src/
-├── core/                   # Platform-independent game logic
-│   ├── GameLoop.js         # requestAnimationFrame driver with delta-time
-│   ├── GameState.js        # Session state (score, timer, phase, combo)
-│   ├── Grid.js             # 8x8 cell array; cell access helpers
-│   ├── FlowerFSM.js        # Flower state machine class
-│   ├── SpawnManager.js     # Wave/difficulty logic; places flowers on grid
-│   └── ComboSystem.js      # Consecutive-tap tracking, multiplier calc
-├── input/
-│   └── InputHandler.js     # Touch + mouse unification; grid hit-test
-├── render/
-│   ├── Renderer.js         # Main draw pass: grid, flowers, UI
-│   ├── AnimationSystem.js  # Short-lived effects: burst, wilt, score popup
-│   └── SpriteSheet.js      # Asset loader; frame map for flower states
-├── data/
-│   ├── flowerTypes.js      # Config: cycle speed, score values per type
-│   └── difficultyPhases.js # Spawn rates, intervals for each 40s phase
-├── scenes/
-│   ├── GameScene.js        # Wires core + input + render; owns game loop
-│   └── ResultScene.js      # End-of-game screen: score, highscore display
-├── utils/
-│   ├── storage.js          # localStorage wrapper for highscore
-│   └── math.js             # Grid-coord helpers, random empty cell picker
-└── main.js                 # Entry point; canvas setup; scene bootstrap
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         COCOS RENDERER TIER                                  │
+│  (cc imports allowed — Cocos lifecycle, tween, node manipulation)            │
+├────────────────┬──────────────────────┬───────────────┬──────────────────────┤
+│ GameController │    GridRenderer       │  (JuiceSystem)│   ResultsScreen      │
+│ (orchestrator) │ (64 pooled nodes,     │  inline in GC │  (game-over overlay) │
+│                │  sprites, touch)      │               │                      │
+├────────────────┴──────────────────────┴───────────────┴──────────────────────┤
+│              BOUNDARY: no cc imports below this line                          │
+├──────────────┬──────────────┬──────────────┬───────────────┬──────────────────┤
+│  FlowerFSM   │     Grid     │ ComboSystem  │ SpawnManager  │   GameState      │
+│ (timestamp   │ (64 cells,   │ (multiplier  │ (phase config,│  (score, timing) │
+│  state deriv)│  FlowerFSMs) │  streak)     │  type weights)│                  │
+├──────────────┴──────────────┴──────────────┴───────────────┴──────────────────┤
+│                         PURE LOGIC TIER                                        │
+│  FlowerTypes.ts (configs)   JuiceHelpers.ts (pure math)   StorageService.ts  │
+│  FlowerState.ts (enum)      GameConfig.ts (NEW — JSON-driven)                 │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Structure Rationale
+### Component Responsibilities (v1.0 baseline)
 
-- **core/:** Contains all game logic with zero DOM/Canvas dependency. Makes unit-testing flower FSM and combo logic trivial without a browser.
-- **input/:** Isolated translation layer. Changing from raw canvas touch to a framework (Phaser, etc.) only touches this folder.
-- **render/:** All drawing knowledge lives here. The rest of the codebase never calls Canvas API directly.
-- **data/:** Declarative config files. Tuning spawn rates or flower scores never touches logic code.
-- **scenes/:** Scene objects own the lifecycle (init / update / destroy). Switching from game to result screen is a scene swap.
+| Component | Tier | Responsibility |
+|-----------|------|----------------|
+| `GameController` | Renderer | Session FSM (WAITING → COUNTDOWN → PLAYING → GAME_OVER), spawn tick in `update()`, tap routing, HUD writes, juice orchestration |
+| `GridRenderer` | Renderer | 64 pooled cell nodes, per-frame FSM color poll, touch registration, score floats (8-slot pool), flash animations |
+| `FlowerFSM` | Pure | Timestamp-based state derivation (`elapsed = nowMs - spawnTimestamp`), score interpolation, collect() flag |
+| `Grid` | Pure | Flat 64-cell array, owns all FlowerFSM instances, spawn/clear/alive-count |
+| `SpawnManager` | Pure | Phase-table-driven config lookup, weighted random flower type selection |
+| `ComboSystem` | Pure | Multiplier/streak/step management, onCorrectTap()/onWrongTap() |
+| `GameState` | Pure | Score accumulation, session timing, applyCorrectTap/applyWrongTap |
+| `JuiceHelpers` | Pure | Stateless math: float label string, font size, float duration, urgency stage, milestone label |
+| `StorageService` | Pure | localStorage abstraction (bloomtap_ prefix, silent-fail) |
 
 ---
 
-## Architectural Patterns
+## v1.1 Integration Architecture
 
-### Pattern 1: Fixed-Rate Update with Variable Render (delta-time game loop)
+### New and Modified Components
 
-**What:** Accumulate real elapsed time; run logic updates in fixed steps; render as fast as the display allows.
+| Component | Status | Tier | Description |
+|-----------|--------|------|-------------|
+| `GameConfig.ts` | **NEW** | Pure | Typed interfaces + `parse()` for JSON config. Outputs `FlowerTypeConfig[]` and `SpawnPhaseConfig[]` |
+| `SpecialFlowerDef.ts` | **NEW** | Pure | `SpecialFlowerType` enum (SCORE_MULTIPLIER, FREEZE_TIME, SLOW_GROWTH) + config interface |
+| `PowerUpState.ts` | **NEW** | Pure | Pure data record: active type, `expiresAtMs`, magnitude; helper `isActive(nowMs)`, `applyOffset(ms)` |
+| `PauseState.ts` | **NEW** | Pure | `{ isPaused, pauseStartMs, totalPausedMs }` — pure data, no cc |
+| `FlowerTypes.ts` | **Modified** | Pure | Keep `FlowerTypeConfig` interface + `FlowerTypeId` enum; **remove** hardcoded `FLOWER_CONFIGS` constant |
+| `FlowerFSM.ts` | **Modified** | Pure | Add `_pauseOffset: number` field + `addPauseOffset(ms)` method; modify elapsed: `(nowMs - spawnTimestamp) - pauseOffset` |
+| `SpawnManager.ts` | **Modified** | Pure | Accept injected phase array in constructor; add `initialCount` + `specialSpawnChance` to `SpawnPhaseConfig`; add `pickSpecialSpawn()` |
+| `Grid.ts` | **Modified** | Pure | Add `_specialTypes: Map<number, SpecialFlowerType>`; add `spawnSpecialFlower()`, `getSpecialType()`, `clearSpecialType()` |
+| `JuiceHelpers.ts` | **Modified** | Pure | No functional change — wire `GameController` to call `getUrgencyStage()` and `getMilestoneLabel()` instead of duplicating them inline |
+| `GameController.ts` | **Modified** | Renderer | Pause/resume handlers, power-up activation, config injection, initial-spawn burst, combo label fix (HUD-03), screen shake call |
+| `GridRenderer.ts` | **Modified** | Renderer | Sprite render path alongside Graphics; special flower visual variant; `playScreenShake()` method |
 
-**When to use:** Always. This is the standard HTML5 game loop. It decouples flower FSM timer accuracy from frame rate drops on low-end mobile.
+---
 
-**Trade-offs:** Slight implementation complexity over a naive `setInterval`; prevents timer drift and ensures consistent difficulty regardless of device speed.
+## Pattern 1: Config-Driven Flower Data
 
-**Example:**
-```javascript
-// GameLoop.js
-let accumulator = 0;
-const FIXED_STEP = 1000 / 60; // ms — 60 logic ticks/sec
+**What:** A JSON asset file defines all `FlowerTypeConfig` records and `SpawnPhaseConfig` phases. The pure logic tier never reads JSON directly — it receives typed plain objects. Cocos handles asset loading.
 
-function tick(timestamp) {
-  const dt = timestamp - lastTime;
-  lastTime = timestamp;
-  accumulator += Math.min(dt, 200); // cap spiral-of-death
+**Where config loading lives:** Renderer tier only. `GameController.onLoad()` loads the JSON asset via `cc.resources.load()` and calls `GameConfig.parse(json)` to produce typed objects. The parsed arrays are stored on `GameController` and passed down to `SpawnManager` at construction.
 
-  while (accumulator >= FIXED_STEP) {
-    update(FIXED_STEP);   // deterministic, always 16.67ms
-    accumulator -= FIXED_STEP;
-  }
+**Integration point — GameController.onLoad():**
+```
+GameController.onLoad()
+  → cc.resources.load('game-config', JsonAsset, callback)
+  → GameConfig.parse(jsonAsset.json)   // pure, Vitest-testable
+  → this._flowerConfigs = result.flowerTypes  // Record<FlowerTypeId, FlowerTypeConfig>
+  → this._spawnManager = new SpawnManager(result.spawnPhases)
+  → _configReady = true (enables start button)
+```
 
-  render();
-  requestAnimationFrame(tick);
+**Integration point — spawn tick in GameController.update():**
+```typescript
+// v1.0:
+const config = FLOWER_CONFIGS[typeId];       // module import
+
+// v1.1:
+const config = this._flowerConfigs[typeId];  // injected at onLoad()
+```
+
+**Integration point — SpawnManager constructor:**
+```typescript
+// v1.0: module-level PHASE_CONFIGS constant
+// v1.1:
+constructor(phases: SpawnPhaseConfig[]) {
+    this._phases = phases;  // fully injected, no module constant
 }
 ```
 
-### Pattern 2: Flower Finite State Machine (FSM) per Cell
+**Test coverage:** `GameConfig.parse()` is pure — add Vitest tests for malformed JSON, missing fields, wrong types, and boundary values without any Cocos dependency.
 
-**What:** Each occupied grid cell runs an independent FSM. State transitions are time-driven (timer expires) except `DEAD` which can also be triggered by a wrong tap.
-
-**When to use:** Any entity with a defined lifecycle. Centralises transition logic; prevents scattered `if (state === 'blooming')` checks across the codebase.
-
-**Trade-offs:** 64 FSM instances is trivial overhead. The benefit is testability and clarity.
-
-**State diagram:**
-```
-EMPTY → SPROUT → BUDDING → BLOOMING → WILTING → DEAD → EMPTY
-           ↑          |         |
-       (spawn)    [tap OK]  [tap OK]    → harvest + score
-                                ↓
-                          [tap wrong] → penalty + skip to DEAD
+**SPAWN-01 (immediate initial flowers):** Add `initialCount: number` to `SpawnPhaseConfig`. In `GameController._beginSession()`, replace the 3-second first-spawn delay with a burst loop that runs synchronously before entering PLAYING state:
+```typescript
+// replaces: this._nextSpawnMs = now + firstInterval
+const phase0 = this._spawnManager.getPhaseConfig(0);
+while (this.grid.getAliveCount(nowMs) < phase0.initialCount) {
+    // spawnOne() — same logic as update() spawn tick
+}
+this._nextSpawnMs = nowMs + phase0.intervalMs;
 ```
 
-**Example:**
-```javascript
-// FlowerFSM.js
-class FlowerFSM {
-  constructor(type) {
-    this.type = type;   // references flowerTypes config
-    this.state = 'SPROUT';
-    this.timer = 0;
-  }
+---
 
-  update(dt) {
-    this.timer += dt;
-    const cfg = flowerTypes[this.type];
-    if (this.timer >= cfg.durations[this.state]) {
-      this.timer = 0;
-      this.state = NEXT_STATE[this.state]; // transition table
+## Pattern 2: Special Power-Up Flower Architecture
+
+**What:** Special flowers share the same `FlowerFSM` lifecycle as normal flowers. Their "specialness" is tracked separately in `Grid` via a parallel map. Power-up effects are tracked in `PowerUpState` on `GameController`.
+
+**Data model (pure tier):**
+```
+SpecialFlowerType { SCORE_MULTIPLIER | FREEZE_TIME | SLOW_GROWTH }
+
+PowerUpState {
+    activeType: SpecialFlowerType | null
+    expiresAtMs: number     // wall-clock expiry (adjusted on pause/resume)
+    magnitude: number       // x2/x3/x5 for SCORE_MULTIPLIER, factor for SLOW_GROWTH
+}
+```
+
+**Grid extension (pure tier, additive change):**
+```typescript
+private _specialTypes = new Map<number, SpecialFlowerType>();
+
+spawnSpecialFlower(cell, config, type, nowMs): FlowerFSM {
+    const fsm = this.spawnFlower(cell, config, nowMs);  // existing method unchanged
+    this._specialTypes.set(cell.index, type);
+    return fsm;
+}
+getSpecialType(cell): SpecialFlowerType | null {
+    return this._specialTypes.get(cell.index) ?? null;
+}
+clearSpecialType(cell): void {
+    this._specialTypes.delete(cell.index);
+}
+```
+
+**Spawn integration — SpawnManager:** Add `pickSpecialSpawn(elapsedMs): boolean` — returns true with probability `SpawnPhaseConfig.specialSpawnChance` (new field, e.g. 0.05). Called by `GameController.update()` after the normal spawn decision:
+
+```
+if (shouldSpawn && spawnManager.pickSpecialSpawn(elapsedMs)) {
+    grid.spawnSpecialFlower(cell, config, type, nowMs)
+    gridRenderer.setCellTypeId(row, col, typeId, specialType)
+} else {
+    grid.spawnFlower(cell, config, nowMs)
+    gridRenderer.setCellTypeId(row, col, typeId)
+}
+```
+
+**Tap routing — GameController.handleCorrectTap():** After BLOOMING/FULL_BLOOM confirmed, check `grid.getSpecialType(cell)`. If non-null, call `_activatePowerUp(type)` before normal score path. Clear special type on collect: `grid.clearSpecialType(cell)`.
+
+**Power-up effects by type:**
+
+| Power-Up | Effect Location | Mechanism |
+|----------|----------------|-----------|
+| SCORE_MULTIPLIER | `GameState.applyCorrectTap()` | Pass `powerUpMultiplier` as additional factor: `rawScore * combo.multiplier * powerUpMultiplier` |
+| FREEZE_TIME | `GameController._updateHUD()` + `GameState.isGameOver()` | Store `freezeEndsAtMs`; while active, do not advance displayed timer and extend `sessionStartMs` by frozen duration |
+| SLOW_GROWTH | Spawn-time config copy | On activation, set `_growthSlowActive = true`; newly spawned flowers get `{ ...baseConfig, cycleDurationMs: base * slowFactor }` — existing live flowers not retroactively affected |
+
+**SLOW_GROWTH recommendation:** Spawn-time config copy is the cleanest approach. It avoids mutating live `FlowerFSM` timestamps and keeps `FlowerFSM` unchanged. The effect reads as "new flowers grow slower" which is visually correct and simpler to test.
+
+---
+
+## Pattern 3: Pause/Resume — Timestamp-Based FSM Strategy
+
+**This is the critical design constraint.** `FlowerFSM` derives state from `elapsed = nowMs - spawnTimestamp`. If the game pauses for N milliseconds, every live flower's `elapsed` advances by N even though gameplay was frozen — flowers skip states or die during pause.
+
+**Solution: Accumulated Pause Offset per FlowerFSM**
+
+Add `_pauseOffset: number = 0` to each `FlowerFSM`. On resume, propagate the pause duration to all live instances. The elapsed calculation becomes:
+
+```typescript
+// FlowerFSM.getState(nowMs) and getScore(nowMs) both use:
+const elapsed = (nowMs - this._spawnTimestamp) - this._pauseOffset;
+```
+
+**New method (pure, testable):**
+```typescript
+addPauseOffset(ms: number): void {
+    this._pauseOffset += ms;
+}
+```
+
+Existing 150 tests pass unchanged — `_pauseOffset` starts at 0, so `elapsed` is identical to v1.0 when no pause occurs.
+
+**PauseState (pure tier, no cc):**
+```typescript
+interface PauseState {
+    isPaused: boolean;
+    pauseStartMs: number;   // wall-clock time when current pause began
+    totalPausedMs: number;  // sum of completed pause durations
+}
+```
+
+**On pause — GameController._pauseSession():**
+```
+pauseState.isPaused = true
+pauseState.pauseStartMs = performance.now()
+SessionPhase → PAUSED               // update() early-returns on !== PLAYING
+gridRenderer.setInputEnabled(false)
+unschedule(this._blinkCallback)    // stop urgency blink
+show pause overlay
+```
+
+**On resume — GameController._resumeSession():**
+```
+pauseDuration = performance.now() - pauseState.pauseStartMs
+pauseState.totalPausedMs += pauseDuration
+pauseState.isPaused = false
+
+// Slide all time-anchored values forward by pauseDuration:
+gameState.sessionStartMs += pauseDuration          // session clock
+this._nextSpawnMs += pauseDuration                 // spawn scheduler
+powerUpState.expiresAtMs += pauseDuration          // power-up expiry
+
+// Propagate to all live FlowerFSMs:
+for each cell in grid.getCells():
+    if cell.flower !== null:
+        cell.flower.addPauseOffset(pauseDuration)
+
+SessionPhase → PLAYING
+gridRenderer.setInputEnabled(true)
+if urgencyStage === 3: reschedule blink callback
+hide pause overlay
+```
+
+**New flowers spawned after a pause:** Their `_spawnTimestamp` is set to `performance.now()` at spawn time and `_pauseOffset` starts at 0. They do not inherit historical offsets — correct, because their lifecycle begins from the post-resume wall clock.
+
+**GameState session clock:** `sessionStartMs += pauseDuration` on resume. `isGameOver()` and `getElapsedMs()` require zero changes — the sliding window absorbs all pause time transparently.
+
+**Cocos scheduler and tweens during pause:**
+- Blink callback: `unschedule` on pause; conditionally `reschedule` on resume (only if urgency stage 3)
+- Float animations in progress: let them complete naturally (visual only, no logic impact)
+- Active tweens on cells: leave running — the state poll in `GridRenderer.update()` will correct colors on next frame after resume anyway
+
+---
+
+## Pattern 4: Sprite Rendering in GridRenderer
+
+**What:** Replace `Graphics.fillRect` color-coded cells with `Sprite` + `SpriteFrame` per cell node. The 64 pooled cell nodes already exist — the change adds a `Sprite` component alongside the existing `Graphics` component.
+
+**CellView extension:**
+```typescript
+interface CellView {
+    node: Node;
+    graphics: Graphics;    // retained for flash overlays
+    sprite: Sprite | null; // null when sprites not loaded
+    row: number;
+    col: number;
+    typeId: FlowerTypeId | null;
+    isFlashing: boolean;
+}
+```
+
+**Sprite atlas structure (recommendation):** One `SpriteAtlas` per flower type (5 atlases) with frames named by `FlowerState` string value. Loaded once in `GridRenderer.onLoad()` via `cc.resources.load()`.
+
+**Coexistence strategy:** `Sprite` renders the flower image; `Graphics` renders flash feedback (wrong-tap red, correct-tap yellow/white) on top. `Graphics` z-order higher than `Sprite`. This avoids clearing the sprite frame on each flash.
+
+**Render path toggle:**
+```typescript
+private _useSprites: boolean = false;  // set true after atlas load success
+
+// _paintState becomes:
+private _paintState(view: CellView, state: FlowerState): void {
+    if (this._useSprites && view.sprite && view.typeId) {
+        view.sprite.spriteFrame = this._spriteFrames[view.typeId][state];
+    } else {
+        // existing Graphics color-coded fallback
+        const color = FLOWER_COLORS[view.typeId!][state];
+        this._paintCellColor(view, color);
     }
-  }
-
-  tap() {
-    if (this.state === 'BUDDING' || this.state === 'BLOOMING') {
-      return { result: 'harvest', points: flowerTypes[this.type].points[this.state] };
-    }
-    return { result: 'penalty', points: -flowerTypes[this.type].penaltyPoints };
-  }
-}
-
-const NEXT_STATE = {
-  SPROUT: 'BUDDING', BUDDING: 'BLOOMING',
-  BLOOMING: 'WILTING', WILTING: 'DEAD', DEAD: null
-};
-```
-
-### Pattern 3: Event-Driven Score Pipeline (tap → score)
-
-**What:** Input events emit a discrete `TapEvent` object. Game logic processes it synchronously: hit-test grid → query FSM → update score/combo → trigger animation. No side effects outside this pipeline.
-
-**When to use:** Keeps the data flow explicit and testable. Avoids tightly coupling the input handler to scoring rules.
-
-**Trade-offs:** One extra indirection. Worthwhile for this complexity level.
-
-**Data flow:**
-```
-touchstart (canvas pixel x,y)
-    ↓
-InputHandler.pixelToCell(x, y) → (row, col)
-    ↓
-Grid.getCell(row, col) → FlowerFSM instance (or null)
-    ↓
-FlowerFSM.tap() → { result, points }
-    ↓
-ComboSystem.record(result) → multiplier
-    ↓
-GameState.applyScore(points * multiplier)
-    ↓
-AnimationSystem.spawn(type, x, y)   // visual feedback, non-blocking
-```
-
-### Pattern 4: Phase-Based Spawn Controller
-
-**What:** A single elapsed-time value drives which of three difficulty configs is active. Spawn decisions are made by a rate timer, not frame-by-frame logic.
-
-**When to use:** When difficulty progression is time-based without discrete level transitions.
-
-**Example:**
-```javascript
-// SpawnManager.js
-const PHASES = [
-  { start: 0,   end: 40000,  spawnInterval: 2000 },  // 0-40s slow
-  { start: 40000, end: 80000, spawnInterval: 1200 },  // 40-80s medium
-  { start: 80000, end: 120000, spawnInterval: 600 },  // 80-120s fast
-];
-
-update(dt, elapsed, grid) {
-  const phase = PHASES.find(p => elapsed >= p.start && elapsed < p.end);
-  this.spawnTimer += dt;
-  if (this.spawnTimer >= phase.spawnInterval) {
-    this.spawnTimer = 0;
-    const cell = grid.randomEmptyCell();
-    if (cell) grid.spawn(cell, randomFlowerType());
-  }
 }
 ```
+
+**Special flower visual:** `GridRenderer.setCellTypeId()` gains an optional `specialType?: SpecialFlowerType` parameter. When set, a child overlay node on the cell renders the special frame (e.g., a glow border or icon).
 
 ---
 
 ## Data Flow
 
-### Tap Event Flow (full pipeline)
+### Tap Flow (v1.1)
 
 ```
-User finger / mouse
+User TOUCH_START
     ↓
-touchstart / mousedown on <canvas>
+GridRenderer._onCellTapped(view)
+    guard: _inputEnabled, isFlashing, null checks
     ↓
-InputHandler
-  - preventDefault() to block scroll
-  - Translate clientX/Y → canvas-relative coords
-  - Divide by cellSize → (col, row)
-  - Emit TapEvent { row, col, timestamp }
+cell.flower.getState(nowMs)
+    [elapsed = (nowMs - spawnTimestamp) - pauseOffset]
     ↓
-GameScene.handleTap(event)
-  - Grid.getFlower(row, col) → flower | null
-  - flower.tap() → { result, points }
-  - ComboSystem.record(result) → comboMultiplier
-  - GameState.score += points * comboMultiplier
-  - if result === 'harvest': Grid.clear(row, col)
-  - AnimationSystem.addEffect(result, canvasX, canvasY, points * multiplier)
+FlowerState === BLOOMING | FULL_BLOOM ?
+    YES ↓
+grid.getSpecialType(cell)  →  SpecialFlowerType | null
     ↓
-Next render frame: Renderer draws updated state
+GameController.handleCorrectTap(cell, flower, nowMs)
+    1. rawScore = flower.getScore(nowMs)
+    2. flower.collect()
+    3. grid.clearSpecialType(cell) if special
+    4. gameState.applyCorrectTap(rawScore, combo, powerUpMultiplier)
+    5. if specialType → _activatePowerUp(type)
+    ↓
+GridRenderer: flash + pulse + scoreFloat(rawScore, combo.multiplier * powerUpMult)
 ```
 
-### State Update Flow (each logic tick)
+### Spawn Flow (v1.1)
 
 ```
-GameLoop.update(dt)
+GameController.update()
     ↓
-GameState.update(dt)
-  - elapsed += dt
-  - timeRemaining -= dt
-  - if timeRemaining <= 0 → scene transition to ResultScene
+nowMs >= _nextSpawnMs?
+    YES ↓
+spawnManager.getPhaseConfig(elapsedMs)   [uses injected JSON-driven phases]
     ↓
-SpawnManager.update(dt, elapsed, grid)
-  - may call grid.spawn(cell, type)
+grid.getAliveCount(nowMs) < phaseConfig.maxAlive?
+    YES ↓
+spawnManager.pickSpecialSpawn(elapsedMs)? [probabilistic, new method]
+    YES → grid.spawnSpecialFlower(cell, config, type, nowMs)
+    NO  → grid.spawnFlower(cell, config, nowMs)         [existing]
     ↓
-for each occupied cell: FlowerFSM.update(dt)
-  - state transitions on timer expiry
-  - if transition to DEAD: Grid.clear(cell)
+gridRenderer.setCellTypeId(row, col, typeId, specialType?)
     ↓
-ComboSystem.update(dt)
-  - reset combo if tap gap timeout exceeded
-    ↓
-AnimationSystem.update(dt)
-  - advance all active effects, remove expired ones
+_nextSpawnMs = nowMs + phaseConfig.intervalMs
 ```
 
-### Combo System State
+### Config Load Flow (startup, runs once)
 
 ```
-ComboSystem
-  streak: number        ← increments on correct tap
-  multiplier: number    ← lookup: streak → multiplier
-  gapTimer: number      ← resets on each tap, counts up each tick
+GameController.onLoad()
+    ↓
+cc.resources.load('game-config', JsonAsset, callback)
+    ↓
+GameConfig.parse(jsonAsset.json)    [pure — Vitest-testable]
+    → { flowerTypes: Record<FlowerTypeId, FlowerTypeConfig>,
+        spawnPhases: SpawnPhaseConfig[] }
+    ↓
+this._flowerConfigs = result.flowerTypes
+this._spawnManager = new SpawnManager(result.spawnPhases)
+    ↓
+cc.resources.load sprite atlases     [separate load]
+    ↓
+_configReady = true   [start button enabled only after both complete]
+```
 
-On correct tap:
-  streak++
-  gapTimer = 0
-  multiplier = MULTIPLIER_TABLE[min(streak, MAX_STREAK)]
+### Pause Flow
 
-On wrong tap or gapTimer > GAP_THRESHOLD:
-  streak = 0
-  multiplier = 1
-  gapTimer = 0
+```
+User taps Pause button
+    ↓
+GameController._pauseSession()
+    pauseState.isPaused = true
+    pauseState.pauseStartMs = performance.now()
+    SessionPhase → PAUSED
+    gridRenderer.setInputEnabled(false)
+    unschedule blink callback
+    show pause overlay
+    [update() returns early — no spawn, no HUD, no game-over check]
+
+User taps Resume button
+    ↓
+GameController._resumeSession()
+    pauseDuration = now - pauseState.pauseStartMs
+    gameState.sessionStartMs += pauseDuration
+    _nextSpawnMs += pauseDuration
+    powerUpState.expiresAtMs += pauseDuration
+    for each live FlowerFSM: addPauseOffset(pauseDuration)
+    SessionPhase → PLAYING
+    gridRenderer.setInputEnabled(true)
+    if urgencyStage === 3: reschedule blink callback
+    hide pause overlay
 ```
 
 ---
 
-## Mobile Touch Input Handling
+## Component Boundaries: New vs Modified
 
-### Critical requirements for mobile
+### New Files (pure logic tier — all Vitest-testable)
 
-1. **Use `touchstart` not `touchend`** — `touchend` fires 60-100ms later. For a reflex game, `touchstart` is the correct event. `touchend` should only cancel scroll, not fire game logic.
+| File | Purpose | Key Test Surface |
+|------|---------|-----------------|
+| `logic/GameConfig.ts` | JSON parse + validation, typed output | parse() with valid/invalid/edge-case JSON |
+| `logic/SpecialFlowerDef.ts` | `SpecialFlowerType` enum + `SpecialFlowerConfig` interface | Type-only; minimal tests |
+| `logic/PowerUpState.ts` | Pure data record + `isActive(nowMs)`, `applyOffset(ms)` | isActive() expiry, offset propagation |
+| `logic/PauseState.ts` | Pure data record — no methods needed | Trivial; data-only |
 
-2. **`preventDefault()` on touchstart** — Required to suppress the 300ms click delay and prevent page scroll during gameplay. Must be called on the canvas element with `{ passive: false }`.
+### Modified Files (pure logic tier)
 
-3. **Coordinate translation** — `touch.clientX/Y` is viewport-relative. Subtract `canvas.getBoundingClientRect()` to get canvas-relative coords, then divide by `cellSize`.
+| File | Change | Risk |
+|------|--------|------|
+| `logic/FlowerFSM.ts` | Add `_pauseOffset`, `addPauseOffset()`; modify elapsed formula | LOW — additive; existing 150 tests pass at offset=0 |
+| `logic/FlowerTypes.ts` | Remove `FLOWER_CONFIGS` constant; keep interface + enum | MEDIUM — only `GameController` imports `FLOWER_CONFIGS`; one call site to update |
+| `logic/SpawnManager.ts` | Constructor injection; add `initialCount`, `specialSpawnChance` fields; add `pickSpecialSpawn()` | LOW — constructor change only breaks `GameController` instantiation |
+| `logic/Grid.ts` | Add `_specialTypes` map + three new methods | LOW — additive; existing tests unaffected |
+| `logic/JuiceHelpers.ts` | No code change — wire callers | NONE — exports unchanged |
 
-4. **Single-touch only for v1** — Multi-touch opens edge cases (two fingers, palm rejection). Track only `touches[0]`. Ignore subsequent touches.
+### Modified Files (renderer tier)
 
-5. **Unified mouse + touch handler** — Use a single `handlePointerDown(x, y)` function called from both `mousedown` and `touchstart`. Keeps logic DRY and simplifies testing.
-
-**Example:**
-```javascript
-// InputHandler.js
-canvas.addEventListener('touchstart', (e) => {
-  e.preventDefault();  // MUST be non-passive
-  const touch = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-  handlePointerDown(x, y);
-}, { passive: false });
-
-canvas.addEventListener('mousedown', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  handlePointerDown(e.clientX - rect.left, e.clientY - rect.top);
-});
-
-function handlePointerDown(x, y) {
-  const col = Math.floor(x / CELL_SIZE);
-  const row = Math.floor(y / CELL_SIZE);
-  if (row >= 0 && row < 8 && col >= 0 && col < 8) {
-    onTap({ row, col });
-  }
-}
-```
-
-### Canvas sizing for mobile
-
-Scale the canvas to fill the viewport while maintaining the 8x8 grid aspect ratio. Use CSS `width: 100%; height: auto` on the canvas element, and compute `cellSize` from `canvas.clientWidth / 8` at runtime. Re-compute on `resize` events.
+| File | Change | Risk |
+|------|--------|------|
+| `GameController.ts` | Add PAUSED phase; add `_pauseSession()`/`_resumeSession()`; add `_powerUpState`; modify `_beginSession()` for burst spawn; fix comboLabel (HUD-03); call `JuiceHelpers.getUrgencyStage()` and `getMilestoneLabel()` | MEDIUM — many small touch points; no pure tier logic added |
+| `GridRenderer.ts` | Add `Sprite` to CellView; add atlas loader; add `_paintStateSprite()`; extend `setCellTypeId()` signature; add `playScreenShake()` | MEDIUM — parallel render path; Graphics fallback preserved |
 
 ---
 
-## Build Order (Component Dependencies)
+## Build Order
 
-```
-Tier 1 — No dependencies (build first):
-  flowerTypes.js         ← pure data
-  difficultyPhases.js    ← pure data
-  FlowerFSM.js           ← depends only on flowerTypes data
-  math.js                ← pure utility
+Ordering ensures pure tier changes are verified before renderer tier touches them.
 
-Tier 2 — Depends on Tier 1:
-  Grid.js                ← depends on FlowerFSM
-  ComboSystem.js         ← standalone logic
-  GameState.js           ← standalone logic
+**Step 1 — Config infrastructure (pure tier, zero risk)**
+- Create `logic/GameConfig.ts` with `parse()` returning typed config
+- Create `resources/game-config.json` with v1.0 values (all 5 flower types, 3 phases)
+- Add Vitest tests for `GameConfig.parse()`
+- Modify `FlowerTypes.ts`: remove `FLOWER_CONFIGS` constant
+- Modify `SpawnManager.ts`: constructor injection
+- Update `GameController.onLoad()` to load JSON and inject — game behavior identical to v1.0
+- Covers: CFG-01, CFG-02
 
-Tier 3 — Depends on Tier 2:
-  SpawnManager.js        ← depends on Grid + difficultyPhases
-  InputHandler.js        ← depends on Grid geometry (cellSize)
+**Step 2 — Spawn fix (pure + renderer, low risk)**
+- Add `initialCount` to `SpawnPhaseConfig` in JSON (e.g. 4 for phase 1)
+- Modify `GameController._beginSession()`: remove 3s delay, add initial burst
+- Covers: SPAWN-01
 
-Tier 4 — Depends on Tier 3:
-  Renderer.js            ← depends on Grid + GameState + AnimationSystem
-  AnimationSystem.js     ← standalone, feeds Renderer
-  GameLoop.js            ← orchestrates all Tier 2-3 components
+**Step 3 — Pause system (pure tier first, then renderer)**
+- Add `_pauseOffset` to `FlowerFSM`; run existing 150 tests — all pass (offset=0 baseline)
+- Create `PauseState.ts`
+- Add PAUSED to `SessionPhase` enum
+- Implement `GameController._pauseSession()` / `_resumeSession()`, pause button node wiring
+- Covers: PAUSE-01
 
-Tier 5 — Top of graph:
-  GameScene.js           ← wires everything together
-  ResultScene.js         ← depends on GameState (final score)
-  main.js                ← entry point, scene bootstrap
-```
+**Step 4 — Special power-up flowers (pure tier, then renderer)**
+- Create `SpecialFlowerDef.ts`, `PowerUpState.ts`
+- Modify `Grid.ts`: add `_specialTypes` map + new methods
+- Add `pickSpecialSpawn()` to `SpawnManager`; add `specialSpawnChance` field to phases in JSON
+- Write Vitest tests for `PowerUpState.isActive()`, `Grid.getSpecialType()`
+- Modify `GameController.handleCorrectTap()`: check special type, route to `_activatePowerUp()`
+- Modify `GridRenderer`: special flower visual (overlay node or frame swap)
+- Covers: SPECIAL-01 through SPECIAL-04
 
-**Implication for roadmap:** Build and test `FlowerFSM` + `Grid` + `ComboSystem` as pure logic first (no canvas required). Add `Renderer` once logic is verified. Add `InputHandler` last in the core pass since you can test logic with direct function calls.
+**Step 5 — Bug fixes (renderer tier only)**
+- Fix `comboLabel`: show `multiplier.toFixed(1)` from first tap (HUD-03)
+- Refactor `GameController._updateTimerUrgency()` to call `JuiceHelpers.getUrgencyStage()` (JuiceHelpers coupling)
+- Refactor `GameController._checkMilestone()` to call `JuiceHelpers.getMilestoneLabel()` (JuiceHelpers coupling)
+- Add `GridRenderer.playScreenShake()`; call from `GameController.handleWrongTap()` (JUICE-01)
 
----
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Putting Game Logic in the Renderer
-
-**What people do:** Call `FlowerFSM.update()` inside the draw function, or check `if (flower.state === 'DEAD') removeFlower()` inside the render pass.
-
-**Why it's wrong:** The render function runs at display refresh rate (variable), not at game logic rate. Flower timers become frame-rate-dependent. On a 120Hz phone, flowers die twice as fast.
-
-**Do this instead:** Strict separation — `update(dt)` mutates state, `render()` reads state and draws. Never mutate state in render.
-
-### Anti-Pattern 2: Listening to `touchend` for Tap Detection
-
-**What people do:** Wire tap logic to `touchend` because "that's when the tap is complete."
-
-**Why it's wrong:** `touchend` fires ~100ms after `touchstart`. In a 120-second reflex game where BLOOMING windows can be 1-2 seconds, losing 100ms per tap matters. It also causes double-fire when combined with the synthesized `click` event.
-
-**Do this instead:** Use `touchstart` with `preventDefault()`. Only use `touchend` if you need to distinguish tap from swipe (check that touch didn't move more than a threshold).
-
-### Anti-Pattern 3: Mutable Global Game State
-
-**What people do:** `window.score += points`, `window.combo++`, etc.
-
-**Why it's wrong:** Impossible to reset state cleanly between games. End-of-game scene reads stale values. Testing is impossible.
-
-**Do this instead:** All session state lives in a `GameState` instance created fresh at game start. Pass it through to components that need it, or use a minimal event bus.
-
-### Anti-Pattern 4: Animating via setTimeout/setInterval
-
-**What people do:** `setTimeout(() => drawExplosion(), 100)` for visual effects.
-
-**Why it's wrong:** Timers fire off the render cycle. Effects render mid-frame or are skipped entirely. Results in visual tearing and desync.
-
-**Do this instead:** Push effects to an `AnimationSystem` array. Each effect has its own timer. The render loop draws all active effects every frame.
-
-### Anti-Pattern 5: Re-allocating Objects per Frame
-
-**What people do:** `const flowers = grid.cells.filter(c => c.flower).map(c => ...)` inside the update or render loop.
-
-**Why it's wrong:** On mobile, GC pauses from per-frame allocations cause visible hitches during intense spawn waves (exactly when it's worst for gameplay).
-
-**Do this instead:** Pre-allocate fixed arrays. Mark cells as occupied/empty with a flag. Iterate the fixed `cells[64]` array directly.
+**Step 6 — Art refresh (renderer only, zero logic impact)**
+- Add sprite atlas assets
+- Extend `CellView` with `Sprite` component in `GridRenderer._buildCellViews()`
+- Implement `_paintStateSprite()` with `_useSprites` fallback flag
+- Wire `GridRenderer.onLoad()` to load atlases and set `_useSprites = true`
+- Covers: ART-01, ART-02, ART-03
 
 ---
 
-## Integration Points
+## Anti-Patterns to Avoid
 
-### Internal Boundaries
+### Anti-Pattern 1: Mutating spawnTimestamp to implement pause
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| InputHandler → GameScene | Callback `onTap(row, col)` | InputHandler knows nothing about game rules |
-| GameScene → FlowerFSM | Direct method call `flower.tap()` | FSM is owned by Grid cell |
-| GameScene → Renderer | Pass current state snapshot each frame | Renderer is read-only consumer |
-| GameScene → AnimationSystem | `addEffect(type, x, y, value)` push | AnimationSystem runs independently |
-| GameLoop → GameScene | Calls `scene.update(dt)` and `scene.render()` | GameLoop owns the rAF handle |
-| ResultScene ← GameState | Reads final score/highscore on construct | localStorage for highscore persistence |
+**What:** Setting `flower._spawnTimestamp += pauseDuration` to slide the anchor forward.
 
-### External Services
+**Why wrong:** `_spawnTimestamp` is `readonly` in the current FSM. Mutating it also changes the flower's historical position — score interpolation at any future `nowMs` would compute the wrong value.
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| localStorage | Wrapper in `utils/storage.js` | Save/load highscore only; no session state persisted |
-| FB Instant Games SDK (future) | Swap `storage.js` implementation | Core game logic untouched if storage is abstracted |
+**Do this instead:** Add `_pauseOffset` and `addPauseOffset()` as the additive approach described in Pattern 3.
+
+### Anti-Pattern 2: Loading JSON config in the pure logic tier
+
+**What:** Having `GameConfig.ts` call `cc.resources.load()` or `fetch()` internally.
+
+**Why wrong:** Breaks the cc-free constraint. Vitest cannot run the file in Node because `cc` does not exist. It also makes the loader async in a tier that should be synchronous.
+
+**Do this instead:** `GameConfig.parse(json: object)` is pure and synchronous. The Cocos asset load happens in `GameController.onLoad()` (renderer tier), which then passes the parsed result down.
+
+### Anti-Pattern 3: Storing power-up state inside FlowerFSM
+
+**What:** Adding `isSpecial: boolean` and `specialType` fields to `FlowerFSM`.
+
+**Why wrong:** `FlowerFSM` models a single flower lifecycle. Power-up effects are session-scoped, not flower-scoped. Adding cross-session concerns to the FSM conflates two responsibilities.
+
+**Do this instead:** `Grid._specialTypes` tracks spawn-time identity; `PowerUpState` on `GameController` tracks active effects. They are separate objects.
+
+### Anti-Pattern 4: Applying SLOW_GROWTH by mutating live FlowerFSM timestamps
+
+**What:** On SLOW_GROWTH activation, iterate all live flowers and multiply remaining cycle time by adjusting `_spawnTimestamp`.
+
+**Why wrong:** Retroactively changes already-elapsed time, causing inconsistent lifecycle states mid-animation. It also requires exposing `_spawnTimestamp` as mutable.
+
+**Do this instead:** Apply SLOW_GROWTH only to newly-spawned flowers via a modified config copy at spawn time. Effect reads as "future flowers grow slower" — visually equivalent and requires no changes to `FlowerFSM`.
+
+### Anti-Pattern 5: Blocking the start screen until config loads
+
+**What:** Showing a full-screen loading spinner and preventing scene interaction until `cc.resources.load()` completes.
+
+**Why wrong:** The JSON config is small (< 2KB). On any reasonable connection this load completes in milliseconds. A blocking spinner adds perceived latency for no gain.
+
+**Do this instead:** Load config during the 3-second countdown. If load fails, fall back silently to hardcoded defaults (same pattern as `StorageService` silent-fail). The fallback values are exactly the v1.0 `FLOWER_CONFIGS` and `PHASE_CONFIGS` constants.
 
 ---
 
-## Scaling Considerations
+## Integration Points Summary
 
-This is a single-player client-side game — "scaling" means device performance, not server load.
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| Low-end Android (60fps target) | Keep draw calls minimal; avoid shadow/blur filters; pool animation objects |
-| Mid-range mobile (smooth gameplay) | Current architecture handles this well; profile GC pressure if hitches occur |
-| FB Instant Games embed | Replace `localStorage` with FBInstant.getDataAsync; rest unchanged |
-
-### Performance Priorities
-
-1. **First bottleneck:** Canvas draw calls. Each flower is a sprite draw. 64 cells + animations is fine on any device. Only becomes an issue if particle effects are unbounded.
-2. **Second bottleneck:** GC pauses from per-tap object creation. Pool `TapEvent` objects or use plain function args instead of objects.
+| Boundary | v1.0 Communication | v1.1 Change |
+|----------|--------------------|-------------|
+| GameController → FlowerFSM | `getState(nowMs)`, `getScore(nowMs)`, `collect()` | Add `addPauseOffset(ms)` |
+| GameController → Grid | `spawnFlower()`, `clearAll()`, `getAliveCount()` | Add `spawnSpecialFlower()`, `getSpecialType()`, `clearSpecialType()` |
+| GameController → SpawnManager | `getPhaseConfig()`, `pickFlowerType()` | Constructor requires injected phases; add `pickSpecialSpawn()` |
+| GameController → GridRenderer | `setCellTypeId()`, `setInputEnabled()`, juice calls | `setCellTypeId()` gains optional `specialType`; add `playScreenShake()` |
+| GameController → GameState | `applyCorrectTap(rawScore, combo)` | Add `powerUpMultiplier` parameter |
+| GameController → JuiceHelpers | Not called (logic duplicated inline in v1.0) | Refactor to call `getUrgencyStage()` + `getMilestoneLabel()` |
+| Config JSON → GameConfig.parse() | n/a (hardcoded) | NEW boundary — Cocos asset load → pure parse |
+| GameController pause state | n/a | NEW — `_pauseSession()` / `_resumeSession()` propagate offset to all live FSMs |
 
 ---
 
 ## Sources
 
-- HTML5 game loop patterns: well-established in gamedev community (Fix Your Timestep, Glenn Fiedler 2004 — canonical reference)
-- Finite state machine for game entities: standard pattern documented in "Game Programming Patterns" (Nystrom)
-- Mobile touch input `touchstart` vs `touchend` behavior: MDN Web Docs (Touch Events)
-- Canvas coordinate transform for responsive sizing: MDN Web Docs (Canvas API)
-- Confidence: MEDIUM — core architecture patterns are stable and well-established; specific implementation details are training knowledge, not verified against 2026 sources due to WebSearch being unavailable
+- Full source read: `FlowerFSM.ts`, `Grid.ts`, `SpawnManager.ts`, `ComboSystem.ts`, `GameState.ts`, `GameController.ts`, `GridRenderer.ts`, `JuiceHelpers.ts`, `FlowerTypes.ts`, `StorageService.ts`
+- `.planning/PROJECT.md` — v1.1 feature list and architectural constraints
+- Cocos Creator 3.8.x Sprite/SpriteAtlas API (training data; HIGH confidence — standard Cocos patterns unchanged since 3.6)
+- Pause offset strategy derived from timestamp-based FSM first principles (architectural reasoning; HIGH confidence)
 
 ---
-*Architecture research for: HTML5 Casual Grid-Based Tapping Game*
-*Researched: 2026-03-13*
+*Architecture research for: Bloom Tap v1.1 — config-driven, power-ups, pause*
+*Researched: 2026-03-17*
