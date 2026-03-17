@@ -1,24 +1,24 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-current_phase: complete
-current_plan: all 18 plans complete
-status: milestone_archived
-stopped_at: v1.0 milestone archived 2026-03-17
+milestone: v1.1
+milestone_name: Polish & Power-ups
+current_phase: not_started
+current_plan: —
+status: defining_requirements
+stopped_at: —
 last_updated: "2026-03-17T00:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 18
-  completed_plans: 18
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State: Bloom Tap
 
 **Last updated:** 2026-03-17
-**Session:** v1.0 milestone archived
+**Session:** Milestone v1.1 started — defining requirements
 
 ---
 
@@ -33,14 +33,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-**Status:** v1.0 MVP archived  
-**All 6 phases complete, 18/18 plans, 29/29 requirements satisfied**
-
-```
-Progress: [██████████] 100%
-           Foundation  CoreLogic   Renderer    Session     Juice       Results
-           ✅          ✅          ✅          ✅          ✅          ✅
-```
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-17 — Milestone v1.1 started
 
 ---
 
