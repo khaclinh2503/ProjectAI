@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 10-special-flowers-01-PLAN.md
-last_updated: "2026-03-21T17:09:05.143Z"
+stopped_at: Completed 10-special-flowers-02-PLAN.md
+last_updated: "2026-03-21T17:15:36.728Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State: Bloom Tap
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 10 (special-flowers) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -66,6 +66,9 @@ Recent decisions affecting v1.1 work:
 - [Phase 09-pause-system]: GridRenderer.freezeAt() added post-UAT — Cocos render loop is independent of update(); flowers kept progressing visually without pinning render timestamp during pause
 - [Phase 10-special-flowers]: PowerUpState uses expiry timestamps — isActive = expiry > nowMs; shiftExpiries shifts all 4 fields (3 expiries + lastSpecialSpawnMs) for pause compatibility
 - [Phase 10-special-flowers]: applySlowGrowthConfig returns spread+Math.round copy — never mutates live config; powerUpMultiplier defaults to 1 in applyCorrectTap for full backward compatibility
+- [Phase 10-special-flowers]: TIME_FREEZE per-frame: sessionStartMs += dt*1000; expiries NOT shifted during normal play (absolute timestamps)
+- [Phase 10-special-flowers]: initPowerUpConfig() public on GameController allows BootController to override fallback defaults after JSON load
+- [Phase 10-special-flowers]: Special overlay drawn after _paintState in GridRenderer so it renders on top of flower color
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -84,8 +87,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-21T17:09:05.140Z
-Stopped at: Completed 10-special-flowers-01-PLAN.md
+Last session: 2026-03-21T17:15:36.724Z
+Stopped at: Completed 10-special-flowers-02-PLAN.md
 Resume file: None
 
 ---
