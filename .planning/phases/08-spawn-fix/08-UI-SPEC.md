@@ -68,10 +68,12 @@ No new text elements introduced. All typography is inherited from the existing C
 |------|------|--------|-------------|-------|
 | Body | 16px | 400 (regular) | 1.5 | General in-game labels (inherited) |
 | Label | 14px | 400 (regular) | 1.4 | Small HUD elements (inherited) |
-| Heading | 28px | 600 (semibold) | 1.2 | Score, countdown digits (inherited) |
+| Heading | 28px | 700 (bold) | 1.2 | Score, countdown digits (inherited) |
 | Display | 40px | 700 (bold) | 1.1 | Countdown number overlay "3 / 2 / 1" (inherited, no change) |
 
-**Source:** defaults (no typography changes in this phase; sizes reflect existing scene structure from prior phases).
+Weights declared: **400 (regular)** for Body/Label, **700 (bold)** for Heading/Display. Maximum 2 weights enforced.
+
+**Source:** defaults (no typography changes in this phase; sizes reflect existing scene structure from prior phases). Weight reduced from 3 to 2 per checker revision — `600 (semibold)` dropped, Heading promoted to 700.
 
 ---
 
@@ -186,5 +188,6 @@ No UI component registries used. This is a Cocos Creator game with no web compon
 | CORRECT_FLASH_YELLOW / WRONG_FLASH_COLOR | FlowerColors.ts direct read | Color table |
 | Recommended initialCount = 5 | RESEARCH.md Open Question 1 | Initial Burst Constraints |
 | Grid always empty at burst time | RESEARCH.md Pitfall 1 | Initial Burst Constraints |
+| Heading weight changed 600→700, semibold dropped | Checker revision (Dimension 4) | Typography |
 
 No user questions were required. All contract fields are pre-populated from upstream artifacts.
