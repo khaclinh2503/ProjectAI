@@ -577,8 +577,11 @@ export class GameController extends Component {
         if (this.redFlashOverlay) Tween.stopAllByTarget(this.redFlashOverlay);
         if (this.comboLabel) Tween.stopAllByTarget(this.comboLabel.node);
 
-        // Disable grid input during pause
-        if (this.gridRenderer) this.gridRenderer.setInputEnabled(false);
+        // Disable grid input and freeze rendering during pause
+        if (this.gridRenderer) {
+            this.gridRenderer.setInputEnabled(false);
+            this.gridRenderer.freezeAt(performance.now());
+        }
 
         // Show pause overlay (D-05, D-06, D-07)
         if (this.pauseOverlay) this.pauseOverlay.active = true;
@@ -618,8 +621,11 @@ export class GameController extends Component {
         const pauseDeltaMs = performance.now() - this._pauseStartMs;
         this._applyPauseOffset(pauseDeltaMs);
 
-        // Re-enable grid input
-        if (this.gridRenderer) this.gridRenderer.setInputEnabled(true);
+        // Re-enable grid input and unfreeze rendering (timestamps already shifted above)
+        if (this.gridRenderer) {
+            this.gridRenderer.freezeAt(null);
+            this.gridRenderer.setInputEnabled(true);
+        }
 
         this._phase = SessionPhase.PLAYING;
         this._updatePauseButtonVisibility();

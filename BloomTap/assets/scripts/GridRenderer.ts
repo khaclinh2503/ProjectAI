@@ -114,6 +114,7 @@ export class GridRenderer extends Component {
     private _controller: GameController | null = null;
     private _inputEnabled: boolean = false;
     private _floatPool: FloatSlot[] = [];
+    private _frozenNowMs: number | null = null;
 
     /**
      * Called by GameController.onLoad() after scene wiring is ready.
@@ -131,6 +132,11 @@ export class GridRenderer extends Component {
      */
     setInputEnabled(enabled: boolean): void {
         this._inputEnabled = enabled;
+    }
+
+    /** Freeze render timestamp during pause (pass null to resume live rendering). */
+    freezeAt(nowMs: number | null): void {
+        this._frozenNowMs = nowMs;
     }
 
     onLoad(): void {
@@ -447,7 +453,7 @@ export class GridRenderer extends Component {
     // -----------------------------------------------------------------------
     update(_dt: number): void {
         if (!this._grid) return;
-        const nowMs = performance.now();
+        const nowMs = this._frozenNowMs ?? performance.now();
         const cells = this._grid.getCells();
 
         for (let i = 0; i < 64; i++) {
