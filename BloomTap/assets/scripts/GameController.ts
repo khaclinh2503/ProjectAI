@@ -22,6 +22,7 @@ enum SessionPhase {
     WAITING,
     COUNTDOWN,
     PLAYING,
+    PAUSED,       // per D-04
     GAME_OVER,
 }
 
@@ -87,6 +88,18 @@ export class GameController extends Component {
     @property(Label)
     newBestLabel: Label | null = null;
 
+    @property(Node)
+    pauseButton: Node | null = null;
+
+    @property(Node)
+    pauseOverlay: Node | null = null;
+
+    @property(Label)
+    pausedLabel: Label | null = null;
+
+    @property(Label)
+    pausedSubLabel: Label | null = null;
+
     public readonly grid = new Grid();
     public readonly comboSystem = new ComboSystem();
     public readonly spawnManager = new SpawnManager();
@@ -99,6 +112,7 @@ export class GameController extends Component {
     private _urgencyStage: number = 0;
     private _blinkVisible: boolean = true;
     private _blinkCallback: (() => void) | null = null;
+    private _pauseStartMs: number = 0;
 
     onLoad(): void {
         // DO NOT call gameState.reset() here — reset happens in _beginSession() after countdown.
@@ -110,6 +124,12 @@ export class GameController extends Component {
         // Wire button click handlers in code (buttons also exposed as @property for inspector wiring)
         this.startButton?.node.on(Button.EventType.CLICK, this._onStartTapped, this);
         this.restartButton?.node.on(Button.EventType.CLICK, this.onRestartTapped, this);
+        this.pauseButton?.on(Button.EventType.CLICK, this._onPauseTapped, this);
+        if (this.pauseOverlay) {
+            this.pauseOverlay.on(Node.EventType.TOUCH_START, this._onResumeTapped, this);
+        }
+        if (this.pauseButton) this.pauseButton.active = false;
+        if (this.pauseOverlay) this.pauseOverlay.active = false;
         this._showStartScreen();
     }
 
@@ -390,8 +410,15 @@ export class GameController extends Component {
         if (this.gridRenderer) this.gridRenderer.stopAllFloatAnimations();
     }
 
+    private _updatePauseButtonVisibility(): void {
+        if (this.pauseButton) {
+            this.pauseButton.active = (this._phase === SessionPhase.PLAYING);
+        }
+    }
+
     private _showStartScreen(): void {
         this._phase = SessionPhase.WAITING;
+        this._updatePauseButtonVisibility();
         if (this.hudNode) this.hudNode.active = false;
         if (this.gameOverOverlay) this.gameOverOverlay.active = false;
         if (this.countdownOverlay) this.countdownOverlay.active = false;
@@ -405,6 +432,7 @@ export class GameController extends Component {
 
     private _startCountdown(): void {
         this._phase = SessionPhase.COUNTDOWN;
+        this._updatePauseButtonVisibility();
         if (this.startOverlay) this.startOverlay.active = false;
         if (this.countdownOverlay) this.countdownOverlay.active = true;
         if (this.countdownLabel) this.countdownLabel.string = '3';
@@ -437,6 +465,7 @@ export class GameController extends Component {
 
         if (this.gridRenderer) this.gridRenderer.setInputEnabled(true);
         this._phase = SessionPhase.PLAYING;
+        this._updatePauseButtonVisibility();
     }
 
     /**
@@ -464,6 +493,7 @@ export class GameController extends Component {
     private _triggerGameOver(): void {
         this._stopAllJuiceAnimations();
         this._phase = SessionPhase.GAME_OVER;
+        this._updatePauseButtonVisibility();
         if (this.gridRenderer) this.gridRenderer.setInputEnabled(false);
         this.grid.clearAll();
         if (this.hudNode) this.hudNode.active = false;
@@ -522,6 +552,91 @@ export class GameController extends Component {
                     .start();
             }, 0.5);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Pause / Resume — per D-01 through D-12 and Research Patterns 1-6
+    // -----------------------------------------------------------------------
+
+    private _onPauseTapped(): void {
+        if (this._phase !== SessionPhase.PLAYING) return;
+
+        this._pauseStartMs = performance.now();
+        this._phase = SessionPhase.PAUSED;
+        this._updatePauseButtonVisibility();
+
+        // Freeze urgency blink (Research Pattern 3 — do NOT call _stopAllJuiceAnimations)
+        if (this._blinkCallback) {
+            this.unschedule(this._blinkCallback);
+        }
+        // Ensure timer label is visible (may have been toggled off mid-blink)
+        if (this.timerLabel) this.timerLabel.node.active = true;
+
+        // Stop all active tweens (Pitfall 1 — tweens run outside update() guard)
+        if (this.milestoneNode) Tween.stopAllByTarget(this.milestoneNode);
+        if (this.redFlashOverlay) Tween.stopAllByTarget(this.redFlashOverlay);
+        if (this.comboLabel) Tween.stopAllByTarget(this.comboLabel.node);
+
+        // Disable grid input during pause
+        if (this.gridRenderer) this.gridRenderer.setInputEnabled(false);
+
+        // Show pause overlay (D-05, D-06, D-07)
+        if (this.pauseOverlay) this.pauseOverlay.active = true;
+    }
+
+    private _onResumeTapped(): void {
+        if (this._phase !== SessionPhase.PAUSED) return;  // Pitfall 6: block double-tap
+
+        if (this.pauseOverlay) this.pauseOverlay.active = false;
+        this._startResumeCountdown();
+    }
+
+    private _startResumeCountdown(): void {
+        this._phase = SessionPhase.COUNTDOWN;
+        this._updatePauseButtonVisibility();
+
+        // Reuse existing countdownOverlay (D-10)
+        if (this.countdownOverlay) this.countdownOverlay.active = true;
+        if (this.countdownLabel) this.countdownLabel.string = '3';
+
+        this.scheduleOnce(() => {
+            if (this.countdownLabel) this.countdownLabel.string = '2';
+            this.scheduleOnce(() => {
+                if (this.countdownLabel) this.countdownLabel.string = '1';
+                this.scheduleOnce(() => {
+                    this._resumeSession();
+                }, 1);
+            }, 1);
+        }, 1);
+    }
+
+    private _resumeSession(): void {
+        if (this.countdownOverlay) this.countdownOverlay.active = false;
+
+        // D-12: timestamp shift applied AFTER 3-2-1 countdown completes
+        // Total pause duration = now - pauseStartMs (includes the 3s countdown per D-11)
+        const pauseDeltaMs = performance.now() - this._pauseStartMs;
+        this._applyPauseOffset(pauseDeltaMs);
+
+        // Re-enable grid input
+        if (this.gridRenderer) this.gridRenderer.setInputEnabled(true);
+
+        this._phase = SessionPhase.PLAYING;
+        this._updatePauseButtonVisibility();
+
+        // Restore urgency blink at correct stage (Pitfall 2)
+        this._applyUrgencyStage(this._urgencyStage);
+    }
+
+    /**
+     * Shifts all stored timestamps forward by deltaMs so derived values
+     * (elapsed time, flower states, next spawn) pick up exactly where
+     * they left off before the pause.
+     */
+    private _applyPauseOffset(deltaMs: number): void {
+        this.gameState.sessionStartMs += deltaMs;
+        this.grid.shiftAllTimestamps(deltaMs);
+        this._nextSpawnMs += deltaMs;
     }
 
     public onRestartTapped(): void {
