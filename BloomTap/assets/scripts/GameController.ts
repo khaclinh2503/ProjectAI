@@ -9,6 +9,8 @@ import { FlowerState } from './logic/FlowerState';
 import { GridRenderer } from './GridRenderer';
 import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 import { StorageService } from './logic/StorageService';
+import { PowerUpState, SpecialEffectType, applySlowGrowthConfig } from './logic/PowerUpState';
+import { PowerUpsConfig } from './logic/GameConfig';
 
 const { ccclass, property } = _decorator;
 
@@ -104,6 +106,14 @@ export class GameController extends Component {
     public readonly comboSystem = new ComboSystem();
     public readonly spawnManager = new SpawnManager();
     public readonly gameState = new GameState();
+    public readonly powerUpState = new PowerUpState();
+    private _powerUpConfig: PowerUpsConfig = {
+        specialChance: 0.08,
+        pityWindowMs: 30000,
+        scoreMultiplier: { durationMs: 6000, multiplierByPhase: [2, 3, 5] },
+        timeFreeze: { durationMs: 5000 },
+        slowGrowth: { durationMs: 8000, factor: 2.0 },
+    };
 
     private _nextSpawnMs: number = 0;
     private _phase: SessionPhase = SessionPhase.WAITING;
@@ -113,6 +123,13 @@ export class GameController extends Component {
     private _blinkVisible: boolean = true;
     private _blinkCallback: (() => void) | null = null;
     private _pauseStartMs: number = 0;
+
+    /**
+     * Override power-up config from BootController after JSON config loading.
+     */
+    public initPowerUpConfig(config: PowerUpsConfig): void {
+        this._powerUpConfig = config;
+    }
 
     onLoad(): void {
         // DO NOT call gameState.reset() here — reset happens in _beginSession() after countdown.
@@ -133,21 +150,28 @@ export class GameController extends Component {
         this._showStartScreen();
     }
 
-    update(_dt: number): void {
+    update(dt: number): void {
         if (this._phase !== SessionPhase.PLAYING) return;
 
         const nowMs = performance.now();
 
-        // CRITICAL: game-over check FIRST — before any spawn logic.
-        // Pitfall 6 from RESEARCH.md: checking after spawn can cause one extra flower on game-over frame.
+        // TIME_FREEZE: roll sessionStartMs forward so elapsed time stands still (D-13, D-14)
+        // CRITICAL: do NOT call shiftExpiries here — expiries are absolute performance.now() time
+        // and must NOT be shifted during normal play (Pitfall 1 from RESEARCH.md)
+        if (this.powerUpState.isActive('TIME_FREEZE', nowMs)) {
+            this.gameState.sessionStartMs += dt * 1000;
+        }
+
+        // Game-over check FIRST — before any spawn logic
         if (this.gameState.isGameOver(nowMs)) {
+            this.powerUpState.reset(0);
             this._triggerGameOver();
             return;
         }
 
         const elapsedMs = nowMs - this.gameState.sessionStartMs;
 
-        // SpawnManager tick: spawn a batch of flowers per interval
+        // Spawn loop
         if (nowMs >= this._nextSpawnMs) {
             const phaseConfig = this.spawnManager.getPhaseConfig(elapsedMs);
             for (let i = 0; i < phaseConfig.spawnBatch; i++) {
@@ -155,8 +179,27 @@ export class GameController extends Component {
                 const emptyCell = this.grid.getRandomEmptyCell();
                 if (!emptyCell) break;
                 const typeId = this.spawnManager.pickFlowerType(elapsedMs);
-                const config = FLOWER_CONFIGS[typeId];
+
+                // Determine if this flower is special (D-05, D-06)
+                const isSpecial = this.powerUpState.needsPitySpawn(nowMs, this._powerUpConfig.pityWindowMs)
+                    || Math.random() < this._powerUpConfig.specialChance;
+
+                const effect: SpecialEffectType | null = isSpecial ? this._pickRandomEffect() : null;
+
+                // SLOW_GROWTH: pass modified config copy for newly spawned flowers (D-15)
+                const baseConfig = FLOWER_CONFIGS[typeId];
+                const config = this.powerUpState.isActive('SLOW_GROWTH', nowMs)
+                    ? applySlowGrowthConfig(baseConfig, this._powerUpConfig.slowGrowth.factor)
+                    : baseConfig;
+
                 this.grid.spawnFlower(emptyCell, config, nowMs);
+                emptyCell.isSpecial = isSpecial;
+                emptyCell.specialEffect = effect;
+
+                if (isSpecial) {
+                    this.powerUpState.recordSpecialSpawn(nowMs);
+                }
+
                 if (this.gridRenderer) {
                     this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
                 }
@@ -164,8 +207,26 @@ export class GameController extends Component {
             this._nextSpawnMs = nowMs + phaseConfig.intervalMs;
         }
 
-        // HUD update
         this._updateHUD(elapsedMs);
+    }
+
+    private _pickRandomEffect(): SpecialEffectType {
+        const effects: SpecialEffectType[] = ['SCORE_MULTIPLIER', 'TIME_FREEZE', 'SLOW_GROWTH'];
+        return effects[Math.floor(Math.random() * effects.length)];
+    }
+
+    private _getPhaseIndex(elapsedMs: number): number {
+        if (elapsedMs < 40000) return 0;
+        if (elapsedMs < 80000) return 1;
+        return 2;
+    }
+
+    private _getDurationForEffect(effect: SpecialEffectType): number {
+        switch (effect) {
+            case 'SCORE_MULTIPLIER': return this._powerUpConfig.scoreMultiplier.durationMs;
+            case 'TIME_FREEZE':      return this._powerUpConfig.timeFreeze.durationMs;
+            case 'SLOW_GROWTH':      return this._powerUpConfig.slowGrowth.durationMs;
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -195,10 +256,28 @@ export class GameController extends Component {
         const state    = flower.getState(nowMs);          // 1. Read state before collect()
         const rawScore = flower.getScore(nowMs) ?? 0;     // 2. Read score before collect()
         flower.collect();                                  // 3. Mark collected
-        this.gameState.applyCorrectTap(rawScore, this.comboSystem);
+
+        // Check special flower activation — BEFORE applyCorrectTap (D-02)
+        if (cell.isSpecial && cell.specialEffect) {
+            const elapsedMs = nowMs - this.gameState.sessionStartMs;
+            const phaseIndex = this._getPhaseIndex(elapsedMs);
+            const effect = cell.specialEffect;
+            const durationMs = this._getDurationForEffect(effect);
+            const multiplierValue = effect === 'SCORE_MULTIPLIER'
+                ? this._powerUpConfig.scoreMultiplier.multiplierByPhase[phaseIndex]
+                : undefined;
+            this.powerUpState.activate(effect, nowMs, durationMs, multiplierValue);
+            cell.isSpecial = false;
+            cell.specialEffect = null;
+        }
+
+        const powerUpMultiplier = this.powerUpState.isActive('SCORE_MULTIPLIER', nowMs)
+            ? this.powerUpState.getScoreMultiplier()
+            : 1;
+        this.gameState.applyCorrectTap(rawScore, this.comboSystem, powerUpMultiplier);
         const isFullBloom = state === FlowerState.FULL_BLOOM;
         const flashColor = isFullBloom ? CORRECT_FLASH_WHITE : CORRECT_FLASH_YELLOW;
-        const multiplier = this.comboSystem.multiplier;
+        const multiplier = this.comboSystem.multiplier * powerUpMultiplier;
 
         // JUICE-03: combo label pulse + milestone check
         this._pulseComboLabel();
@@ -457,6 +536,7 @@ export class GameController extends Component {
         // Reset all game state — this is the ONLY place reset() is called.
         this.gameState.reset();
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
+        this.powerUpState.reset(this.gameState.sessionStartMs);
 
         // Reset spawn timer to now so first batch spawns immediately on first update frame.
         this._nextSpawnMs = performance.now();
@@ -470,7 +550,7 @@ export class GameController extends Component {
 
     /**
      * Spawns the initial burst of flowers on the board before countdown starts.
-     * Mirrors the spawn loop in update() (lines 131-144) — same pattern, same guards.
+     * Mirrors the spawn loop in update() — same pattern, same guards.
      * Called from _onStartTapped() per D-01: flowers visible while countdown runs.
      */
     private _spawnInitialBurst(): void {
@@ -482,8 +562,21 @@ export class GameController extends Component {
             const emptyCell = this.grid.getRandomEmptyCell();
             if (!emptyCell) break;
             const typeId = this.spawnManager.pickFlowerType(0);
-            const config = FLOWER_CONFIGS[typeId];
+            // SLOW_GROWTH: apply modified config copy (won't be active at burst time, but wire for consistency)
+            const baseConfig = FLOWER_CONFIGS[typeId];
+            const config = this.powerUpState.isActive('SLOW_GROWTH', nowMs)
+                ? applySlowGrowthConfig(baseConfig, this._powerUpConfig.slowGrowth.factor)
+                : baseConfig;
             this.grid.spawnFlower(emptyCell, config, nowMs);
+            // Initial burst flowers can also be special (same probability)
+            const isSpecial = this.powerUpState.needsPitySpawn(nowMs, this._powerUpConfig.pityWindowMs)
+                || Math.random() < this._powerUpConfig.specialChance;
+            const effect: SpecialEffectType | null = isSpecial ? this._pickRandomEffect() : null;
+            emptyCell.isSpecial = isSpecial;
+            emptyCell.specialEffect = effect;
+            if (isSpecial) {
+                this.powerUpState.recordSpecialSpawn(nowMs);
+            }
             if (this.gridRenderer) {
                 this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
             }
@@ -643,6 +736,7 @@ export class GameController extends Component {
         this.gameState.sessionStartMs += deltaMs;
         this.grid.shiftAllTimestamps(deltaMs);
         this._nextSpawnMs += deltaMs;
+        this.powerUpState.shiftExpiries(deltaMs);
     }
 
     public onRestartTapped(): void {
@@ -653,6 +747,7 @@ export class GameController extends Component {
         this.gameState.peakStreak = 0;
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
         this.grid.clearAll();
+        this.powerUpState.reset(0);
         if (this.newBestLabel) this.newBestLabel.node.active = false;
         if (this.gridRenderer) {
             this.gridRenderer.setInputEnabled(false);
