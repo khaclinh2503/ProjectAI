@@ -1,0 +1,43 @@
+{
+  "flowers": {
+    "CHERRY": {
+      "cycleDurationMs": 3000, "budMs": 1350, "tapWindowMs": 900,
+      "bloomingMs": 600, "fullBloomMs": 300, "wiltingMs": 450, "deadMs": 300,
+      "scoreBloom": 80, "scoreFull": 120
+    },
+    "LOTUS": {
+      "cycleDurationMs": 4500, "budMs": 1710, "tapWindowMs": 1800,
+      "bloomingMs": 1200, "fullBloomMs": 600, "wiltingMs": 630, "deadMs": 360,
+      "scoreBloom": 60, "scoreFull": 90
+    },
+    "CHRYSANTHEMUM": {
+      "cycleDurationMs": 6000, "budMs": 1800, "tapWindowMs": 3000,
+      "bloomingMs": 2000, "fullBloomMs": 1000, "wiltingMs": 780, "deadMs": 420,
+      "scoreBloom": 40, "scoreFull": 60
+    },
+    "ROSE": {
+      "cycleDurationMs": 8000, "budMs": 1840, "tapWindowMs": 4800,
+      "bloomingMs": 3200, "fullBloomMs": 1600, "wiltingMs": 880, "deadMs": 480,
+      "scoreBloom": 25, "scoreFull": 40
+    },
+    "SUNFLOWER": {
+      "cycleDurationMs": 10000, "budMs": 1700, "tapWindowMs": 7000,
+      "bloomingMs": 4670, "fullBloomMs": 2330, "wiltingMs": 800, "deadMs": 500,
+      "scoreBloom": 15, "scoreFull": 25
+    }
+  },
+  "spawnPhases": [
+    {
+      "startMs": 0, "endMs": 40000, "intervalMs": 3000, "maxAlive": 8,
+      "weights": { "SUNFLOWER": 35, "ROSE": 30, "CHRYSANTHEMUM": 20, "LOTUS": 10, "CHERRY": 5 }
+    },
+    {
+      "startMs": 40000, "endMs": 80000, "intervalMs": 2000, "maxAlive": 16,
+      "weights": { "SUNFLOWER": 15, "ROSE": 20, "CHRYSANTHEMUM": 30, "LOTUS": 20, "CHERRY": 15 }
+    },
+    {
+      "startMs": 80000, "endMs": 120000, "intervalMs": 1000, "maxAlive": 28,
+      "weights": { "SUNFLOWER": 5, "ROSE": 10, "CHRYSANTHEMUM": 20, "LOTUS": 30, "CHERRY": 35 }
+    }
+  ]
+}

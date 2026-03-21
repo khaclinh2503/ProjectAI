@@ -1,0 +1,4 @@
+{
+  "session": { "durationMs": 120000 },
+  "scoring": { "wrongTapPenalty": 10 }
+}
