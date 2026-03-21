@@ -36,6 +36,7 @@ const validFlowersData = {
     spawnPhases: [
         {
             startMs: 0, endMs: 40000, intervalMs: 3000, maxAlive: 8, spawnBatch: 3,
+            initialCount: 5,
             weights: { SUNFLOWER: 35, ROSE: 30, CHRYSANTHEMUM: 20, LOTUS: 10, CHERRY: 5 },
         },
         {
@@ -213,5 +214,52 @@ describe('parseGameConfig', () => {
         expect(config.flowers.CHRYSANTHEMUM.id).toBe('CHRYSANTHEMUM');
         expect(config.flowers.ROSE.id).toBe('ROSE');
         expect(config.flowers.SUNFLOWER.id).toBe('SUNFLOWER');
+    });
+});
+
+describe('initialCount validation', () => {
+    // Test 1: valid initialCount on phase 0 is returned
+    it('returns spawnPhases[0].initialCount === 5 when initialCount is 5', () => {
+        const config = parseGameConfig(validFlowersData, validSettingsData);
+        expect(config.spawnPhases[0].initialCount).toBe(5);
+    });
+
+    // Test 2: missing initialCount on phase 0 throws
+    it('throws when initialCount is missing from spawnPhases[0]', () => {
+        const flowersWithout = JSON.parse(JSON.stringify(validFlowersData));
+        delete flowersWithout.spawnPhases[0].initialCount;
+        expect(() => parseGameConfig(flowersWithout, validSettingsData))
+            .toThrowError(/spawnPhases\[0\]\.initialCount must be a number/);
+    });
+
+    // Test 3: initialCount === 0 on phase 0 throws
+    it('throws when initialCount is 0 on phase 0', () => {
+        const flowersZero = JSON.parse(JSON.stringify(validFlowersData));
+        flowersZero.spawnPhases[0].initialCount = 0;
+        expect(() => parseGameConfig(flowersZero, validSettingsData))
+            .toThrowError(/spawnPhases\[0\]\.initialCount must be > 0/);
+    });
+
+    // Test 4: initialCount === -1 on phase 0 throws
+    it('throws when initialCount is -1 on phase 0', () => {
+        const flowersNeg = JSON.parse(JSON.stringify(validFlowersData));
+        flowersNeg.spawnPhases[0].initialCount = -1;
+        expect(() => parseGameConfig(flowersNeg, validSettingsData))
+            .toThrowError(/spawnPhases\[0\]\.initialCount must be > 0/);
+    });
+
+    // Test 5: initialCount absent on phases 1 and 2 does NOT throw
+    it('does NOT throw when initialCount is absent from spawnPhases[1] and spawnPhases[2]', () => {
+        const flowersNoPhase12 = JSON.parse(JSON.stringify(validFlowersData));
+        delete flowersNoPhase12.spawnPhases[1].initialCount;
+        delete flowersNoPhase12.spawnPhases[2].initialCount;
+        expect(() => parseGameConfig(flowersNoPhase12, validSettingsData)).not.toThrow();
+    });
+
+    // Test 6: parsed spawnPhases[1] and [2] do NOT have initialCount property
+    it('parsed spawnPhases[1] and spawnPhases[2] do NOT have initialCount property (undefined)', () => {
+        const config = parseGameConfig(validFlowersData, validSettingsData);
+        expect(config.spawnPhases[1].initialCount).toBeUndefined();
+        expect(config.spawnPhases[2].initialCount).toBeUndefined();
     });
 });

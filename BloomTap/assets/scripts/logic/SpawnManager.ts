@@ -14,6 +14,7 @@ export interface SpawnPhaseConfig {
     maxAlive: number;
     spawnBatch: number;
     weights: Record<FlowerTypeId, number>;
+    initialCount?: number;
 }
 
 let PHASE_CONFIGS: SpawnPhaseConfig[] = [

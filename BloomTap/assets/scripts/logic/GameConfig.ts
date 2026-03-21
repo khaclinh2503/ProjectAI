@@ -139,7 +139,11 @@ function parseSpawnPhases(flowersData: unknown): SpawnPhaseConfig[] {
             weights[key as FlowerTypeId] = val as number;
         }
 
-        return { startMs, endMs, intervalMs, maxAlive, spawnBatch, weights };
+        const initialCount = index === 0
+            ? requirePositiveNumber(phase, 'initialCount', ctx)
+            : undefined;
+
+        return { startMs, endMs, intervalMs, maxAlive, spawnBatch, weights, ...(initialCount !== undefined ? { initialCount } : {}) };
     });
 }
 
