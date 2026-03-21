@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 current_phase: 7
-current_plan: —
-status: ready_to_plan
-stopped_at: roadmap_created
-last_updated: "2026-03-17T00:00:00.000Z"
+current_plan: 1
+status: in_progress
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-21T09:47:30Z"
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State: Bloom Tap
 
-**Last updated:** 2026-03-17
-**Session:** v1.1 roadmap created — ready to plan Phase 7
+**Last updated:** 2026-03-21
+**Session:** Phase 7 Plan 01 complete — parseGameConfig() + JSON config files, 19/19 tests passing
 
 ---
 
@@ -34,20 +34,20 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 7 of 12 (Config Infrastructure)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-03-17 — v1.1 roadmap defined (phases 7–12, 15 requirements)
+Plan: 1 of 2 complete
+Status: In Progress (07-02 remaining)
+Last activity: 2026-03-21 — 07-01 complete: parseGameConfig() TDD + flowers.json + settings.json
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ---
 
 ## Performance Metrics
 
 **Velocity (v1.1):**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1
+- Average duration: ~15 min
+- Total execution time: ~15 min
 
 *Updated after each plan completion*
 
@@ -60,10 +60,11 @@ Progress: [░░░░░░░░░░] 0%
 Recent decisions affecting v1.1 work:
 
 - [v1.1 Arch]: Use `_applyPauseOffset(ms)` centralized pattern — pause, freeze-time, and slow-growth all shift timestamps in one pass; never scatter offset logic across call sites
-- [v1.1 Arch]: Config loaded via `@property JsonAsset` (synchronous Inspector wiring) — avoid `resources.load()` async callback lifecycle complexity
+- [v1.1 Arch Phase 7]: Config loaded via `resources.load()` (async callback in BootController) — `@property JsonAsset` overridden per CONTEXT.md Decision 3 (requires assets/resources/ path)
 - [v1.1 Arch]: SLOW_GROWTH applies via spawn-time config copy (new flowers get modified cycleDurationMs) — do NOT mutate live FlowerFSM timestamps
 - [v1.1 Arch]: Power-up replacement semantics only — new tap replaces active effect; never stack two effects simultaneously
 - [v1.1 Arch]: `director.pause()` confirmed broken (CC bug #11144) — use manual flag + `_applyPauseOffset()` instead
+- [07-01 Config]: parseGameConfig accepts unknown (not string) — Cocos JsonAsset.json returns parsed objects; id injected from key at parse time; wrongTapPenalty and spawn weights allow zero via requireNonNegativeNumber
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -82,11 +83,11 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-17T00:00:00.000Z
-Stopped at: v1.1 roadmap created, phases 7–12 defined
+Last session: 2026-03-21T09:47:30Z
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None
 
 ---
 
 *State initialized: 2026-03-13*
-*Last updated: 2026-03-17 after v1.1 roadmap creation*
+*Last updated: 2026-03-21 after 07-01 plan execution*

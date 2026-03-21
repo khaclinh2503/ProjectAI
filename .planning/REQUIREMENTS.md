@@ -7,9 +7,9 @@
 
 ### Config
 
-- [ ] **CFG-01**: Người dùng có thể chỉnh flower types (tốc độ chu kỳ, điểm gốc, tên) qua file JSON mà không cần recompile
-- [ ] **CFG-02**: Người dùng có thể chỉnh spawn parameters (initialCount, maxAlive per phase, spawn interval per phase) qua file JSON
-- [ ] **CFG-03**: Game hiển thị lỗi rõ ràng khi config JSON sai format, không crash silent — tất cả game params đều data-driven để playtest nhanh
+- [x] **CFG-01**: Người dùng có thể chỉnh flower types (tốc độ chu kỳ, điểm gốc, tên) qua file JSON mà không cần recompile
+- [x] **CFG-02**: Người dùng có thể chỉnh spawn parameters (initialCount, maxAlive per phase, spawn interval per phase) qua file JSON
+- [x] **CFG-03**: Game hiển thị lỗi rõ ràng khi config JSON sai format, không crash silent — tất cả game params đều data-driven để playtest nhanh
 
 ### Spawn
 
@@ -69,9 +69,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 7 | Pending |
-| CFG-02 | Phase 7 | Pending |
-| CFG-03 | Phase 7 | Pending |
+| CFG-01 | Phase 7 | Complete |
+| CFG-02 | Phase 7 | Complete |
+| CFG-03 | Phase 7 | Complete |
 | SPAWN-01 | Phase 8 | Pending |
 | PAUSE-01 | Phase 9 | Pending |
 | SPECIAL-01 | Phase 10 | Pending |
