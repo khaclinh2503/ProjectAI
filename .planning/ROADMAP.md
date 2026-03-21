@@ -68,7 +68,10 @@ Plans:
   2. Tapping Resume restores the countdown from the exact second it was paused — no time lost, no time gained
   3. Live flowers that were mid-cycle when paused continue from their correct state on resume — no instant deaths or skipped stages
   4. Urgency blink (timer pulse) stops while paused and resumes at correct rate after resume
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — TDD: Add shiftTimestamp() to FlowerFSM and shiftAllTimestamps() to Grid with tests
+- [ ] 09-02-PLAN.md — Wire pause/resume into GameController: SessionPhase.PAUSED, overlay, countdown reuse, timestamp shift
 
 ### Phase 10: Special Flowers
 **Goal**: Special power-up flowers appear randomly on the board with a distinct visual; tapping one activates one of three timed effects — score multiplier, freeze timer, or slow flower growth
@@ -115,11 +118,11 @@ Plans:
 | 6. Results and Persistence | v1.0 | 3/3 | Complete | 2026-03-16 |
 | 7. Config Infrastructure | 2/2 | Complete   | 2026-03-21 | - |
 | 8. Spawn Fix | v1.1 | 1/1 | Complete   | 2026-03-21 |
-| 9. Pause System | v1.1 | 0/? | Not started | - |
+| 9. Pause System | v1.1 | 0/2 | Planning complete | - |
 | 10. Special Flowers | v1.1 | 0/? | Not started | - |
 | 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
 | 12. Art Refresh | v1.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-03-21 — Phase 8 plans created (1 plan)*
+*Last updated: 2026-03-21 — Phase 9 plans created (2 plans)*
