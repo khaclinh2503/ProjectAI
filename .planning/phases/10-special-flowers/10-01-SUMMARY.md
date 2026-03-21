@@ -138,6 +138,15 @@ Wave 2 (10-02) can now consume:
 
 All 216 tests green — no regressions.
 
+## Self-Check: PASSED
+
+- All 9 files verified present on disk
+- Commits 5dcd436 (RED) and ec4b268 (GREEN) verified in git log
+- 216/216 tests pass (`npx vitest run` exit code 0)
+- STATE.md advanced to plan 2 of 3
+- ROADMAP.md phase 10 updated (1 summary / 3 plans)
+- Requirements SPECIAL-01, SPECIAL-02, SPECIAL-03, SPECIAL-04 marked complete
+
 ---
 *Phase: 10-special-flowers*
 *Completed: 2026-03-22*
