@@ -80,4 +80,17 @@ export class Grid {
             c => c.flower !== null && c.flower.getState(nowMs) !== FlowerState.DEAD
         ).length;
     }
+
+    /**
+     * Shifts every live flower's spawn timestamp forward by deltaMs.
+     * Used by pause/resume so all derived flower states resume from
+     * the same relative position after the pause gap.
+     */
+    shiftAllTimestamps(deltaMs: number): void {
+        for (const cell of this._cells) {
+            if (cell.flower !== null) {
+                cell.flower.shiftTimestamp(deltaMs);
+            }
+        }
+    }
 }

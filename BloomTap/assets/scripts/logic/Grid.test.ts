@@ -168,3 +168,57 @@ describe('Grid.getAliveCount()', () => {
         expect(grid.getAliveCount(3000)).toBe(0);
     });
 });
+
+describe('Grid.shiftAllTimestamps', () => {
+    it('shifts all live flowers by deltaMs', () => {
+        const grid = new Grid();
+        const c0 = grid.getCell(0, 0);
+        const c1 = grid.getCell(0, 1);
+        const c2 = grid.getCell(0, 2);
+        grid.spawnFlower(c0, cherryConfig, 0);
+        grid.spawnFlower(c1, cherryConfig, 0);
+        grid.spawnFlower(c2, cherryConfig, 0);
+
+        // All BUD at t=500
+        expect(c0.flower!.getState(500)).toBe(FlowerState.BUD);
+        expect(c1.flower!.getState(500)).toBe(FlowerState.BUD);
+        expect(c2.flower!.getState(500)).toBe(FlowerState.BUD);
+
+        grid.shiftAllTimestamps(10000);
+
+        // After shift, BUD at t=500+10000=10500
+        expect(c0.flower!.getState(10500)).toBe(FlowerState.BUD);
+        expect(c1.flower!.getState(10500)).toBe(FlowerState.BUD);
+        expect(c2.flower!.getState(10500)).toBe(FlowerState.BUD);
+    });
+
+    it('skips null cells without error', () => {
+        const grid = new Grid();
+        const c0 = grid.getCell(0, 0);
+        grid.spawnFlower(c0, cherryConfig, 0);
+        // 63 other cells are null
+        expect(() => grid.shiftAllTimestamps(5000)).not.toThrow();
+    });
+
+    it('empty grid is a no-op', () => {
+        const grid = new Grid();
+        expect(() => grid.shiftAllTimestamps(5000)).not.toThrow();
+    });
+
+    it('preserves getScore for all flowers after shift', () => {
+        const grid = new Grid();
+        const c0 = grid.getCell(0, 0);
+        const c1 = grid.getCell(1, 0);
+        grid.spawnFlower(c0, cherryConfig, 0);
+        grid.spawnFlower(c1, cherryConfig, 0);
+
+        const s0 = c0.flower!.getScore(1500);
+        const s1 = c1.flower!.getScore(1500);
+        expect(s0).not.toBeNull();
+
+        grid.shiftAllTimestamps(10000);
+
+        expect(c0.flower!.getScore(11500)).toBeCloseTo(s0!, 5);
+        expect(c1.flower!.getScore(11500)).toBeCloseTo(s1!, 5);
+    });
+});
