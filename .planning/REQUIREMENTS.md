@@ -13,7 +13,7 @@
 
 ### Spawn
 
-- [ ] **SPAWN-01**: Hoa xuất hiện ngay khi game bắt đầu (không delay 3 giây), số lượng ban đầu configurable từ JSON
+- [x] **SPAWN-01**: Hoa xuất hiện ngay khi game bắt đầu (không delay 3 giây), số lượng ban đầu configurable từ JSON
 
 ### Pause
 
@@ -72,7 +72,7 @@
 | CFG-01 | Phase 7 | Complete |
 | CFG-02 | Phase 7 | Complete |
 | CFG-03 | Phase 7 | Complete |
-| SPAWN-01 | Phase 8 | Pending |
+| SPAWN-01 | Phase 8 | Complete |
 | PAUSE-01 | Phase 9 | Pending |
 | SPECIAL-01 | Phase 10 | Pending |
 | SPECIAL-02 | Phase 10 | Pending |

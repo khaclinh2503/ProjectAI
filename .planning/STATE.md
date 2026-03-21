@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
-status: completed
-stopped_at: Completed 07-02-PLAN.md (all tasks done, human-verify approved)
-last_updated: "2026-03-21T06:55:12.667Z"
-last_activity: "2026-03-21 — 07-02 complete: BootController wired, init functions in FlowerTypes/SpawnManager/GameState, human-verify approved"
+status: unknown
+stopped_at: Completed 08-spawn-fix-01-PLAN.md
+last_updated: "2026-03-21T07:51:28.351Z"
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
 ---
 
 # Project State: Bloom Tap
@@ -26,24 +24,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 7 — Config Infrastructure
+**Current focus:** Phase 08 — spawn-fix
 
 ---
 
 ## Current Position
 
-Phase: 7 of 12 (Config Infrastructure)
-Plan: 2 of 2 complete
-Status: Active — Phase 7 complete
-Last activity: 2026-03-21 — 07-02 complete: BootController wired, init functions in FlowerTypes/SpawnManager/GameState, human-verify approved
-
-Progress: [██████████] 100%
-
----
+Phase: 08 (spawn-fix) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
 **Velocity (v1.1):**
+
 - Total plans completed: 1
 - Average duration: ~15 min
 - Total execution time: ~15 min
@@ -66,6 +59,8 @@ Recent decisions affecting v1.1 work:
 - [07-01 Config]: parseGameConfig accepts unknown (not string) — Cocos JsonAsset.json returns parsed objects; id injected from key at parse time; wrongTapPenalty and spawn weights allow zero via requireNonNegativeNumber
 - [07-02 Config]: initFlowerConfigs mutates FLOWER_CONFIGS in place (not reassign) — same reference, test defaults preserved; WRONG_TAP_PENALTY/SESSION_DURATION_MS changed to let for live binding propagation; resources.load path omits .json extension (Cocos requirement)
 - [Phase 07-config-infrastructure]: initFlowerConfigs mutates FLOWER_CONFIGS in place (not reassign) — tests import the same object reference and see defaults when init is not called
+- [Phase 08-spawn-fix]: initialCount optional in SpawnPhaseConfig — required enforcement by GameConfig parser on phase index 0 only
+- [Phase 08-spawn-fix]: _spawnInitialBurst() called before _startCountdown() — flowers appear on board before countdown overlay (D-01)
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -84,8 +79,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-21T10:20:00Z
-Stopped at: Completed 07-02-PLAN.md (all tasks done, human-verify approved)
+Last session: 2026-03-21T07:51:28.347Z
+Stopped at: Completed 08-spawn-fix-01-PLAN.md
 Resume file: None
 
 ---
