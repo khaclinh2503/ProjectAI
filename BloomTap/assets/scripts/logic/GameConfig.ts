@@ -120,6 +120,7 @@ function parseSpawnPhases(flowersData: unknown): SpawnPhaseConfig[] {
         const endMs = requirePositiveNumber(phase, 'endMs', ctx);
         const intervalMs = requirePositiveNumber(phase, 'intervalMs', ctx);
         const maxAlive = requirePositiveNumber(phase, 'maxAlive', ctx);
+        const spawnBatch = requirePositiveNumber(phase, 'spawnBatch', ctx);
 
         const weightsRaw = phase['weights'];
         if (!isRecord(weightsRaw)) {
@@ -138,7 +139,7 @@ function parseSpawnPhases(flowersData: unknown): SpawnPhaseConfig[] {
             weights[key as FlowerTypeId] = val as number;
         }
 
-        return { startMs, endMs, intervalMs, maxAlive, weights };
+        return { startMs, endMs, intervalMs, maxAlive, spawnBatch, weights };
     });
 }
 

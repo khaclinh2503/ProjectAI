@@ -12,6 +12,7 @@ export interface SpawnPhaseConfig {
     endMs: number;
     intervalMs: number;
     maxAlive: number;
+    spawnBatch: number;
     weights: Record<FlowerTypeId, number>;
 }
 
@@ -21,6 +22,7 @@ let PHASE_CONFIGS: SpawnPhaseConfig[] = [
         endMs: 40000,
         intervalMs: 3000,
         maxAlive: 8,
+        spawnBatch: 3,
         weights: {
             [FlowerTypeId.SUNFLOWER]: 35,
             [FlowerTypeId.ROSE]: 30,
@@ -34,6 +36,7 @@ let PHASE_CONFIGS: SpawnPhaseConfig[] = [
         endMs: 80000,
         intervalMs: 2000,
         maxAlive: 16,
+        spawnBatch: 4,
         weights: {
             [FlowerTypeId.SUNFLOWER]: 15,
             [FlowerTypeId.ROSE]: 20,
@@ -47,6 +50,7 @@ let PHASE_CONFIGS: SpawnPhaseConfig[] = [
         endMs: 120000,
         intervalMs: 1000,
         maxAlive: 28,
+        spawnBatch: 5,
         weights: {
             [FlowerTypeId.SUNFLOWER]: 5,
             [FlowerTypeId.ROSE]: 10,

@@ -28,15 +28,15 @@
   },
   "spawnPhases": [
     {
-      "startMs": 0, "endMs": 40000, "intervalMs": 3000, "maxAlive": 8,
+      "startMs": 0, "endMs": 40000, "intervalMs": 3000, "maxAlive": 8, "spawnBatch": 3,
       "weights": { "SUNFLOWER": 35, "ROSE": 30, "CHRYSANTHEMUM": 20, "LOTUS": 10, "CHERRY": 5 }
     },
     {
-      "startMs": 40000, "endMs": 80000, "intervalMs": 2000, "maxAlive": 16,
+      "startMs": 40000, "endMs": 80000, "intervalMs": 2000, "maxAlive": 16, "spawnBatch": 4,
       "weights": { "SUNFLOWER": 15, "ROSE": 20, "CHRYSANTHEMUM": 30, "LOTUS": 20, "CHERRY": 15 }
     },
     {
-      "startMs": 80000, "endMs": 120000, "intervalMs": 1000, "maxAlive": 28,
+      "startMs": 80000, "endMs": 120000, "intervalMs": 1000, "maxAlive": 28, "spawnBatch": 5,
       "weights": { "SUNFLOWER": 5, "ROSE": 10, "CHRYSANTHEMUM": 20, "LOTUS": 30, "CHERRY": 35 }
     }
   ]

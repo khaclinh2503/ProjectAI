@@ -127,22 +127,21 @@ export class GameController extends Component {
 
         const elapsedMs = nowMs - this.gameState.sessionStartMs;
 
-        // SpawnManager tick (existing logic — unchanged)
+        // SpawnManager tick: spawn a batch of flowers per interval
         if (nowMs >= this._nextSpawnMs) {
             const phaseConfig = this.spawnManager.getPhaseConfig(elapsedMs);
-            const aliveCount = this.grid.getAliveCount(nowMs);
-            if (aliveCount < phaseConfig.maxAlive) {
+            for (let i = 0; i < phaseConfig.spawnBatch; i++) {
+                if (this.grid.getAliveCount(nowMs) >= phaseConfig.maxAlive) break;
                 const emptyCell = this.grid.getRandomEmptyCell();
-                if (emptyCell) {
-                    const typeId = this.spawnManager.pickFlowerType(elapsedMs);
-                    const config = FLOWER_CONFIGS[typeId];
-                    this.grid.spawnFlower(emptyCell, config, nowMs);
-                    if (this.gridRenderer) {
-                        this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
-                    }
+                if (!emptyCell) break;
+                const typeId = this.spawnManager.pickFlowerType(elapsedMs);
+                const config = FLOWER_CONFIGS[typeId];
+                this.grid.spawnFlower(emptyCell, config, nowMs);
+                if (this.gridRenderer) {
+                    this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
                 }
             }
-            this._nextSpawnMs = nowMs + this.spawnManager.getPhaseConfig(elapsedMs).intervalMs;
+            this._nextSpawnMs = nowMs + phaseConfig.intervalMs;
         }
 
         // HUD update
@@ -430,10 +429,8 @@ export class GameController extends Component {
         this.gameState.reset();
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
 
-        // Reset spawn timer: delay first spawn by one full Phase 1 interval (3000ms)
-        // Pitfall 2 from RESEARCH.md: _nextSpawnMs must be reset or first session floods grid.
-        const firstInterval = this.spawnManager.getPhaseConfig(0).intervalMs;
-        this._nextSpawnMs = performance.now() + firstInterval;
+        // Reset spawn timer to now so first batch spawns immediately on first update frame.
+        this._nextSpawnMs = performance.now();
 
         this._lastDisplayedSecond = -1; // force timer label to refresh on first frame
 
