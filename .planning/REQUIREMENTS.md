@@ -17,7 +17,7 @@
 
 ### Pause
 
-- [ ] **PAUSE-01**: Người chơi có thể pause game bất cứ lúc nào và tiếp tục từ đúng trạng thái đó (timer, hoa, combo đều giữ nguyên)
+- [x] **PAUSE-01**: Người chơi có thể pause game bất cứ lúc nào và tiếp tục từ đúng trạng thái đó (timer, hoa, combo đều giữ nguyên)
 
 ### Special Flowers
 
@@ -73,7 +73,7 @@
 | CFG-02 | Phase 7 | Complete |
 | CFG-03 | Phase 7 | Complete |
 | SPAWN-01 | Phase 8 | Complete |
-| PAUSE-01 | Phase 9 | Pending |
+| PAUSE-01 | Phase 9 | Complete |
 | SPECIAL-01 | Phase 10 | Pending |
 | SPECIAL-02 | Phase 10 | Pending |
 | SPECIAL-03 | Phase 10 | Pending |

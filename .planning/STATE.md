@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 08-spawn-fix-01-PLAN.md
-last_updated: "2026-03-21T07:55:23.362Z"
+stopped_at: Completed 09-pause-system-01-PLAN.md
+last_updated: "2026-03-21T09:20:07.827Z"
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # Project State: Bloom Tap
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 08 — spawn-fix
+**Current focus:** Phase 09 — pause-system
 
 ---
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
+Phase: 09 (pause-system) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Recent decisions affecting v1.1 work:
 - [Phase 07-config-infrastructure]: initFlowerConfigs mutates FLOWER_CONFIGS in place (not reassign) — tests import the same object reference and see defaults when init is not called
 - [Phase 08-spawn-fix]: initialCount optional in SpawnPhaseConfig — required enforcement by GameConfig parser on phase index 0 only
 - [Phase 08-spawn-fix]: _spawnInitialBurst() called before _startCountdown() — flowers appear on board before countdown overlay (D-01)
+- [Phase 09-pause-system]: Remove readonly from _spawnTimestamp in FlowerFSM to allow shiftTimestamp() mutation — controlled via public API only
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -79,8 +80,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-21T07:51:28.347Z
-Stopped at: Completed 08-spawn-fix-01-PLAN.md
+Last session: 2026-03-21T09:20:07.824Z
+Stopped at: Completed 09-pause-system-01-PLAN.md
 Resume file: None
 
 ---
