@@ -52,7 +52,7 @@ completed: 2026-03-21
 - **Duration:** ~2 min
 - **Started:** 2026-03-21T09:50:05Z
 - **Completed:** 2026-03-21T09:51:50Z
-- **Tasks:** 2 auto + 1 checkpoint (human-verify pending)
+- **Tasks:** 3 (2 auto + 1 human-verify — approved)
 - **Files modified:** 4
 
 ## Accomplishments
@@ -71,7 +71,7 @@ Each task was committed atomically:
 
 1. **Task 1: Add init functions to FlowerTypes, SpawnManager, GameState** - `f3350e8` (feat)
 2. **Task 2: Rewrite BootController with JSON loading and error popup** - `a952f04` (feat)
-3. **Task 3: Verify config loading in Cocos Editor** - PENDING (checkpoint:human-verify)
+3. **Task 3: Verify config loading in Cocos Editor** - APPROVED (checkpoint:human-verify — all 6 steps passed)
 
 ## Files Created/Modified
 
@@ -97,24 +97,16 @@ None — all acceptance criteria met on first attempt. Both task verifications (
 
 ## User Setup Required
 
-**Task 3 (checkpoint:human-verify) is pending.** The user must:
-1. Open Cocos Creator Editor and open the BloomTap project
-2. In the Boot scene, create an error overlay UI:
-   - Node "ErrorOverlay" (child of Canvas)
-   - Label child: "Game config loi. Vui long reload."
-   - Button child: "Reload"
-   - Wire these to BootController's `errorOverlay`, `errorLabel`, `reloadButton` @property fields
-3. Click Play — verify game loads through Boot into GameScene with flowers spawning
-4. Modify `cycleDurationMs` in flowers.json — verify change takes effect without recompile
-5. Break flowers.json — verify error popup appears with Reload button
-6. Fix flowers.json and use Reload — verify game recovers
+Completed during human-verify checkpoint (Task 3):
+- Boot scene error overlay UI wired in Cocos Inspector: Node "ErrorOverlay" + Label child + Button child connected to BootController's `errorOverlay`, `errorLabel`, `reloadButton` @property fields
+- All 6 verification steps passed: game loads into GameScene, CHERRY faster with cycleDurationMs=1500, error popup on broken JSON, Reload restores normal flow
 
 ## Next Phase Readiness
 
-After checkpoint approval:
 - Phase 7 (Config Infrastructure) is complete — all CFG-01, CFG-02, CFG-03 requirements fulfilled
 - JSON config files are live-editable and drive gameplay without recompile
 - Error popup prevents game from starting with corrupt data
+- No blockers for Phase 8 or later phases
 
 ## Self-Check: PASSED
 
