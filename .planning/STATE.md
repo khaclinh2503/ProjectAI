@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 10-special-flowers-02-PLAN.md
-last_updated: "2026-03-21T17:15:36.728Z"
+stopped_at: "Checkpoint: Task 2 human-verify in 10-03-PLAN.md"
+last_updated: "2026-03-21T17:20:43.756Z"
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State: Bloom Tap
@@ -69,6 +69,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 10-special-flowers]: TIME_FREEZE per-frame: sessionStartMs += dt*1000; expiries NOT shifted during normal play (absolute timestamps)
 - [Phase 10-special-flowers]: initPowerUpConfig() public on GameController allows BootController to override fallback defaults after JSON load
 - [Phase 10-special-flowers]: Special overlay drawn after _paintState in GridRenderer so it renders on top of flower color
+- [Phase 10-special-flowers]: PowerUpHUDRenderer reads PowerUpState via tick(powerUpState, nowMs) — pure read, no mutation
+- [Phase 10-special-flowers]: BootController.gameController @property added to enable initPowerUpConfig call before scene load
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -87,8 +89,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-21T17:15:36.724Z
-Stopped at: Completed 10-special-flowers-02-PLAN.md
+Last session: 2026-03-21T17:20:37.397Z
+Stopped at: Checkpoint: Task 2 human-verify in 10-03-PLAN.md
 Resume file: None
 
 ---
