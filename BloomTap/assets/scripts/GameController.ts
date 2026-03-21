@@ -7,6 +7,7 @@ import { FLOWER_CONFIGS } from './logic/FlowerTypes';
 import { FlowerFSM } from './logic/FlowerFSM';
 import { FlowerState } from './logic/FlowerState';
 import { GridRenderer } from './GridRenderer';
+import { PowerUpHUDRenderer } from './PowerUpHUDRenderer';
 import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 import { StorageService } from './logic/StorageService';
 import { PowerUpState, SpecialEffectType, applySlowGrowthConfig } from './logic/PowerUpState';
@@ -102,6 +103,9 @@ export class GameController extends Component {
     @property(Label)
     pausedSubLabel: Label | null = null;
 
+    @property(PowerUpHUDRenderer)
+    powerUpHUD: PowerUpHUDRenderer | null = null;
+
     public readonly grid = new Grid();
     public readonly comboSystem = new ComboSystem();
     public readonly spawnManager = new SpawnManager();
@@ -129,6 +133,9 @@ export class GameController extends Component {
      */
     public initPowerUpConfig(config: PowerUpsConfig): void {
         this._powerUpConfig = config;
+        if (this.powerUpHUD) {
+            this.powerUpHUD.init(config);
+        }
     }
 
     onLoad(): void {
@@ -147,6 +154,9 @@ export class GameController extends Component {
         }
         if (this.pauseButton) this.pauseButton.active = false;
         if (this.pauseOverlay) this.pauseOverlay.active = false;
+        if (this.powerUpHUD) {
+            this.powerUpHUD.init(this._powerUpConfig);
+        }
         this._showStartScreen();
     }
 
@@ -165,6 +175,7 @@ export class GameController extends Component {
         // Game-over check FIRST — before any spawn logic
         if (this.gameState.isGameOver(nowMs)) {
             this.powerUpState.reset(0);
+            if (this.powerUpHUD) this.powerUpHUD.node.active = false;
             this._triggerGameOver();
             return;
         }
@@ -207,6 +218,9 @@ export class GameController extends Component {
             this._nextSpawnMs = nowMs + phaseConfig.intervalMs;
         }
 
+        if (this.powerUpHUD) {
+            this.powerUpHUD.tick(this.powerUpState, nowMs);
+        }
         this._updateHUD(elapsedMs);
     }
 
@@ -748,6 +762,7 @@ export class GameController extends Component {
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
         this.grid.clearAll();
         this.powerUpState.reset(0);
+        if (this.powerUpHUD) this.powerUpHUD.node.active = false;
         if (this.newBestLabel) this.newBestLabel.node.active = false;
         if (this.gridRenderer) {
             this.gridRenderer.setInputEnabled(false);
