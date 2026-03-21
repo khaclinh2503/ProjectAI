@@ -76,3 +76,43 @@ describe('FlowerFSM score calculation (CHERRY, spawnTimestamp=0)', () => {
         expect(fsm.getScore(1350 + 900 + 100)).toBeNull();
     });
 });
+
+describe('FlowerFSM.shiftTimestamp', () => {
+    it('shifts getState forward by deltaMs', () => {
+        const fsm = new FlowerFSM(0, cherryConfig);
+        expect(fsm.getState(1350)).toBe(FlowerState.BLOOMING);
+        fsm.shiftTimestamp(5000);
+        expect(fsm.getState(1350 + 5000)).toBe(FlowerState.BLOOMING);
+    });
+
+    it('preserves getScore after shift', () => {
+        const fsm = new FlowerFSM(0, cherryConfig);
+        const scoreBefore = fsm.getScore(1500);
+        expect(scoreBefore).not.toBeNull();
+        fsm.shiftTimestamp(10000);
+        const scoreAfter = fsm.getScore(1500 + 10000);
+        expect(scoreAfter).toBeCloseTo(scoreBefore!, 5);
+    });
+
+    it('does not throw on collected flower', () => {
+        const fsm = new FlowerFSM(0, cherryConfig);
+        fsm.collect();
+        expect(() => fsm.shiftTimestamp(5000)).not.toThrow();
+        expect(fsm.getState(99999)).toBe(FlowerState.COLLECTED);
+    });
+
+    it('zero deltaMs is a no-op', () => {
+        const fsm = new FlowerFSM(0, cherryConfig);
+        expect(fsm.getState(1350)).toBe(FlowerState.BLOOMING);
+        fsm.shiftTimestamp(0);
+        expect(fsm.getState(1350)).toBe(FlowerState.BLOOMING);
+    });
+
+    it('multiple calls accumulate', () => {
+        const fsm = new FlowerFSM(0, cherryConfig);
+        fsm.shiftTimestamp(1000);
+        fsm.shiftTimestamp(2000);
+        // equivalent to total shift of 3000
+        expect(fsm.getState(1350 + 3000)).toBe(FlowerState.BLOOMING);
+    });
+});

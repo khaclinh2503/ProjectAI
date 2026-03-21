@@ -7,7 +7,7 @@ import { FlowerState } from './FlowerState';
  * This prevents timer drift over the 120s game session.
  */
 export class FlowerFSM {
-    private readonly _spawnTimestamp: number;
+    private _spawnTimestamp: number;
     private readonly _config: FlowerTypeConfig;
     private _collected: boolean = false;
 
@@ -83,5 +83,14 @@ export class FlowerFSM {
      */
     collect(): void {
         this._collected = true;
+    }
+
+    /**
+     * Shifts the internal spawn timestamp forward by deltaMs.
+     * Used by pause/resume to advance the timeline so derived state
+     * (getState, getScore) picks up from the same relative position.
+     */
+    shiftTimestamp(deltaMs: number): void {
+        this._spawnTimestamp += deltaMs;
     }
 }
