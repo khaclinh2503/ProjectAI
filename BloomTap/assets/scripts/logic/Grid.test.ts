@@ -3,6 +3,7 @@ import { Grid, Cell } from './Grid';
 import { FlowerFSM } from './FlowerFSM';
 import { FlowerTypeId, FLOWER_CONFIGS } from './FlowerTypes';
 import { FlowerState } from './FlowerState';
+import { SpecialEffectType } from './PowerUpState';
 
 const cherryConfig = FLOWER_CONFIGS[FlowerTypeId.CHERRY];
 
@@ -220,5 +221,46 @@ describe('Grid.shiftAllTimestamps', () => {
 
         expect(c0.flower!.getScore(11500)).toBeCloseTo(s0!, 5);
         expect(c1.flower!.getScore(11500)).toBeCloseTo(s1!, 5);
+    });
+});
+
+describe('Cell isSpecial and specialEffect', () => {
+    it('new cell has isSpecial === false and specialEffect === null', () => {
+        const grid = new Grid();
+        const cell = grid.getCells()[0];
+        expect(cell.isSpecial).toBe(false);
+        expect(cell.specialEffect).toBeNull();
+    });
+
+    it('clearCell resets isSpecial and specialEffect to false/null', () => {
+        const grid = new Grid();
+        const cell = grid.getCells()[0];
+        // Set the special fields manually
+        (cell as any).isSpecial = true;
+        (cell as any).specialEffect = 'SCORE_MULTIPLIER' as SpecialEffectType;
+        expect(cell.isSpecial).toBe(true);
+        expect(cell.specialEffect).toBe('SCORE_MULTIPLIER');
+
+        grid.clearCell(cell);
+
+        expect(cell.isSpecial).toBe(false);
+        expect(cell.specialEffect).toBeNull();
+    });
+
+    it('clearAll resets isSpecial and specialEffect on all cells', () => {
+        const grid = new Grid();
+        const cells = grid.getCells();
+        // Set all cells as special
+        for (const cell of cells) {
+            (cell as any).isSpecial = true;
+            (cell as any).specialEffect = 'TIME_FREEZE' as SpecialEffectType;
+        }
+
+        grid.clearAll();
+
+        for (const cell of cells) {
+            expect(cell.isSpecial).toBe(false);
+            expect(cell.specialEffect).toBeNull();
+        }
     });
 });
