@@ -15,7 +15,7 @@ export interface SpawnPhaseConfig {
     weights: Record<FlowerTypeId, number>;
 }
 
-const PHASE_CONFIGS: SpawnPhaseConfig[] = [
+let PHASE_CONFIGS: SpawnPhaseConfig[] = [
     {
         startMs: 0,
         endMs: 40000,
@@ -56,6 +56,15 @@ const PHASE_CONFIGS: SpawnPhaseConfig[] = [
         },
     },
 ];
+
+/**
+ * Overrides PHASE_CONFIGS with runtime values from JSON config.
+ * SpawnManager methods reference PHASE_CONFIGS by closure and will use the new data.
+ * When not called (e.g. in tests), hardcoded defaults remain.
+ */
+export function initPhaseConfigs(configs: SpawnPhaseConfig[]): void {
+    PHASE_CONFIGS = configs;
+}
 
 export class SpawnManager {
     /**

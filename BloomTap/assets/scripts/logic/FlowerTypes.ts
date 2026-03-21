@@ -100,3 +100,14 @@ export const FLOWER_CONFIGS: Record<FlowerTypeId, FlowerTypeConfig> = {
         scoreFull: 25,
     },
 };
+
+/**
+ * Overrides FLOWER_CONFIGS entries with runtime values from JSON config.
+ * Mutates the same object reference so existing imports stay valid.
+ * When not called (e.g. in tests), hardcoded defaults remain.
+ */
+export function initFlowerConfigs(configs: Record<FlowerTypeId, FlowerTypeConfig>): void {
+    for (const key of Object.keys(configs)) {
+        (FLOWER_CONFIGS as Record<string, FlowerTypeConfig>)[key] = configs[key as FlowerTypeId];
+    }
+}

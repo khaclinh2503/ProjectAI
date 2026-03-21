@@ -8,10 +8,19 @@
 import { ComboSystem } from './ComboSystem';
 
 /** Points deducted for tapping in the wrong state. */
-export const WRONG_TAP_PENALTY: number = 10;
+export let WRONG_TAP_PENALTY: number = 10;
 
 /** Total session duration in milliseconds (2 minutes). */
-export const SESSION_DURATION_MS: number = 120_000;
+export let SESSION_DURATION_MS: number = 120_000;
+
+/**
+ * Overrides WRONG_TAP_PENALTY and SESSION_DURATION_MS with runtime values from JSON config.
+ * When not called (e.g. in tests), hardcoded defaults remain.
+ */
+export function initGameSettings(settings: { session: { durationMs: number }; scoring: { wrongTapPenalty: number } }): void {
+    SESSION_DURATION_MS = settings.session.durationMs;
+    WRONG_TAP_PENALTY = settings.scoring.wrongTapPenalty;
+}
 
 export class GameState {
     /** Current accumulated score for this session. */
