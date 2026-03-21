@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 09-pause-system-02-PLAN.md — Phase 09 complete
-last_updated: "2026-03-21T14:49:40.618Z"
+stopped_at: Completed 10-special-flowers-01-PLAN.md
+last_updated: "2026-03-21T17:09:05.143Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State: Bloom Tap
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 09 — pause-system
+**Current focus:** Phase 10 — special-flowers
 
 ---
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10 (special-flowers) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -64,6 +64,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 09-pause-system]: Remove readonly from _spawnTimestamp in FlowerFSM to allow shiftTimestamp() mutation — controlled via public API only
 - [Phase 09-pause-system]: SessionPhase.PAUSED as enum value (not boolean flag) — consistent with existing state machine; do NOT call _stopAllJuiceAnimations on pause (resets _urgencyStage); _applyPauseOffset() shifts all timestamps in one pass
 - [Phase 09-pause-system]: GridRenderer.freezeAt() added post-UAT — Cocos render loop is independent of update(); flowers kept progressing visually without pinning render timestamp during pause
+- [Phase 10-special-flowers]: PowerUpState uses expiry timestamps — isActive = expiry > nowMs; shiftExpiries shifts all 4 fields (3 expiries + lastSpecialSpawnMs) for pause compatibility
+- [Phase 10-special-flowers]: applySlowGrowthConfig returns spread+Math.round copy — never mutates live config; powerUpMultiplier defaults to 1 in applyCorrectTap for full backward compatibility
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -82,8 +84,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-21T14:07:23.167Z
-Stopped at: Completed 09-pause-system-02-PLAN.md — Phase 09 complete
+Last session: 2026-03-21T17:09:05.140Z
+Stopped at: Completed 10-special-flowers-01-PLAN.md
 Resume file: None
 
 ---
