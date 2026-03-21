@@ -399,6 +399,7 @@ export class GameController extends Component {
     }
 
     private _onStartTapped(): void {
+        this._spawnInitialBurst();
         this._startCountdown();
     }
 
@@ -436,6 +437,28 @@ export class GameController extends Component {
 
         if (this.gridRenderer) this.gridRenderer.setInputEnabled(true);
         this._phase = SessionPhase.PLAYING;
+    }
+
+    /**
+     * Spawns the initial burst of flowers on the board before countdown starts.
+     * Mirrors the spawn loop in update() (lines 131-144) — same pattern, same guards.
+     * Called from _onStartTapped() per D-01: flowers visible while countdown runs.
+     */
+    private _spawnInitialBurst(): void {
+        const nowMs = performance.now();
+        const phaseConfig = this.spawnManager.getPhaseConfig(0);
+        const initialCount = phaseConfig.initialCount ?? 0;
+        for (let i = 0; i < initialCount; i++) {
+            if (this.grid.getAliveCount(nowMs) >= phaseConfig.maxAlive) break;
+            const emptyCell = this.grid.getRandomEmptyCell();
+            if (!emptyCell) break;
+            const typeId = this.spawnManager.pickFlowerType(0);
+            const config = FLOWER_CONFIGS[typeId];
+            this.grid.spawnFlower(emptyCell, config, nowMs);
+            if (this.gridRenderer) {
+                this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
+            }
+        }
     }
 
     private _triggerGameOver(): void {
