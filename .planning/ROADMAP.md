@@ -55,7 +55,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. When the player taps Start, flowers are visible on the board within the first game frame — no empty-board wait
   2. The number of flowers in the opening burst matches the initialCount value set in the spawn config JSON
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 08-01-PLAN.md — Schema + burst wiring: add initialCount to config, validate in parseSpawnPhases, wire _spawnInitialBurst in GameController
 
 ### Phase 9: Pause System
 **Goal**: Player can pause the game at any moment and resume to the exact state they left — timer, live flowers, and combo all preserved with no time-drift artifacts
@@ -112,7 +114,7 @@ Plans:
 | 5. Juice and Polish | v1.0 | 3/3 | Complete | 2026-03-15 |
 | 6. Results and Persistence | v1.0 | 3/3 | Complete | 2026-03-16 |
 | 7. Config Infrastructure | 2/2 | Complete   | 2026-03-21 | - |
-| 8. Spawn Fix | v1.1 | 0/? | Not started | - |
+| 8. Spawn Fix | v1.1 | 0/1 | Planning complete | - |
 | 9. Pause System | v1.1 | 0/? | Not started | - |
 | 10. Special Flowers | v1.1 | 0/? | Not started | - |
 | 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
@@ -120,4 +122,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-03-17 — Phase 7 plans created (2 plans)*
+*Last updated: 2026-03-21 — Phase 8 plans created (1 plan)*
