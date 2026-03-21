@@ -82,8 +82,12 @@ Plans:
   2. Tapping a special flower during Score Multiplier effect causes all subsequent scored taps to award x2–x5 points for approximately 6 seconds; a HUD indicator shows the effect and remaining duration
   3. Tapping a special flower during Freeze Time effect visibly stops the countdown timer for approximately 5 seconds; the timer resumes from the frozen value when the effect ends
   4. Tapping a special flower during Slow Growth effect causes newly spawned flowers to cycle more slowly for approximately 8 seconds — the bloom window is observably wider
-  5. Activating a second power-up while one is active replaces the first effect immediately — effects never stack
-**Plans**: TBD
+  5. Each effect type has its own independent slot — up to 3 effects active simultaneously; same-type retap resets timer
+**Plans:** 3 plans
+Plans:
+- [ ] 10-01-PLAN.md — TDD: PowerUpState class + Cell extension + GameConfig powerUps schema + GameState multiplier + tests
+- [ ] 10-02-PLAN.md — Wire spawn loop, effects, TIME_FREEZE, SLOW_GROWTH, pause integration into GameController + GridRenderer overlay
+- [ ] 10-03-PLAN.md — PowerUpHUDRenderer component + BootController config wiring + human verify
 
 ### Phase 11: Bug Fixes and Refactors
 **Goal**: Three known issues are resolved — combo label shows correct multiplier from session start, wrong taps trigger screen shake, and GameController no longer duplicates JuiceHelpers logic inline
@@ -119,10 +123,10 @@ Plans:
 | 7. Config Infrastructure | 2/2 | Complete   | 2026-03-21 | - |
 | 8. Spawn Fix | v1.1 | 1/1 | Complete   | 2026-03-21 |
 | 9. Pause System | v1.1 | 2/2 | Complete   | 2026-03-21 |
-| 10. Special Flowers | v1.1 | 0/? | Not started | - |
+| 10. Special Flowers | v1.1 | 0/3 | Not started | - |
 | 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
 | 12. Art Refresh | v1.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-03-21 — Phase 9 plans created (2 plans)*
+*Last updated: 2026-03-21 — Phase 10 plans created (3 plans)*
