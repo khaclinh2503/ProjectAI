@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: "Checkpoint: Task 2 human-verify in 09-pause-system-02-PLAN.md"
-last_updated: "2026-03-21T09:23:57.134Z"
+stopped_at: Completed 09-pause-system-02-PLAN.md — Phase 09 complete
+last_updated: "2026-03-21T14:07:23.173Z"
 progress:
   total_phases: 6
   completed_phases: 3
@@ -63,6 +63,7 @@ Recent decisions affecting v1.1 work:
 - [Phase 08-spawn-fix]: _spawnInitialBurst() called before _startCountdown() — flowers appear on board before countdown overlay (D-01)
 - [Phase 09-pause-system]: Remove readonly from _spawnTimestamp in FlowerFSM to allow shiftTimestamp() mutation — controlled via public API only
 - [Phase 09-pause-system]: SessionPhase.PAUSED as enum value (not boolean flag) — consistent with existing state machine; do NOT call _stopAllJuiceAnimations on pause (resets _urgencyStage); _applyPauseOffset() shifts all timestamps in one pass
+- [Phase 09-pause-system]: GridRenderer.freezeAt() added post-UAT — Cocos render loop is independent of update(); flowers kept progressing visually without pinning render timestamp during pause
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -81,8 +82,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:23:57.129Z
-Stopped at: Checkpoint: Task 2 human-verify in 09-pause-system-02-PLAN.md
+Last session: 2026-03-21T14:07:23.167Z
+Stopped at: Completed 09-pause-system-02-PLAN.md — Phase 09 complete
 Resume file: None
 
 ---
