@@ -1,12 +1,15 @@
 import { FlowerFSM } from './FlowerFSM';
 import { FlowerTypeConfig } from './FlowerTypes';
 import { FlowerState } from './FlowerState';
+import { EffectType } from './PowerUpState';
 
 export interface Cell {
     index: number;
     row: number;
     col: number;
     flower: FlowerFSM | null;
+    isSpecial: boolean;
+    specialEffect: EffectType | null;
 }
 
 /**
@@ -21,7 +24,7 @@ export class Grid {
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const index = row * 8 + col;
-                this._cells.push({ index, row, col, flower: null });
+                this._cells.push({ index, row, col, flower: null, isSpecial: false, specialEffect: null });
             }
         }
     }
@@ -55,19 +58,23 @@ export class Grid {
     }
 
     /**
-     * Removes the flower from the cell (sets flower to null).
+     * Removes the flower from the cell and resets special flower fields.
      */
     clearCell(cell: Cell): void {
         cell.flower = null;
+        cell.isSpecial = false;
+        cell.specialEffect = null;
     }
 
     /**
-     * Clears all 64 cells — sets every cell.flower to null.
+     * Clears all 64 cells — sets every cell.flower to null and resets special fields.
      * Used by restart flow to reset the grid without recreating it.
      */
     clearAll(): void {
         for (const cell of this._cells) {
             cell.flower = null;
+            cell.isSpecial = false;
+            cell.specialEffect = null;
         }
     }
 

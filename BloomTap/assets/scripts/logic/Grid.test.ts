@@ -3,6 +3,7 @@ import { Grid, Cell } from './Grid';
 import { FlowerFSM } from './FlowerFSM';
 import { FlowerTypeId, FLOWER_CONFIGS } from './FlowerTypes';
 import { FlowerState } from './FlowerState';
+import { EffectType } from './PowerUpState';
 
 const cherryConfig = FLOWER_CONFIGS[FlowerTypeId.CHERRY];
 
@@ -166,6 +167,52 @@ describe('Grid.getAliveCount()', () => {
 
         // Both flowers are DEAD at t=3000ms (elapsed >= budMs + tapWindowMs + wiltingMs)
         expect(grid.getAliveCount(3000)).toBe(0);
+    });
+});
+
+describe('Cell isSpecial and specialEffect fields', () => {
+    it('new cell has isSpecial false and specialEffect null', () => {
+        const grid = new Grid();
+        const cell = grid.getCells()[0];
+        expect(cell.isSpecial).toBe(false);
+        expect(cell.specialEffect).toBeNull();
+    });
+
+    it('clearCell resets isSpecial and specialEffect', () => {
+        const grid = new Grid();
+        const cell = grid.getCells()[0];
+        // Manually set special fields to simulate a special flower
+        (cell as Cell).isSpecial = true;
+        (cell as Cell).specialEffect = EffectType.TIME_FREEZE;
+        grid.spawnFlower(cell, FLOWER_CONFIGS[FlowerTypeId.CHERRY], 0);
+
+        grid.clearCell(cell);
+
+        expect(cell.flower).toBeNull();
+        expect(cell.isSpecial).toBe(false);
+        expect(cell.specialEffect).toBeNull();
+    });
+
+    it('clearAll resets isSpecial and specialEffect on all cells', () => {
+        const grid = new Grid();
+        const cells = grid.getCells();
+        // Mark some cells as special
+        (cells[0] as Cell).isSpecial = true;
+        (cells[0] as Cell).specialEffect = EffectType.SCORE_MULTIPLIER;
+        (cells[5] as Cell).isSpecial = true;
+        (cells[5] as Cell).specialEffect = EffectType.SLOW_GROWTH;
+        // Spawn flowers
+        for (const cell of cells) {
+            grid.spawnFlower(cell, FLOWER_CONFIGS[FlowerTypeId.CHERRY], 0);
+        }
+
+        grid.clearAll();
+
+        for (const cell of cells) {
+            expect(cell.flower).toBeNull();
+            expect(cell.isSpecial).toBe(false);
+            expect(cell.specialEffect).toBeNull();
+        }
     });
 });
 
