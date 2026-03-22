@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-03-22T11:34:50.122Z"
+stopped_at: Completed 10-03-PLAN.md Task 1 — awaiting human-verify checkpoint Task 2
+last_updated: "2026-03-22T11:38:36.878Z"
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State: Bloom Tap
@@ -75,6 +75,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 10]: applySlowGrowthConfig returns spread+Math.round copy — never mutates live config; powerUpMultiplier defaults to 1 in applyCorrectTap for full backward compatibility
 - [Phase 10-special-flowers]: TIME_FREEZE advances sessionStartMs BEFORE elapsedMs calculation — timer display freezes correctly
 - [Phase 10-special-flowers]: GridRenderer._refreshCellBg uses _lastIsSpecial dirty check — avoids redundant spriteFrame writes each frame
+- [Phase 10-special-flowers]: PowerUpHUDRenderer hides immediately on effect expiry (node.active=false, D-16) — no animation
+- [Phase 10-special-flowers]: BootController passes powerUps config only when present in JSON — falls back to hardcoded defaults in GameController
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -93,8 +95,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-22T11:34:50.119Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-03-22T11:38:36.874Z
+Stopped at: Completed 10-03-PLAN.md Task 1 — awaiting human-verify checkpoint Task 2
 Resume file: None
 
 ---

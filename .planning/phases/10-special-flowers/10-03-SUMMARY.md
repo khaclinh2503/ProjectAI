@@ -2,31 +2,28 @@
 phase: 10-special-flowers
 plan: 03
 subsystem: ui
-tags: [cocos, typescript, power-up, hud, graphics, timer]
+tags: [power-up, hud, cocos-component, sprite, graphics, countdown-arc]
 
 # Dependency graph
 requires:
-  - phase: 10-special-flowers-02
-    provides: PowerUpState with isActive/getRemaining/getActiveCount; GameController.initPowerUpConfig; GameController.powerUpState
-  - phase: 10-special-flowers-01
-    provides: PowerUpsConfig interface in GameConfig; special flower spawn logic foundation
-  - phase: 07-config-infrastructure
-    provides: BootController with resources.load config pipeline; parseGameConfig
+  - phase: 10-01
+    provides: PowerUpState pure logic (isActive, getRemainingMs, activate, tick, shiftExpiry, reset)
+  - phase: 10-02
+    provides: GameController power-up wiring (spawn, effects, GridRenderer cell background swap)
 provides:
-  - PowerUpHUDRenderer Cocos Component with 3-slot circular arc timer row
-  - GameController @property(PowerUpHUDRenderer) + tick/init/hide wiring
-  - BootController initPowerUpConfig pass-through after config load
-  - Human verification checkpoint for complete special flowers system
-affects: [11-polish-fixes, future-art-refresh]
+  - PowerUpHUDRenderer Cocos Component: effect icon + circular countdown arc
+  - BootController @property(GameController) + initPowerUpConfig call from JSON config
+  - GameController @property(PowerUpHUDRenderer) + per-frame tick in update()
+affects: [phase 11, any future HUD polish]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - Pre-allocate 3 slot nodes in onLoad (never create during gameplay, consistent with GridRenderer)
-    - Hidden by default node pattern: node.active = false in onLoad, revealed in tick when active
-    - Circular arc timer via Graphics.arc() with fraction = remaining/total
-    - Separation: PowerUpHUDRenderer reads PowerUpState via tick(state, nowMs) — no direct GameController dependency
+    - PowerUpHUDRenderer reads PowerUpState via tick(powerUpState, nowMs) — pure read, no mutation (D-15)
+    - onLoad hides HUD node (active=false) to prevent first-frame flash (Pitfall 5)
+    - Countdown arc drawn with Cocos Graphics: background circle (dim gray) + foreground arc (white, clockwise from top)
+    - Cell sprites loaded via resources.load with SpriteFrame fallback to Texture2D (same pattern as GridRenderer)
 
 key-files:
   created:
@@ -36,87 +33,72 @@ key-files:
     - BloomTap/assets/scripts/BootController.ts
 
 key-decisions:
-  - "PowerUpHUDRenderer reads PowerUpState via tick(powerUpState, nowMs) — pure read, no mutation"
-  - "node.active toggled in tick() not per-frame set — only changes when activeCount crosses 0 boundary"
-  - "BootController.gameController @property required for initPowerUpConfig call before scene load"
+  - "PowerUpHUDRenderer hides immediately (node.active=false) when effect expires — no fade animation (D-16)"
+  - "BootController passes powerUps config only when cfg.powerUps exists AND gameController is wired — falls back to hardcoded defaults otherwise"
+  - "PowerUpHUD reset in _beginSession() ensures HUD hides on new session start"
 
 patterns-established:
-  - "HUD component pattern: pre-allocate in onLoad, hide by default, reveal conditionally in tick"
-  - "Arc timer pattern: g.arc(0, 0, r, -PI/2, -PI/2 + fraction*2PI, false) for clockwise countdown"
+  - "Component tick pattern: GameController.update() calls component.tick(state, nowMs) — component owns its own render decisions"
 
 requirements-completed: [SPECIAL-01, SPECIAL-02, SPECIAL-03, SPECIAL-04]
 
 # Metrics
-duration: 3min
-completed: 2026-03-21
+duration: 5min
+completed: 2026-03-22
 ---
 
-# Phase 10 Plan 03: PowerUpHUDRenderer + Wiring + Human Verify Summary
+# Phase 10 Plan 03: Special Flowers HUD + BootController Config Summary
 
-**3-slot circular arc HUD renderer created using Cocos Graphics API, wired into GameController tick loop and BootController config pipeline — awaiting human verification in Cocos Editor**
+**PowerUpHUDRenderer component wired into GameController (per-frame tick + icon/arc render) and BootController loads powerUps config from JSON.**
 
 ## Performance
 
-- **Duration:** ~3 min
-- **Started:** 2026-03-21T17:16:56Z
-- **Completed:** 2026-03-21T17:19:36Z
-- **Tasks:** 1 of 2 complete (Task 2 is human-verify checkpoint — awaiting user)
-- **Files modified:** 3
+- **Duration:** ~5 min
+- **Started:** 2026-03-22T11:35:44Z
+- **Completed:** 2026-03-22T11:41:00Z
+- **Tasks:** 1 of 2 (Task 2 is human-verify checkpoint — awaiting approval)
+- **Files modified:** 3 (1 created, 2 modified)
 
 ## Accomplishments
 
-- PowerUpHUDRenderer.ts: 3-slot HUD row with pre-allocated nodes, circular arc timer per slot
-- HUD hidden by default (D-20); auto-shows when any effect is active, hides when all expired
-- Each slot renders: inactive ring, colored fill circle, shrinking arc timer (D-21)
-- Effect colors consistent with GridRenderer overlay: gold (SCORE_MULTIPLIER), ice blue (TIME_FREEZE), green (SLOW_GROWTH)
-- GameController wired: @property, init in onLoad, tick in update loop, hide on game-over/restart
-- BootController: added GameController @property + initPowerUpConfig(cfg.powerUps) call after config load
-- All 216 tests continue passing
+- Created `PowerUpHUDRenderer` Cocos Component with Sprite icon + Graphics countdown arc
+- Wired `GameController.update()` to tick `PowerUpHUDRenderer` each frame — pure read of `PowerUpState`
+- Added `@property(GameController)` to `BootController` and call `initPowerUpConfig(cfg.powerUps)` after JSON load
+- 220/220 tests passing (no regressions)
 
 ## Task Commits
 
-1. **Task 1: Create PowerUpHUDRenderer + wire GameController + BootController** - `cddce2e` (feat)
-2. **Task 2: Human verify checkpoint** - awaiting approval
+1. **Task 1: Create PowerUpHUDRenderer + wire GameController + BootController** - `7a27c3e` (feat)
 
-**Plan metadata:** (pending — awaiting checkpoint approval before final commit)
+**Plan metadata commit:** pending (after human-verify checkpoint)
 
 ## Files Created/Modified
 
-- `BloomTap/assets/scripts/PowerUpHUDRenderer.ts` - New Cocos Component: 3-slot power-up HUD with circular countdown timers
-- `BloomTap/assets/scripts/GameController.ts` - Added @property(PowerUpHUDRenderer), tick call, init, hide logic
-- `BloomTap/assets/scripts/BootController.ts` - Added GameController @property + initPowerUpConfig pass-through
-
-## Decisions Made
-
-- BootController needs GameController @property to call initPowerUpConfig before scene load — the plan noted this as conditional and it was indeed needed (BootController had no existing GameController reference)
-- node.active toggled conditionally (only when crossing 0-boundary) to avoid redundant property sets each frame
+- `BloomTap/assets/scripts/PowerUpHUDRenderer.ts` — New Cocos Component: @ccclass, Sprite iconSprite, Graphics arcGraphics, tick() reads PowerUpState, _drawCountdownArc(), _loadCellSprites() loading cell_fire/cell_freeze/cell_grass
+- `BloomTap/assets/scripts/GameController.ts` — Added import + @property(PowerUpHUDRenderer), tick call in update(), reset in _beginSession()
+- `BloomTap/assets/scripts/BootController.ts` — Added import + @property(GameController), initPowerUpConfig call in _loadConfigs() when cfg.powerUps present
 
 ## Deviations from Plan
 
 None - plan executed exactly as written.
 
-## Issues Encountered
-
-None.
-
 ## Known Stubs
 
-None — PowerUpHUDRenderer reads live PowerUpState data; no hardcoded/placeholder values in rendering path.
+None — PowerUpHUDRenderer loads real sprites from resources/flowers/, reads live PowerUpState. No hardcoded empty values flowing to UI.
 
-## User Setup Required
+## Checkpoint: Human Verify
 
-**Cocos Editor wiring required:**
-1. In the game scene hierarchy, create a new empty Node below the grid (name it "PowerUpHUD")
-2. Add the PowerUpHUDRenderer component to it
-3. Drag it into GameController's `powerUpHUD` property slot in the Inspector
-4. Wire BootController's `gameController` property to the GameController node if not already wired
+**Task 2 is a human-verify checkpoint.** The complete power-up system (Plans 01 + 02 + 03) must be verified in Cocos Creator:
 
-## Next Phase Readiness
+1. Wire `@property` fields in editor (powerUpHUD on GameController node, gameController on BootController node, iconSprite + arcGraphics on HUD child node)
+2. Verify special flowers spawn with correct cell sprites (cell_fire/cell_freeze/cell_grass)
+3. Verify all 3 effects work: score multiplier, timer freeze, slow growth
+4. Verify HUD shows icon + arc when active, hides immediately on expiry
+5. Verify replacement semantics, pause/resume effect preservation
 
-- Special flowers system code complete (plans 01-03)
-- Human verification in Cocos Editor required to confirm full visual + gameplay correctness
-- After checkpoint approval: Phase 10 complete, ready for Phase 11 (polish-fixes)
+## Self-Check: PASSED
 
----
-*Phase: 10-special-flowers*
-*Completed: 2026-03-21 (pending human checkpoint approval)*
+- `BloomTap/assets/scripts/PowerUpHUDRenderer.ts` — FOUND
+- `BloomTap/assets/scripts/GameController.ts` — FOUND (contains import, @property, tick call)
+- `BloomTap/assets/scripts/BootController.ts` — FOUND (contains import, @property, initPowerUpConfig call)
+- Commit `7a27c3e` — FOUND
