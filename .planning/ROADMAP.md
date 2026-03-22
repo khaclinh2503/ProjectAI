@@ -83,10 +83,10 @@ Plans:
   3. Tapping a special flower during Freeze Time effect visibly stops the countdown timer for approximately 5 seconds; the timer resumes from the frozen value when the effect ends
   4. Tapping a special flower during Slow Growth effect causes newly spawned flowers to cycle more slowly for approximately 8 seconds — the bloom window is observably wider
   5. Replacement semantics: tapping a new special flower replaces the currently active effect; same-type retap resets timer
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [x] 10-01-PLAN.md — TDD: PowerUpState class + Cell extension + GameConfig powerUps schema + GameState multiplier + tests
-- [ ] 10-02-PLAN.md — Wire spawn loop, effects, TIME_FREEZE, SLOW_GROWTH, pause integration into GameController + GridRenderer overlay
+- [x] 10-02-PLAN.md — Wire spawn loop, effects, TIME_FREEZE, SLOW_GROWTH, pause integration into GameController + GridRenderer overlay
 - [ ] 10-03-PLAN.md — PowerUpHUDRenderer component + BootController config wiring + human verify
 
 ### Phase 11: Bug Fixes and Refactors
@@ -123,7 +123,7 @@ Plans:
 | 7. Config Infrastructure | v1.1 | 2/2 | Complete | 2026-03-21 |
 | 8. Spawn Fix | v1.1 | 1/1 | Complete | 2026-03-21 |
 | 9. Pause System | v1.1 | 2/2 | Complete | 2026-03-21 |
-| 10. Special Flowers | v1.1 | 1/3 | In Progress|  |
+| 10. Special Flowers | v1.1 | 2/3 | In Progress|  |
 | 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
 | 12. Art Refresh | v1.1 | 0/? | Not started | - |
 

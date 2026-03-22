@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-03-22T11:29:54.269Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-03-22T11:34:50.122Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State: Bloom Tap
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 10 (special-flowers) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -73,6 +73,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 10-special-flowers]: BootController.gameController @property added to enable initPowerUpConfig call before scene load
 - [Phase 10]: PowerUpState uses expiry timestamps — isActive = activeEffect !== null && nowMs < expiryMs; shiftExpiry shifts expiry for pause compatibility
 - [Phase 10]: applySlowGrowthConfig returns spread+Math.round copy — never mutates live config; powerUpMultiplier defaults to 1 in applyCorrectTap for full backward compatibility
+- [Phase 10-special-flowers]: TIME_FREEZE advances sessionStartMs BEFORE elapsedMs calculation — timer display freezes correctly
+- [Phase 10-special-flowers]: GridRenderer._refreshCellBg uses _lastIsSpecial dirty check — avoids redundant spriteFrame writes each frame
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -91,8 +93,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-22T11:29:54.265Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-03-22T11:34:50.119Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
 
 ---
