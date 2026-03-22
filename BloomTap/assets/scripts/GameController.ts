@@ -11,6 +11,7 @@ import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 import { StorageService } from './logic/StorageService';
 import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
 import { PowerUpConfig } from './logic/GameConfig';
+import { PowerUpHUDRenderer } from './PowerUpHUDRenderer';
 
 const { ccclass, property } = _decorator;
 
@@ -101,6 +102,9 @@ export class GameController extends Component {
 
     @property(Label)
     pausedSubLabel: Label | null = null;
+
+    @property(PowerUpHUDRenderer)
+    powerUpHUD: PowerUpHUDRenderer | null = null;
 
     public readonly grid = new Grid();
     public readonly comboSystem = new ComboSystem();
@@ -204,6 +208,11 @@ export class GameController extends Component {
 
         // Tick power-up state — expires effect if past expiryMs
         this.powerUpState.tick(nowMs);
+
+        // Power-up HUD tick (D-15, D-16)
+        if (this.powerUpHUD) {
+            this.powerUpHUD.tick(this.powerUpState, nowMs);
+        }
 
         // HUD update
         this._updateHUD(elapsedMs);
@@ -539,6 +548,7 @@ export class GameController extends Component {
         this.gameState.reset();
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
         this.powerUpState.reset();
+        if (this.powerUpHUD) this.powerUpHUD.node.active = false;
 
         // Reset spawn timer to now so first batch spawns immediately on first update frame.
         this._nextSpawnMs = performance.now();

@@ -3,6 +3,7 @@ import { parseGameConfig } from './logic/GameConfig';
 import { initFlowerConfigs } from './logic/FlowerTypes';
 import { initPhaseConfigs } from './logic/SpawnManager';
 import { initGameSettings } from './logic/GameState';
+import { GameController } from './GameController';
 const { ccclass, property } = _decorator;
 
 @ccclass('BootController')
@@ -15,6 +16,9 @@ export class BootController extends Component {
 
     @property(Button)
     reloadButton: Button | null = null;
+
+    @property(GameController)
+    gameController: GameController | null = null;
 
     onLoad(): void {
         if (this.errorOverlay) this.errorOverlay.active = false;
@@ -32,6 +36,9 @@ export class BootController extends Component {
                     initFlowerConfigs(cfg.flowers);
                     initPhaseConfigs(cfg.spawnPhases);
                     initGameSettings(cfg.settings);
+                    if (cfg.powerUps && this.gameController) {
+                        this.gameController.initPowerUpConfig(cfg.powerUps);
+                    }
                     director.loadScene('GameScene');
                 } catch (_e) {
                     this._showError();
