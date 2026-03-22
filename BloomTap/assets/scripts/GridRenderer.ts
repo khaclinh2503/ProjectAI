@@ -458,18 +458,48 @@ export class GridRenderer extends Component {
     // -----------------------------------------------------------------------
 
     private _paintEmpty(view: CellView): void {
+        Tween.stopAllByTarget(view.flowerNode);
+        Tween.stopAllByTarget(view.flowerOpacity);
         view.flowerOpacity.opacity = 0;
         view.flashGraphics.clear();
     }
 
     private _paintState(view: CellView, state: FlowerState): void {
         const sf = view.typeId ? this._spriteFrames[view.typeId] : undefined;
-        if (sf) {
-            view.flowerSprite.spriteFrame = sf;
-            view.flowerNode.setScale(STATE_SCALE[state], STATE_SCALE[state], 1);
-            view.flowerOpacity.opacity = STATE_OPACITY[state];
+        if (!sf) {
+            view.flashGraphics.clear();
+            return;
         }
-        // If sprite not yet loaded, cell stays visually empty until next dirty repaint
+
+        view.flowerSprite.spriteFrame = sf;
+
+        const targetScale   = STATE_SCALE[state];
+        const targetOpacity = STATE_OPACITY[state];
+        const isFirstAppearance = view.flowerOpacity.opacity === 0;
+
+        Tween.stopAllByTarget(view.flowerNode);
+        Tween.stopAllByTarget(view.flowerOpacity);
+
+        if (isFirstAppearance) {
+            // Pop-in: scale 0 → overshoot → settle at BUD size
+            view.flowerNode.setScale(0, 0, 1);
+            view.flowerOpacity.opacity = 255;
+            tween(view.flowerNode)
+                .to(0.15, { scale: new Vec3(targetScale * 1.3, targetScale * 1.3, 1) }, { easing: 'cubicOut' })
+                .to(0.10, { scale: new Vec3(targetScale,       targetScale,       1) }, { easing: 'cubicIn'  })
+                .start();
+        } else {
+            // Smooth growth or wilt transition
+            const isWilting = state === FlowerState.WILTING || state === FlowerState.DEAD;
+            tween(view.flowerNode)
+                .to(0.35, { scale: new Vec3(targetScale, targetScale, 1) },
+                    { easing: isWilting ? 'cubicIn' : 'cubicOut' })
+                .start();
+            tween(view.flowerOpacity)
+                .to(0.35, { opacity: targetOpacity })
+                .start();
+        }
+
         view.flashGraphics.clear();
     }
 
