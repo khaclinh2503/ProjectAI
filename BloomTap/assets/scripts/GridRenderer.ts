@@ -486,14 +486,14 @@ export class GridRenderer extends Component {
 
     private _refreshCellBg(view: CellView, cell: Cell, index: number): void {
         const shouldBeSpecial = cell.isSpecial && cell.specialEffect !== null;
-        if (shouldBeSpecial === this._lastIsSpecial[index]) return; // no change
-        this._lastIsSpecial[index] = shouldBeSpecial;
         const targetSf = shouldBeSpecial
-            ? (this._cellSpriteFrames[cell.specialEffect!] ?? this._defaultCellFrame)
+            ? (this._cellSpriteFrames[cell.specialEffect!] ?? null)
             : this._defaultCellFrame;
-        if (targetSf && view.bgSprite.spriteFrame !== targetSf) {
-            view.bgSprite.spriteFrame = targetSf;
-        }
+        // If the specific special sprite isn't loaded yet, skip — will retry on next dirty cycle
+        if (!targetSf) return;
+        if (targetSf === view.bgSprite.spriteFrame) return; // already correct
+        view.bgSprite.spriteFrame = targetSf;
+        this._lastIsSpecial[index] = shouldBeSpecial;
     }
 
     private _paintEmpty(view: CellView): void {
