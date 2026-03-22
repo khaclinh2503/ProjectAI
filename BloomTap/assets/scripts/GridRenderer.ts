@@ -4,7 +4,6 @@ import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
 import { WRONG_FLASH_COLOR } from './FlowerColors';
 import { getFloatLabelString, getFloatFontSize, getFloatDuration } from './logic/JuiceHelpers';
-import { SpecialEffectType } from './logic/PowerUpState';
 
 // Forward-declare to avoid circular: GameController imports GridRenderer,
 // GridRenderer imports GameController only for the type (erased at runtime).
@@ -79,13 +78,6 @@ const FLOWER_COLORS: Record<FlowerTypeId, Record<FlowerState, Color>> = {
 // Shared constants — each is a distinct Color object.
 const EMPTY_FILL   = new Color( 30,  30,  35, 255);
 const EMPTY_STROKE = new Color( 60,  60,  70, 255);
-
-// Placeholder special flower overlay colors (Phase 12 replaces with sprites)
-const SPECIAL_OVERLAY_COLORS: Record<SpecialEffectType, Color> = {
-    SCORE_MULTIPLIER: new Color(255, 215,   0, 200), // gold
-    TIME_FREEZE:      new Color( 64, 164, 255, 200), // ice blue
-    SLOW_GROWTH:      new Color( 80, 220,  80, 200), // green
-};
 
 // ---------------------------------------------------------------------------
 // CellView — per-cell runtime state for the renderer.
@@ -489,10 +481,6 @@ export class GridRenderer extends Component {
                     continue;
                 }
                 this._paintState(view, state);
-                // Special flower overlay — visible from BUD state onward (D-07)
-                if (cell.isSpecial && cell.specialEffect) {
-                    this._paintSpecialOverlay(view, cell.specialEffect);
-                }
             }
         }
     }
@@ -527,17 +515,5 @@ export class GridRenderer extends Component {
         g.fillColor = color;
         g.roundRect(-CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE, CELL_RADIUS);
         g.fill();
-    }
-
-    private _paintSpecialOverlay(view: CellView, effect: SpecialEffectType): void {
-        const g = view.graphics;
-        g.fillColor = SPECIAL_OVERLAY_COLORS[effect];
-        g.circle(0, 0, 12);
-        g.fill();
-        // Border ring for extra visibility
-        g.strokeColor = SPECIAL_OVERLAY_COLORS[effect];
-        g.lineWidth = 2;
-        g.circle(0, 0, CELL_SIZE / 2 - 4);
-        g.stroke();
     }
 }

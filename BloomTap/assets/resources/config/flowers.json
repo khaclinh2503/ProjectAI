@@ -39,20 +39,5 @@
       "startMs": 80000, "endMs": 120000, "intervalMs": 1000, "maxAlive": 28, "spawnBatch": 5,
       "weights": { "SUNFLOWER": 5, "ROSE": 10, "CHRYSANTHEMUM": 20, "LOTUS": 30, "CHERRY": 35 }
     }
-  ],
-  "powerUps": {
-    "specialChance": 0.08,
-    "pityWindowMs": 30000,
-    "scoreMultiplier": {
-      "durationMs": 6000,
-      "multiplierByPhase": [2, 3, 5]
-    },
-    "timeFreeze": {
-      "durationMs": 5000
-    },
-    "slowGrowth": {
-      "durationMs": 8000,
-      "factor": 2.0
-    }
-  }
+  ]
 }

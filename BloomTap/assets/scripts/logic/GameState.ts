@@ -52,16 +52,15 @@ export class GameState {
 
     /**
      * Applies a correct tap: increments correctTaps, adds Math.round(rawScore *
-     * combo.multiplier * powerUpMultiplier) to score, then calls combo.onCorrectTap()
-     * to advance the streak, and updates peakStreak after the increment.
+     * combo.multiplier) to score, then calls combo.onCorrectTap() to advance
+     * the streak, and updates peakStreak after the increment.
      *
-     * @param rawScore          - Base score value from FlowerFSM.getScore()
-     * @param combo             - Active ComboSystem instance
-     * @param powerUpMultiplier - Active score multiplier from power-up (default 1)
+     * @param rawScore - Base score value from FlowerFSM.getScore()
+     * @param combo    - Active ComboSystem instance
      */
-    applyCorrectTap(rawScore: number, combo: ComboSystem, powerUpMultiplier: number = 1): void {
+    applyCorrectTap(rawScore: number, combo: ComboSystem): void {
         this.correctTaps += 1;
-        this.score += Math.round(rawScore * combo.multiplier * powerUpMultiplier);
+        this.score += Math.round(rawScore * combo.multiplier);
         combo.onCorrectTap();                           // increments tapCount FIRST
         if (combo.tapCount > this.peakStreak) {
             this.peakStreak = combo.tapCount;           // capture peak AFTER increment

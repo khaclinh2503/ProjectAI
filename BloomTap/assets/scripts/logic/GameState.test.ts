@@ -193,21 +193,3 @@ describe('GameState', () => {
         });
     });
 });
-
-describe('applyCorrectTap with powerUpMultiplier', () => {
-    it('applyCorrectTap(100, combo) with no powerUpMultiplier works as before (backward compatible)', () => {
-        const state = new GameState();
-        const combo = new ComboSystem();
-        // combo.multiplier = 1 by default
-        state.applyCorrectTap(100, combo);
-        expect(state.score).toBe(100); // Math.round(100 * 1 * 1) = 100
-    });
-
-    it('applyCorrectTap(100, combo, 3) applies Math.round(100 * 1 * 3) = 300 to score', () => {
-        const state = new GameState();
-        const combo = new ComboSystem();
-        // combo.multiplier = 1 by default, powerUpMultiplier = 3
-        state.applyCorrectTap(100, combo, 3);
-        expect(state.score).toBe(300); // Math.round(100 * 1 * 3) = 300
-    });
-});

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGameConfig, PowerUpsConfig } from './GameConfig';
+import { parseGameConfig } from './GameConfig';
 
 // ---------------------------------------------------------------------------
 // Valid fixture data — mirrors flowers.json and settings.json exactly
@@ -48,21 +48,6 @@ const validFlowersData = {
             weights: { SUNFLOWER: 5, ROSE: 10, CHRYSANTHEMUM: 20, LOTUS: 30, CHERRY: 35 },
         },
     ],
-    powerUps: {
-        specialChance: 0.08,
-        pityWindowMs: 30000,
-        scoreMultiplier: {
-            durationMs: 6000,
-            multiplierByPhase: [2, 3, 5],
-        },
-        timeFreeze: {
-            durationMs: 5000,
-        },
-        slowGrowth: {
-            durationMs: 8000,
-            factor: 2.0,
-        },
-    },
 };
 
 const validSettingsData = {
@@ -276,59 +261,5 @@ describe('initialCount validation', () => {
         const config = parseGameConfig(validFlowersData, validSettingsData);
         expect(config.spawnPhases[1].initialCount).toBeUndefined();
         expect(config.spawnPhases[2].initialCount).toBeUndefined();
-    });
-});
-
-describe('powerUps config parsing', () => {
-    it('parseGameConfig with valid powerUps block returns PowerUpsConfig with correct values', () => {
-        const config = parseGameConfig(validFlowersData, validSettingsData);
-        expect(config.powerUps.specialChance).toBe(0.08);
-        expect(config.powerUps.pityWindowMs).toBe(30000);
-        expect(config.powerUps.scoreMultiplier.durationMs).toBe(6000);
-        expect(config.powerUps.scoreMultiplier.multiplierByPhase).toEqual([2, 3, 5]);
-        expect(config.powerUps.timeFreeze.durationMs).toBe(5000);
-        expect(config.powerUps.slowGrowth.durationMs).toBe(8000);
-        expect(config.powerUps.slowGrowth.factor).toBe(2.0);
-    });
-
-    it('parseGameConfig with missing powerUps block throws descriptive error', () => {
-        const { powerUps: _removed, ...withoutPowerUps } = validFlowersData;
-        expect(() => parseGameConfig(withoutPowerUps, validSettingsData))
-            .toThrowError(/powerUps/);
-    });
-
-    it('parseGameConfig with specialChance=-1 throws about specialChance', () => {
-        const bad = {
-            ...validFlowersData,
-            powerUps: { ...validFlowersData.powerUps, specialChance: -1 },
-        };
-        expect(() => parseGameConfig(bad, validSettingsData))
-            .toThrowError(/specialChance/);
-    });
-
-    it('parseGameConfig with missing multiplierByPhase throws descriptive error', () => {
-        const bad = {
-            ...validFlowersData,
-            powerUps: {
-                ...validFlowersData.powerUps,
-                scoreMultiplier: { durationMs: 6000 },
-            },
-        };
-        expect(() => parseGameConfig(bad, validSettingsData)).toThrow();
-    });
-
-    it('parseGameConfig with multiplierByPhase length !== 3 throws descriptive error', () => {
-        const bad = {
-            ...validFlowersData,
-            powerUps: {
-                ...validFlowersData.powerUps,
-                scoreMultiplier: {
-                    durationMs: 6000,
-                    multiplierByPhase: [2, 3],
-                },
-            },
-        };
-        expect(() => parseGameConfig(bad, validSettingsData))
-            .toThrowError(/multiplierByPhase/);
     });
 });

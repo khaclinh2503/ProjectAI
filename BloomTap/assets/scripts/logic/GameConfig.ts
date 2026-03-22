@@ -2,22 +2,6 @@
 import { FlowerTypeId, FlowerTypeConfig } from './FlowerTypes';
 import { SpawnPhaseConfig } from './SpawnManager';
 
-export interface PowerUpsConfig {
-    specialChance: number;
-    pityWindowMs: number;
-    scoreMultiplier: {
-        durationMs: number;
-        multiplierByPhase: [number, number, number];
-    };
-    timeFreeze: {
-        durationMs: number;
-    };
-    slowGrowth: {
-        durationMs: number;
-        factor: number;
-    };
-}
-
 export interface GameConfig {
     flowers: Record<FlowerTypeId, FlowerTypeConfig>;
     spawnPhases: SpawnPhaseConfig[];
@@ -25,7 +9,6 @@ export interface GameConfig {
         session: { durationMs: number };
         scoring: { wrongTapPenalty: number };
     };
-    powerUps: PowerUpsConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,75 +171,6 @@ function parseSettings(settingsData: unknown): GameConfig['settings'] {
     };
 }
 
-function parsePowerUps(flowersData: unknown): PowerUpsConfig {
-    if (!isRecord(flowersData)) {
-        throw new Error('[GameConfig] flowersData must be a non-null object');
-    }
-
-    if (!('powerUps' in flowersData)) {
-        throw new Error("[GameConfig] flowersData must have a 'powerUps' key");
-    }
-
-    const raw = flowersData['powerUps'];
-    if (!isRecord(raw)) {
-        throw new Error('[GameConfig] flowersData.powerUps must be a non-null object');
-    }
-
-    const specialChance = requireNonNegativeNumber(raw, 'specialChance', 'powerUps');
-    const pityWindowMs = requirePositiveNumber(raw, 'pityWindowMs', 'powerUps');
-
-    // scoreMultiplier
-    const smRaw = raw['scoreMultiplier'];
-    if (!isRecord(smRaw)) {
-        throw new Error('[GameConfig] powerUps.scoreMultiplier must be a non-null object');
-    }
-    const smDurationMs = requirePositiveNumber(smRaw, 'durationMs', 'powerUps.scoreMultiplier');
-    const smPhases = smRaw['multiplierByPhase'];
-    if (!Array.isArray(smPhases)) {
-        throw new Error('[GameConfig] powerUps.scoreMultiplier.multiplierByPhase must be an array');
-    }
-    if (smPhases.length !== 3) {
-        throw new Error(`[GameConfig] powerUps.scoreMultiplier.multiplierByPhase must have exactly 3 elements, got ${smPhases.length}`);
-    }
-    for (let i = 0; i < 3; i++) {
-        if (typeof smPhases[i] !== 'number' || isNaN(smPhases[i]) || smPhases[i] <= 0) {
-            throw new Error(`[GameConfig] powerUps.scoreMultiplier.multiplierByPhase[${i}] must be a positive number`);
-        }
-    }
-    const multiplierByPhase = smPhases as [number, number, number];
-
-    // timeFreeze
-    const tfRaw = raw['timeFreeze'];
-    if (!isRecord(tfRaw)) {
-        throw new Error('[GameConfig] powerUps.timeFreeze must be a non-null object');
-    }
-    const tfDurationMs = requirePositiveNumber(tfRaw, 'durationMs', 'powerUps.timeFreeze');
-
-    // slowGrowth
-    const sgRaw = raw['slowGrowth'];
-    if (!isRecord(sgRaw)) {
-        throw new Error('[GameConfig] powerUps.slowGrowth must be a non-null object');
-    }
-    const sgDurationMs = requirePositiveNumber(sgRaw, 'durationMs', 'powerUps.slowGrowth');
-    const sgFactor = requirePositiveNumber(sgRaw, 'factor', 'powerUps.slowGrowth');
-
-    return {
-        specialChance,
-        pityWindowMs,
-        scoreMultiplier: {
-            durationMs: smDurationMs,
-            multiplierByPhase,
-        },
-        timeFreeze: {
-            durationMs: tfDurationMs,
-        },
-        slowGrowth: {
-            durationMs: sgDurationMs,
-            factor: sgFactor,
-        },
-    };
-}
-
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -273,7 +187,6 @@ export function parseGameConfig(flowersData: unknown, settingsData: unknown): Ga
     const flowers = parseFlowers(flowersData);
     const spawnPhases = parseSpawnPhases(flowersData);
     const settings = parseSettings(settingsData);
-    const powerUps = parsePowerUps(flowersData);
 
-    return { flowers, spawnPhases, settings, powerUps };
+    return { flowers, spawnPhases, settings };
 }
