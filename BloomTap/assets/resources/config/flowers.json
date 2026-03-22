@@ -41,7 +41,7 @@
     }
   ],
   "powerUps": {
-    "specialChance": 0.08,
+    "specialChance": 0.5,
     "scoreMultiplier": {
       "durationMs": 6000,
       "multiplierByPhase": [2, 3, 5]

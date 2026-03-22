@@ -297,7 +297,7 @@ export class GridRenderer extends Component {
             state === FlowerState.DEAD
         ) {
             this._controller.handleWrongTap();
-            this.paintFlash(view.row, view.col, WRONG_FLASH_COLOR, 0.15);
+            this.paintFlashAndClear(view.row, view.col, WRONG_FLASH_COLOR, cell, 0.15);
             this.playTapPulse(view.row, view.col, false);
             this.spawnScoreFloat(view.row, view.col, WRONG_TAP_DISPLAY_PENALTY, 1);
         }
@@ -420,11 +420,17 @@ export class GridRenderer extends Component {
         view.isFlashing = true;
         this._paintCellColor(view, flashColor);
         this.scheduleOnce(() => {
+            const idx = row * GRID_COLS + col;
             this._grid!.clearCell(cell);
             view.typeId = null;
             view.isFlashing = false;
-            this._lastIsSpecial[row * GRID_COLS + col] = false;
-            this._dirty[row * GRID_COLS + col] = true;
+            this._paintEmpty(view);
+            if (this._defaultCellFrame) {
+                view.bgSprite.spriteFrame = this._defaultCellFrame;
+            }
+            this._lastState[idx] = null;
+            this._lastIsSpecial[idx] = false;
+            this._dirty[idx] = false;
         }, durationS);
     }
 

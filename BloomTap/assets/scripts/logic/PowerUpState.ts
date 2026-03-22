@@ -8,62 +8,75 @@ export enum EffectType {
 }
 
 /**
- * Tracks a single active power-up effect with expiry timestamp.
- * Replacement semantics: activate() replaces any existing effect.
+ * Tracks multiple simultaneous active power-up effects.
+ * Stacking semantics: different effects accumulate; same effect replaces its timer.
  * All time values are absolute ms (matching performance.now() scale).
  */
 export class PowerUpState {
-    activeEffect: EffectType | null = null;
-    expiryMs: number = 0;
+    private _effects: Map<EffectType, number> = new Map(); // effect → expiryMs
 
-    /** Returns true when an effect is active and has not expired. */
-    isActive(nowMs: number): boolean {
-        return this.activeEffect !== null && nowMs < this.expiryMs;
+    /** Returns true when the specific effect is active and has not expired. */
+    isEffectActive(effect: EffectType, nowMs: number): boolean {
+        const expiry = this._effects.get(effect);
+        return expiry !== undefined && nowMs < expiry;
+    }
+
+    /** Returns true when any effect is currently active. */
+    isAnyActive(nowMs: number): boolean {
+        for (const expiry of this._effects.values()) {
+            if (nowMs < expiry) return true;
+        }
+        return false;
     }
 
     /**
-     * Activates an effect, replacing any currently active effect.
-     * Sets expiryMs = nowMs + durationMs.
+     * Activates an effect.
+     * - Same effect type: replaces its timer (refreshes duration).
+     * - Different effect type: stacks alongside existing effects.
      */
     activate(effect: EffectType, nowMs: number, durationMs: number): void {
-        this.activeEffect = effect;
-        this.expiryMs = nowMs + durationMs;
+        this._effects.set(effect, nowMs + durationMs);
     }
 
     /**
-     * Clears the active effect if it has expired (nowMs >= expiryMs).
-     * Should be called each frame.
+     * Removes all expired effects. Should be called each frame.
      */
     tick(nowMs: number): void {
-        if (this.activeEffect !== null && nowMs >= this.expiryMs) {
-            this.activeEffect = null;
-            this.expiryMs = 0;
+        for (const [effect, expiry] of this._effects) {
+            if (nowMs >= expiry) this._effects.delete(effect);
         }
     }
 
     /**
-     * Shifts expiryMs forward by deltaMs — used to compensate for pause time.
-     * Does nothing when no effect is active.
+     * Shifts all active effect expiries forward by deltaMs — used to compensate for pause time.
      */
     shiftExpiry(deltaMs: number): void {
-        if (this.activeEffect !== null) {
-            this.expiryMs += deltaMs;
+        for (const [effect, expiry] of this._effects) {
+            this._effects.set(effect, expiry + deltaMs);
         }
     }
 
     /**
-     * Returns remaining duration in ms for the active effect.
-     * Returns 0 when no effect is active or effect has expired.
+     * Returns remaining duration in ms for a specific effect.
+     * Returns 0 when that effect is not active or has expired.
      */
-    getRemainingMs(nowMs: number): number {
-        if (!this.isActive(nowMs)) return 0;
-        return this.expiryMs - nowMs;
+    getRemainingMs(effect: EffectType, nowMs: number): number {
+        if (!this.isEffectActive(effect, nowMs)) return 0;
+        return this._effects.get(effect)! - nowMs;
     }
 
-    /** Clears active effect and resets expiryMs to 0. */
+    /** Returns all currently active effect types. */
+    getActiveEffects(nowMs: number): EffectType[] {
+        const active: EffectType[] = [];
+        for (const [effect, expiry] of this._effects) {
+            if (nowMs < expiry) active.push(effect);
+        }
+        return active;
+    }
+
+    /** Clears all active effects. */
     reset(): void {
-        this.activeEffect = null;
-        this.expiryMs = 0;
+        this._effects.clear();
     }
 }
 

@@ -153,8 +153,7 @@ export class GameController extends Component {
 
         // TIME_FREEZE: advance sessionStartMs each frame while active (D-12)
         // Must run BEFORE elapsedMs calculation so timer display freezes
-        if (this.powerUpState.isActive(nowMs) &&
-            this.powerUpState.activeEffect === EffectType.TIME_FREEZE) {
+        if (this.powerUpState.isEffectActive(EffectType.TIME_FREEZE, nowMs)) {
             this.gameState.sessionStartMs += _dt * 1000;
         }
 
@@ -171,8 +170,7 @@ export class GameController extends Component {
                 let effectiveConfig = FLOWER_CONFIGS[typeId];
 
                 // SLOW_GROWTH: spawn-time config copy with extended cycleDurationMs (D-13, D-14)
-                if (this.powerUpState.isActive(nowMs) &&
-                    this.powerUpState.activeEffect === EffectType.SLOW_GROWTH) {
+                if (this.powerUpState.isEffectActive(EffectType.SLOW_GROWTH, nowMs)) {
                     effectiveConfig = applySlowGrowthConfig(effectiveConfig, getPowerUpConfig().slowGrowth.factor);
                 }
 
@@ -245,16 +243,15 @@ export class GameController extends Component {
         const rawScore = flower.getScore(nowMs) ?? 0;     // 2. Read score before collect()
         flower.collect();                                  // 3. Mark collected
 
-        // Power-up activation: only at FULL_BLOOM on special cell (D-07)
-        if (cell.isSpecial && cell.specialEffect && state === FlowerState.FULL_BLOOM) {
+        // Power-up activation: any scoring tap on special cell
+        if (cell.isSpecial && cell.specialEffect && rawScore > 0) {
             const durationMs = this._getDurationForEffect(cell.specialEffect);
             this.powerUpState.activate(cell.specialEffect, nowMs, durationMs);
         }
 
         // SCORE_MULTIPLIER: apply phase-indexed multiplier (D-09, D-10)
         let powerUpMultiplier = 1;
-        if (this.powerUpState.isActive(nowMs) &&
-            this.powerUpState.activeEffect === EffectType.SCORE_MULTIPLIER) {
+        if (this.powerUpState.isEffectActive(EffectType.SCORE_MULTIPLIER, nowMs)) {
             const elapsedMs = nowMs - this.gameState.sessionStartMs;
             const phaseIndex = this._getPhaseIndex(elapsedMs);
             powerUpMultiplier = getPowerUpConfig().scoreMultiplier.multiplierByPhase[phaseIndex] ?? 1;
@@ -566,8 +563,7 @@ export class GameController extends Component {
             let effectiveConfig = FLOWER_CONFIGS[typeId];
 
             // SLOW_GROWTH: spawn-time config copy with extended cycleDurationMs (D-13, D-14)
-            if (this.powerUpState.isActive(nowMs) &&
-                this.powerUpState.activeEffect === EffectType.SLOW_GROWTH) {
+            if (this.powerUpState.isEffectActive(EffectType.SLOW_GROWTH, nowMs)) {
                 effectiveConfig = applySlowGrowthConfig(effectiveConfig, getPowerUpConfig().slowGrowth.factor);
             }
 
