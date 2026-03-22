@@ -51,9 +51,6 @@ const FLOWER_RESOURCE_NAMES: Record<FlowerTypeId, string> = {
     [FlowerTypeId.SUNFLOWER]:     'sunflower',
 };
 
-// Fallback background color when cell_empty.png not yet loaded
-const EMPTY_FILL   = new Color( 30,  30,  35, 255);
-const EMPTY_STROKE = new Color( 60,  60,  70, 255);
 
 // ---------------------------------------------------------------------------
 // CellView — per-cell runtime state
@@ -61,7 +58,6 @@ const EMPTY_STROKE = new Color( 60,  60,  70, 255);
 interface CellView {
     node: Node;
     bgSprite: Sprite;
-    bgFallbackGraphics: Graphics;  // used only when cell_empty.png not loaded
     flowerNode: Node;
     flowerSprite: Sprite;
     flowerOpacity: UIOpacity;
@@ -91,8 +87,6 @@ export class GridRenderer extends Component {
     private _floatPool: FloatSlot[] = [];
     private _frozenNowMs: number | null = null;
     private _spriteFrames: Partial<Record<FlowerTypeId, SpriteFrame>> = {};
-    private _emptySpriteLoaded = false;
-
     // Dirty tracking — only repaint on state change
     private _lastState: (FlowerState | null)[] = new Array(64).fill(null);
     private _dirty: boolean[] = new Array(64).fill(false);
@@ -123,11 +117,10 @@ export class GridRenderer extends Component {
     private _loadSprites(): void {
         // Background tile
         resources.load('flowers/cell_empty', SpriteFrame, (err, sf) => {
-            if (err) { console.warn('cell_empty sprite not found, using fallback'); return; }
+            if (err) { console.warn('cell_empty sprite not found'); return; }
             this._emptySpriteLoaded = true;
             for (const view of this._cellViews) {
                 view.bgSprite.spriteFrame = sf;
-                view.bgFallbackGraphics.clear(); // clear fallback drawing
             }
         });
 
@@ -175,10 +168,7 @@ export class GridRenderer extends Component {
             bgNode.addComponent(UITransform).setContentSize(CELL_SIZE, CELL_SIZE);
             const bgSprite = bgNode.addComponent(Sprite);
             bgSprite.sizeMode = Sprite.SizeMode.CUSTOM;
-            // Fallback Graphics drawn until sprite loads
-            const bgFallbackGraphics = bgNode.addComponent(Graphics);
             cellNode.addChild(bgNode);
-            this._drawFallbackBg(bgFallbackGraphics);
 
             // --- Layer 2: flower sprite ---
             const flowerNode = new Node('flower');
@@ -200,7 +190,6 @@ export class GridRenderer extends Component {
             const view: CellView = {
                 node: cellNode,
                 bgSprite,
-                bgFallbackGraphics,
                 flowerNode,
                 flowerSprite,
                 flowerOpacity,
@@ -212,17 +201,6 @@ export class GridRenderer extends Component {
             this._cellViews.push(view);
             this._registerCellTouch(view);
         }
-    }
-
-    private _drawFallbackBg(g: Graphics): void {
-        g.clear();
-        g.fillColor = EMPTY_FILL;
-        g.roundRect(-CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE, CELL_RADIUS);
-        g.fill();
-        g.strokeColor = EMPTY_STROKE;
-        g.lineWidth = 1;
-        g.roundRect(-CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE, CELL_RADIUS);
-        g.stroke();
     }
 
     /** Pre-create 8 score float label nodes parented to Canvas. */
