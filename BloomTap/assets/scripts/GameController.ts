@@ -174,6 +174,16 @@ export class GameController extends Component {
     // -----------------------------------------------------------------------
 
     /**
+     * Called by GridRenderer when a cell is tapped while input is disabled.
+     * Resumes session if currently paused.
+     */
+    public onScreenTapped(): void {
+        if (this._phase === SessionPhase.PAUSED) {
+            this._onResumeTapped();
+        }
+    }
+
+    /**
      * Handle a correct tap (BLOOMING or FULL_BLOOM state).
      *
      * CRITICAL ordering (RESEARCH.md Pitfall 1):

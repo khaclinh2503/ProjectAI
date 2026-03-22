@@ -116,6 +116,10 @@ export class GridRenderer extends Component {
     private _floatPool: FloatSlot[] = [];
     private _frozenNowMs: number | null = null;
 
+    // Dirty tracking — only repaint when state changes (avoids 192+ Graphics calls/frame)
+    private _lastState: (FlowerState | null)[] = new Array(64).fill(null);
+    private _dirty: boolean[] = new Array(64).fill(false);
+
     /**
      * Called by GameController.onLoad() after scene wiring is ready.
      * Stores references needed by the TOUCH_START handler.
@@ -231,7 +235,11 @@ export class GridRenderer extends Component {
      *      - COLLECTED             → unreachable here (isFlashing guard at top catches it)
      */
     private _onCellTapped(view: CellView): void {
-        if (!this._inputEnabled) return;                      // session gate: input disabled outside PLAYING phase
+        if (!this._inputEnabled) {
+            // When paused, any tap on the grid should resume the session
+            this._controller?.onScreenTapped();
+            return;
+        }
         if (view.isFlashing) return;                          // guard: no double-flash
         if (!this._grid || !this._controller) return;        // guard: must be initialized
 
@@ -422,7 +430,7 @@ export class GridRenderer extends Component {
         this._paintCellColor(view, flashColor);
         this.scheduleOnce(() => {
             view.isFlashing = false;
-            // update() repaints on next frame from FSM state
+            this._dirty[row * GRID_COLS + col] = true; // force repaint on next frame
         }, durationS);
     }
 
@@ -439,6 +447,7 @@ export class GridRenderer extends Component {
             this._grid!.clearCell(cell);
             view.typeId = null;
             view.isFlashing = false;
+            this._dirty[row * GRID_COLS + col] = true; // force repaint to empty on next frame
         }, durationS);
     }
 
@@ -463,24 +472,33 @@ export class GridRenderer extends Component {
             const cell = cells[i];
             if (!cell.flower) {
                 if (view.typeId !== null) {
-                    // Flower was cleared (DEAD auto-cleared or explicit clearCell call)
                     view.typeId = null;
                 }
-                this._paintEmpty(view);
+                // Only repaint empty if state changed or dirty flag set
+                if (this._dirty[i] || this._lastState[i] !== null) {
+                    this._paintEmpty(view);
+                    this._lastState[i] = null;
+                    this._dirty[i] = false;
+                }
             } else {
                 const state = cell.flower.getState(nowMs);
                 if (state === FlowerState.COLLECTED) {
-                    // COLLECTED flash is managed by paintFlashAndClear() — skip until cleared
                     continue;
                 }
                 if (state === FlowerState.DEAD) {
-                    // Auto-clear dead flowers so grid slots are reused
                     this._grid.clearCell(cell);
                     view.typeId = null;
                     this._paintEmpty(view);
+                    this._lastState[i] = null;
+                    this._dirty[i] = false;
                     continue;
                 }
-                this._paintState(view, state);
+                // Only repaint when state changed or dirty flag set
+                if (this._dirty[i] || state !== this._lastState[i]) {
+                    this._paintState(view, state);
+                    this._lastState[i] = state;
+                    this._dirty[i] = false;
+                }
             }
         }
     }
