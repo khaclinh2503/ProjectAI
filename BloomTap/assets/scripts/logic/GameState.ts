@@ -58,9 +58,9 @@ export class GameState {
      * @param rawScore - Base score value from FlowerFSM.getScore()
      * @param combo    - Active ComboSystem instance
      */
-    applyCorrectTap(rawScore: number, combo: ComboSystem): void {
+    applyCorrectTap(rawScore: number, combo: ComboSystem, powerUpMultiplier: number = 1): void {
         this.correctTaps += 1;
-        this.score += Math.round(rawScore * combo.multiplier);
+        this.score += Math.round(rawScore * combo.multiplier * powerUpMultiplier);
         combo.onCorrectTap();                           // increments tapCount FIRST
         if (combo.tapCount > this.peakStreak) {
             this.peakStreak = combo.tapCount;           // capture peak AFTER increment

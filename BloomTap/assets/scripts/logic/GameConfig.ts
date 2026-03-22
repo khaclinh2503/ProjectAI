@@ -2,6 +2,13 @@
 import { FlowerTypeId, FlowerTypeConfig } from './FlowerTypes';
 import { SpawnPhaseConfig } from './SpawnManager';
 
+export interface PowerUpConfig {
+    specialChance: number;
+    scoreMultiplier: { durationMs: number; multiplierByPhase: [number, number, number] };
+    timeFreeze: { durationMs: number };
+    slowGrowth: { durationMs: number; factor: number };
+}
+
 export interface GameConfig {
     flowers: Record<FlowerTypeId, FlowerTypeConfig>;
     spawnPhases: SpawnPhaseConfig[];
@@ -9,6 +16,7 @@ export interface GameConfig {
         session: { durationMs: number };
         scoring: { wrongTapPenalty: number };
     };
+    powerUps?: PowerUpConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -171,6 +179,39 @@ function parseSettings(settingsData: unknown): GameConfig['settings'] {
     };
 }
 
+function parsePowerUps(flowersData: unknown): PowerUpConfig | undefined {
+    if (!isRecord(flowersData) || !('powerUps' in flowersData)) return undefined;
+    const pu = (flowersData as Record<string, unknown>)['powerUps'];
+    if (!isRecord(pu)) throw new Error('[GameConfig] powerUps must be a non-null object');
+    const puRec = pu as Record<string, unknown>;
+    const specialChance = requirePositiveNumber(puRec, 'specialChance', 'powerUps');
+    // validate scoreMultiplier sub-object
+    const sm = puRec['scoreMultiplier'];
+    if (!isRecord(sm)) throw new Error('[GameConfig] powerUps.scoreMultiplier must be an object');
+    const smRec = sm as Record<string, unknown>;
+    const smDuration = requirePositiveNumber(smRec, 'durationMs', 'powerUps.scoreMultiplier');
+    const mbp = smRec['multiplierByPhase'];
+    if (!Array.isArray(mbp) || mbp.length !== 3 || !mbp.every((v: unknown) => typeof v === 'number' && v > 0)) {
+        throw new Error('[GameConfig] powerUps.scoreMultiplier.multiplierByPhase must be [number, number, number] > 0');
+    }
+    // validate timeFreeze sub-object
+    const tf = puRec['timeFreeze'];
+    if (!isRecord(tf)) throw new Error('[GameConfig] powerUps.timeFreeze must be an object');
+    const tfDuration = requirePositiveNumber(tf as Record<string, unknown>, 'durationMs', 'powerUps.timeFreeze');
+    // validate slowGrowth sub-object
+    const sg = puRec['slowGrowth'];
+    if (!isRecord(sg)) throw new Error('[GameConfig] powerUps.slowGrowth must be an object');
+    const sgRec = sg as Record<string, unknown>;
+    const sgDuration = requirePositiveNumber(sgRec, 'durationMs', 'powerUps.slowGrowth');
+    const sgFactor = requirePositiveNumber(sgRec, 'factor', 'powerUps.slowGrowth');
+    return {
+        specialChance,
+        scoreMultiplier: { durationMs: smDuration, multiplierByPhase: mbp as [number, number, number] },
+        timeFreeze: { durationMs: tfDuration },
+        slowGrowth: { durationMs: sgDuration, factor: sgFactor },
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -187,6 +228,7 @@ export function parseGameConfig(flowersData: unknown, settingsData: unknown): Ga
     const flowers = parseFlowers(flowersData);
     const spawnPhases = parseSpawnPhases(flowersData);
     const settings = parseSettings(settingsData);
+    const powerUps = parsePowerUps(flowersData);
 
-    return { flowers, spawnPhases, settings };
+    return { flowers, spawnPhases, settings, powerUps };
 }

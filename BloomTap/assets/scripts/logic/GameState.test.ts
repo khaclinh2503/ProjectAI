@@ -39,6 +39,22 @@ describe('GameState', () => {
         });
     });
 
+    describe('applyCorrectTap() with powerUpMultiplier', () => {
+        it('applyCorrectTap with powerUpMultiplier=2 doubles score', () => {
+            // combo starts at multiplier=1
+            expect(combo.multiplier).toBe(1);
+            state.applyCorrectTap(100, combo, 2);
+            // Math.round(100 * 1.0 * 2) = 200
+            expect(state.score).toBe(200);
+        });
+
+        it('applyCorrectTap without powerUpMultiplier behaves same as before (backward compat)', () => {
+            state.applyCorrectTap(80, combo);
+            // Math.round(80 * 1.0 * 1) = 80
+            expect(state.score).toBe(80);
+        });
+    });
+
     describe('applyCorrectTap()', () => {
         // GAME-01: correct tap with rawScore=80, multiplier=1 → score=80
         it('GAME-01: applyCorrectTap(80, combo) with multiplier=1 → score=80', () => {

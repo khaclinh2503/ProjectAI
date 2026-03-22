@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGameConfig } from './GameConfig';
+import { parseGameConfig, PowerUpConfig } from './GameConfig';
 
 // ---------------------------------------------------------------------------
 // Valid fixture data — mirrors flowers.json and settings.json exactly
@@ -214,6 +214,57 @@ describe('parseGameConfig', () => {
         expect(config.flowers.CHRYSANTHEMUM.id).toBe('CHRYSANTHEMUM');
         expect(config.flowers.ROSE.id).toBe('ROSE');
         expect(config.flowers.SUNFLOWER.id).toBe('SUNFLOWER');
+    });
+});
+
+describe('parseGameConfig powerUps', () => {
+    const validPowerUpsData = {
+        ...validFlowersData,
+        powerUps: {
+            specialChance: 0.08,
+            scoreMultiplier: {
+                durationMs: 6000,
+                multiplierByPhase: [2, 3, 5],
+            },
+            timeFreeze: {
+                durationMs: 5000,
+            },
+            slowGrowth: {
+                durationMs: 8000,
+                factor: 2.0,
+            },
+        },
+    };
+
+    it('parseGameConfig without powerUps key returns undefined powerUps', () => {
+        const config = parseGameConfig(validFlowersData, validSettingsData);
+        expect(config.powerUps).toBeUndefined();
+    });
+
+    it('parseGameConfig with valid powerUps returns PowerUpConfig', () => {
+        const config = parseGameConfig(validPowerUpsData, validSettingsData);
+        expect(config.powerUps).toBeDefined();
+        const pu = config.powerUps as PowerUpConfig;
+        expect(pu.specialChance).toBe(0.08);
+        expect(pu.scoreMultiplier.durationMs).toBe(6000);
+        expect(pu.scoreMultiplier.multiplierByPhase).toEqual([2, 3, 5]);
+        expect(pu.timeFreeze.durationMs).toBe(5000);
+        expect(pu.slowGrowth.durationMs).toBe(8000);
+        expect(pu.slowGrowth.factor).toBe(2.0);
+    });
+
+    it('parseGameConfig throws on invalid powerUps.specialChance (string)', () => {
+        const badData = {
+            ...validPowerUpsData,
+            powerUps: { ...validPowerUpsData.powerUps, specialChance: 'bad' },
+        };
+        expect(() => parseGameConfig(badData, validSettingsData)).toThrow(/specialChance/);
+    });
+
+    it('parseGameConfig throws on missing scoreMultiplier', () => {
+        const { scoreMultiplier: _removed, ...puWithout } = validPowerUpsData.powerUps;
+        const badData = { ...validPowerUpsData, powerUps: puWithout };
+        expect(() => parseGameConfig(badData, validSettingsData)).toThrow();
     });
 });
 
