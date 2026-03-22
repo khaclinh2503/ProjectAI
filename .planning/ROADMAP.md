@@ -28,7 +28,7 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 7: Config Infrastructure** — Flower types and spawn parameters read from JSON; schema validation at load time (completed 2026-03-21)
 - [x] **Phase 8: Spawn Fix** — Flowers appear immediately when the game starts; initial count configurable (completed 2026-03-21)
 - [x] **Phase 9: Pause System** — Player can pause and resume with full state preservation (completed 2026-03-21)
-- [x] **Phase 10: Special Flowers** — Power-up flowers spawn with distinct visuals and three effect types (completed 2026-03-21)
+- [ ] **Phase 10: Special Flowers** — Power-up flowers spawn with distinct visuals and three effect types (re-planned 2026-03-22)
 - [ ] **Phase 11: Bug Fixes and Refactors** — Combo display fix, screen shake, JuiceHelpers decoupling
 - [ ] **Phase 12: Art Refresh** — Sprite flowers, background/board, and UI element visuals
 
@@ -74,7 +74,7 @@ Plans:
 - [x] 09-02-PLAN.md — Wire pause/resume into GameController: SessionPhase.PAUSED, overlay, countdown reuse, timestamp shift
 
 ### Phase 10: Special Flowers
-**Goal**: Special power-up flowers appear randomly on the board with a distinct visual; tapping one activates one of three timed effects — score multiplier, freeze timer, or slow flower growth
+**Goal**: Special power-up flowers appear randomly on the board with a distinct visual; tapping one activates one of three timed effects — score multiplier, freeze timer, or slow flower growth. Replacement semantics only — 1 effect active at a time (D-05).
 **Depends on**: Phase 9
 **Requirements**: SPECIAL-01, SPECIAL-02, SPECIAL-03, SPECIAL-04
 **Success Criteria** (what must be TRUE):
@@ -82,12 +82,12 @@ Plans:
   2. Tapping a special flower during Score Multiplier effect causes all subsequent scored taps to award x2–x5 points for approximately 6 seconds; a HUD indicator shows the effect and remaining duration
   3. Tapping a special flower during Freeze Time effect visibly stops the countdown timer for approximately 5 seconds; the timer resumes from the frozen value when the effect ends
   4. Tapping a special flower during Slow Growth effect causes newly spawned flowers to cycle more slowly for approximately 8 seconds — the bloom window is observably wider
-  5. Each effect type has its own independent slot — up to 3 effects active simultaneously; same-type retap resets timer
-**Plans:** 3/3 plans complete
+  5. Replacement semantics: tapping a new special flower replaces the currently active effect; same-type retap resets timer
+**Plans:** 3 plans
 Plans:
-- [x] 10-01-PLAN.md — TDD: PowerUpState class + Cell extension + GameConfig powerUps schema + GameState multiplier + tests
-- [x] 10-02-PLAN.md — Wire spawn loop, effects, TIME_FREEZE, SLOW_GROWTH, pause integration into GameController + GridRenderer overlay
-- [x] 10-03-PLAN.md — PowerUpHUDRenderer component + BootController config wiring + human verify
+- [ ] 10-01-PLAN.md — TDD: PowerUpState class + Cell extension + GameConfig powerUps schema + GameState multiplier + tests
+- [ ] 10-02-PLAN.md — Wire spawn loop, effects, TIME_FREEZE, SLOW_GROWTH, pause integration into GameController + GridRenderer overlay
+- [ ] 10-03-PLAN.md — PowerUpHUDRenderer component + BootController config wiring + human verify
 
 ### Phase 11: Bug Fixes and Refactors
 **Goal**: Three known issues are resolved — combo label shows correct multiplier from session start, wrong taps trigger screen shake, and GameController no longer duplicates JuiceHelpers logic inline
@@ -120,13 +120,13 @@ Plans:
 | 4. Session Loop and Scoring | v1.0 | 4/4 | Complete | 2026-03-15 |
 | 5. Juice and Polish | v1.0 | 3/3 | Complete | 2026-03-15 |
 | 6. Results and Persistence | v1.0 | 3/3 | Complete | 2026-03-16 |
-| 7. Config Infrastructure | 2/2 | Complete   | 2026-03-21 | - |
-| 8. Spawn Fix | v1.1 | 1/1 | Complete   | 2026-03-21 |
-| 9. Pause System | v1.1 | 2/2 | Complete   | 2026-03-21 |
-| 10. Special Flowers | v1.1 | 3/3 | Complete   | 2026-03-21 |
+| 7. Config Infrastructure | v1.1 | 2/2 | Complete | 2026-03-21 |
+| 8. Spawn Fix | v1.1 | 1/1 | Complete | 2026-03-21 |
+| 9. Pause System | v1.1 | 2/2 | Complete | 2026-03-21 |
+| 10. Special Flowers | v1.1 | 0/3 | Re-planned | - |
 | 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
 | 12. Art Refresh | v1.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-03-21 — Phase 10 plans created (3 plans)*
+*Last updated: 2026-03-22 — Phase 10 re-planned (3 plans, prior attempt reverted)*
