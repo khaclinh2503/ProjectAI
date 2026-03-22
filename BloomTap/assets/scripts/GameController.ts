@@ -9,6 +9,8 @@ import { FlowerState } from './logic/FlowerState';
 import { GridRenderer } from './GridRenderer';
 import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 import { StorageService } from './logic/StorageService';
+import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
+import { PowerUpConfig } from './logic/GameConfig';
 
 const { ccclass, property } = _decorator;
 
@@ -104,6 +106,13 @@ export class GameController extends Component {
     public readonly comboSystem = new ComboSystem();
     public readonly spawnManager = new SpawnManager();
     public readonly gameState = new GameState();
+    public readonly powerUpState = new PowerUpState();
+    private _powerUpConfig: PowerUpConfig = {
+        specialChance: 0.08,
+        scoreMultiplier: { durationMs: 6000, multiplierByPhase: [2, 3, 5] },
+        timeFreeze: { durationMs: 5000 },
+        slowGrowth: { durationMs: 8000, factor: 2.0 },
+    };
 
     private _nextSpawnMs: number = 0;
     private _phase: SessionPhase = SessionPhase.WAITING;
@@ -113,6 +122,10 @@ export class GameController extends Component {
     private _blinkVisible: boolean = true;
     private _blinkCallback: (() => void) | null = null;
     private _pauseStartMs: number = 0;
+
+    public initPowerUpConfig(config: PowerUpConfig): void {
+        this._powerUpConfig = config;
+    }
 
     onLoad(): void {
         // DO NOT call gameState.reset() here — reset happens in _beginSession() after countdown.
@@ -145,6 +158,13 @@ export class GameController extends Component {
             return;
         }
 
+        // TIME_FREEZE: advance sessionStartMs each frame while active (D-12)
+        // Must run BEFORE elapsedMs calculation so timer display freezes
+        if (this.powerUpState.isActive(nowMs) &&
+            this.powerUpState.activeEffect === EffectType.TIME_FREEZE) {
+            this.gameState.sessionStartMs += _dt * 1000;
+        }
+
         const elapsedMs = nowMs - this.gameState.sessionStartMs;
 
         // SpawnManager tick: spawn a batch of flowers per interval
@@ -155,14 +175,35 @@ export class GameController extends Component {
                 const emptyCell = this.grid.getRandomEmptyCell();
                 if (!emptyCell) break;
                 const typeId = this.spawnManager.pickFlowerType(elapsedMs);
-                const config = FLOWER_CONFIGS[typeId];
-                this.grid.spawnFlower(emptyCell, config, nowMs);
+                let effectiveConfig = FLOWER_CONFIGS[typeId];
+
+                // SLOW_GROWTH: spawn-time config copy with extended cycleDurationMs (D-13, D-14)
+                if (this.powerUpState.isActive(nowMs) &&
+                    this.powerUpState.activeEffect === EffectType.SLOW_GROWTH) {
+                    effectiveConfig = applySlowGrowthConfig(effectiveConfig, this._powerUpConfig.slowGrowth.factor);
+                }
+
+                // Special flower decision (D-18)
+                const isSpecial = Math.random() < this._powerUpConfig.specialChance;
+                if (isSpecial) {
+                    const effects = [EffectType.SCORE_MULTIPLIER, EffectType.TIME_FREEZE, EffectType.SLOW_GROWTH];
+                    emptyCell.isSpecial = true;
+                    emptyCell.specialEffect = effects[Math.floor(Math.random() * effects.length)];
+                }
+
+                this.grid.spawnFlower(emptyCell, effectiveConfig, nowMs);
                 if (this.gridRenderer) {
                     this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
+                    if (isSpecial) {
+                        this.gridRenderer.markCellDirty(emptyCell.row, emptyCell.col);
+                    }
                 }
             }
             this._nextSpawnMs = nowMs + phaseConfig.intervalMs;
         }
+
+        // Tick power-up state — expires effect if past expiryMs
+        this.powerUpState.tick(nowMs);
 
         // HUD update
         this._updateHUD(elapsedMs);
@@ -205,7 +246,23 @@ export class GameController extends Component {
         const state    = flower.getState(nowMs);          // 1. Read state before collect()
         const rawScore = flower.getScore(nowMs) ?? 0;     // 2. Read score before collect()
         flower.collect();                                  // 3. Mark collected
-        this.gameState.applyCorrectTap(rawScore, this.comboSystem);
+
+        // Power-up activation: only at FULL_BLOOM on special cell (D-07)
+        if (cell.isSpecial && cell.specialEffect && state === FlowerState.FULL_BLOOM) {
+            const durationMs = this._getDurationForEffect(cell.specialEffect);
+            this.powerUpState.activate(cell.specialEffect, nowMs, durationMs);
+        }
+
+        // SCORE_MULTIPLIER: apply phase-indexed multiplier (D-09, D-10)
+        let powerUpMultiplier = 1;
+        if (this.powerUpState.isActive(nowMs) &&
+            this.powerUpState.activeEffect === EffectType.SCORE_MULTIPLIER) {
+            const elapsedMs = nowMs - this.gameState.sessionStartMs;
+            const phaseIndex = this._getPhaseIndex(elapsedMs);
+            powerUpMultiplier = this._powerUpConfig.scoreMultiplier.multiplierByPhase[phaseIndex] ?? 1;
+        }
+
+        this.gameState.applyCorrectTap(rawScore, this.comboSystem, powerUpMultiplier);
         const isFullBloom = state === FlowerState.FULL_BLOOM;
         const flashColor = isFullBloom ? CORRECT_FLASH_WHITE : CORRECT_FLASH_YELLOW;
         const multiplier = this.comboSystem.multiplier;
@@ -226,6 +283,20 @@ export class GameController extends Component {
         // JUICE-03: full-screen red flash + combo label blink
         this._playRedFlash();
         this._playComboBreak();
+    }
+
+    private _getDurationForEffect(effect: EffectType): number {
+        switch (effect) {
+            case EffectType.SCORE_MULTIPLIER: return this._powerUpConfig.scoreMultiplier.durationMs;
+            case EffectType.TIME_FREEZE: return this._powerUpConfig.timeFreeze.durationMs;
+            case EffectType.SLOW_GROWTH: return this._powerUpConfig.slowGrowth.durationMs;
+        }
+    }
+
+    private _getPhaseIndex(elapsedMs: number): number {
+        if (elapsedMs < 40000) return 0;
+        if (elapsedMs < 80000) return 1;
+        return 2;
     }
 
     // -----------------------------------------------------------------------
@@ -467,6 +538,7 @@ export class GameController extends Component {
         // Reset all game state — this is the ONLY place reset() is called.
         this.gameState.reset();
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
+        this.powerUpState.reset();
 
         // Reset spawn timer to now so first batch spawns immediately on first update frame.
         this._nextSpawnMs = performance.now();
@@ -492,10 +564,28 @@ export class GameController extends Component {
             const emptyCell = this.grid.getRandomEmptyCell();
             if (!emptyCell) break;
             const typeId = this.spawnManager.pickFlowerType(0);
-            const config = FLOWER_CONFIGS[typeId];
-            this.grid.spawnFlower(emptyCell, config, nowMs);
+            let effectiveConfig = FLOWER_CONFIGS[typeId];
+
+            // SLOW_GROWTH: spawn-time config copy with extended cycleDurationMs (D-13, D-14)
+            if (this.powerUpState.isActive(nowMs) &&
+                this.powerUpState.activeEffect === EffectType.SLOW_GROWTH) {
+                effectiveConfig = applySlowGrowthConfig(effectiveConfig, this._powerUpConfig.slowGrowth.factor);
+            }
+
+            // Special flower decision (D-18)
+            const isSpecial = Math.random() < this._powerUpConfig.specialChance;
+            if (isSpecial) {
+                const effects = [EffectType.SCORE_MULTIPLIER, EffectType.TIME_FREEZE, EffectType.SLOW_GROWTH];
+                emptyCell.isSpecial = true;
+                emptyCell.specialEffect = effects[Math.floor(Math.random() * effects.length)];
+            }
+
+            this.grid.spawnFlower(emptyCell, effectiveConfig, nowMs);
             if (this.gridRenderer) {
                 this.gridRenderer.setCellTypeId(emptyCell.row, emptyCell.col, typeId);
+                if (isSpecial) {
+                    this.gridRenderer.markCellDirty(emptyCell.row, emptyCell.col);
+                }
             }
         }
     }
@@ -653,6 +743,7 @@ export class GameController extends Component {
         this.gameState.sessionStartMs += deltaMs;
         this.grid.shiftAllTimestamps(deltaMs);
         this._nextSpawnMs += deltaMs;
+        this.powerUpState.shiftExpiry(deltaMs);
     }
 
     public onRestartTapped(): void {
@@ -663,6 +754,7 @@ export class GameController extends Component {
         this.gameState.peakStreak = 0;
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
         this.grid.clearAll();
+        this.powerUpState.reset();
         if (this.newBestLabel) this.newBestLabel.node.active = false;
         if (this.gridRenderer) {
             this.gridRenderer.setInputEnabled(false);
