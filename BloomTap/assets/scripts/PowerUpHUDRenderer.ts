@@ -1,6 +1,6 @@
 import { _decorator, Component, Graphics, Color, Sprite, SpriteFrame, Texture2D, resources } from 'cc';
 import { EffectType, PowerUpState } from './logic/PowerUpState';
-import { PowerUpConfig } from './logic/GameConfig';
+import { getPowerUpConfig } from './logic/GameConfig';
 
 const { ccclass, property } = _decorator;
 
@@ -14,16 +14,11 @@ export class PowerUpHUDRenderer extends Component {
 
     private _cellSpriteFrames: Partial<Record<EffectType, SpriteFrame>> = {};
     private _arcRadius: number = 20;
-    private _powerUpConfig: PowerUpConfig | null = null;
 
     onLoad(): void {
         // Hide on start to prevent first-frame flash (Pitfall 5 from RESEARCH.md)
         this.node.active = false;
         this._loadCellSprites();
-    }
-
-    public setPowerUpConfig(config: PowerUpConfig): void {
-        this._powerUpConfig = config;
     }
 
     /**
@@ -52,11 +47,11 @@ export class PowerUpHUDRenderer extends Component {
     }
 
     private _getDurationForEffect(effect: EffectType): number {
-        if (!this._powerUpConfig) return 6000; // fallback
+        const cfg = getPowerUpConfig();
         switch (effect) {
-            case EffectType.SCORE_MULTIPLIER: return this._powerUpConfig.scoreMultiplier.durationMs;
-            case EffectType.TIME_FREEZE: return this._powerUpConfig.timeFreeze.durationMs;
-            case EffectType.SLOW_GROWTH: return this._powerUpConfig.slowGrowth.durationMs;
+            case EffectType.SCORE_MULTIPLIER: return cfg.scoreMultiplier.durationMs;
+            case EffectType.TIME_FREEZE: return cfg.timeFreeze.durationMs;
+            case EffectType.SLOW_GROWTH: return cfg.slowGrowth.durationMs;
         }
     }
 

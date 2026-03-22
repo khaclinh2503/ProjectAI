@@ -232,3 +232,24 @@ export function parseGameConfig(flowersData: unknown, settingsData: unknown): Ga
 
     return { flowers, spawnPhases, settings, powerUps };
 }
+
+// ---------------------------------------------------------------------------
+// Module-level PowerUpConfig store (same pattern as initFlowerConfigs etc.)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_POWER_UP_CONFIG: PowerUpConfig = {
+    specialChance: 0.08,
+    scoreMultiplier: { durationMs: 6000, multiplierByPhase: [2, 3, 5] },
+    timeFreeze: { durationMs: 5000 },
+    slowGrowth: { durationMs: 8000, factor: 2.0 },
+};
+
+let _activePowerUpConfig: PowerUpConfig = DEFAULT_POWER_UP_CONFIG;
+
+export function initPowerUpConfig(config: PowerUpConfig): void {
+    _activePowerUpConfig = config;
+}
+
+export function getPowerUpConfig(): PowerUpConfig {
+    return _activePowerUpConfig;
+}

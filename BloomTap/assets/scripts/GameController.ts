@@ -10,7 +10,7 @@ import { GridRenderer } from './GridRenderer';
 import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
 import { StorageService } from './logic/StorageService';
 import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
-import { PowerUpConfig } from './logic/GameConfig';
+import { getPowerUpConfig } from './logic/GameConfig';
 import { PowerUpHUDRenderer } from './PowerUpHUDRenderer';
 
 const { ccclass, property } = _decorator;
@@ -111,13 +111,6 @@ export class GameController extends Component {
     public readonly spawnManager = new SpawnManager();
     public readonly gameState = new GameState();
     public readonly powerUpState = new PowerUpState();
-    private _powerUpConfig: PowerUpConfig = {
-        specialChance: 0.08,
-        scoreMultiplier: { durationMs: 6000, multiplierByPhase: [2, 3, 5] },
-        timeFreeze: { durationMs: 5000 },
-        slowGrowth: { durationMs: 8000, factor: 2.0 },
-    };
-
     private _nextSpawnMs: number = 0;
     private _phase: SessionPhase = SessionPhase.WAITING;
     private _lastDisplayedSecond: number = -1;
@@ -126,10 +119,6 @@ export class GameController extends Component {
     private _blinkVisible: boolean = true;
     private _blinkCallback: (() => void) | null = null;
     private _pauseStartMs: number = 0;
-
-    public initPowerUpConfig(config: PowerUpConfig): void {
-        this._powerUpConfig = config;
-    }
 
     onLoad(): void {
         // DO NOT call gameState.reset() here — reset happens in _beginSession() after countdown.
@@ -184,11 +173,11 @@ export class GameController extends Component {
                 // SLOW_GROWTH: spawn-time config copy with extended cycleDurationMs (D-13, D-14)
                 if (this.powerUpState.isActive(nowMs) &&
                     this.powerUpState.activeEffect === EffectType.SLOW_GROWTH) {
-                    effectiveConfig = applySlowGrowthConfig(effectiveConfig, this._powerUpConfig.slowGrowth.factor);
+                    effectiveConfig = applySlowGrowthConfig(effectiveConfig, getPowerUpConfig().slowGrowth.factor);
                 }
 
                 // Special flower decision (D-18)
-                const isSpecial = Math.random() < this._powerUpConfig.specialChance;
+                const isSpecial = Math.random() < getPowerUpConfig().specialChance;
                 if (isSpecial) {
                     const effects = [EffectType.SCORE_MULTIPLIER, EffectType.TIME_FREEZE, EffectType.SLOW_GROWTH];
                     emptyCell.isSpecial = true;
@@ -268,7 +257,7 @@ export class GameController extends Component {
             this.powerUpState.activeEffect === EffectType.SCORE_MULTIPLIER) {
             const elapsedMs = nowMs - this.gameState.sessionStartMs;
             const phaseIndex = this._getPhaseIndex(elapsedMs);
-            powerUpMultiplier = this._powerUpConfig.scoreMultiplier.multiplierByPhase[phaseIndex] ?? 1;
+            powerUpMultiplier = getPowerUpConfig().scoreMultiplier.multiplierByPhase[phaseIndex] ?? 1;
         }
 
         this.gameState.applyCorrectTap(rawScore, this.comboSystem, powerUpMultiplier);
@@ -296,9 +285,9 @@ export class GameController extends Component {
 
     private _getDurationForEffect(effect: EffectType): number {
         switch (effect) {
-            case EffectType.SCORE_MULTIPLIER: return this._powerUpConfig.scoreMultiplier.durationMs;
-            case EffectType.TIME_FREEZE: return this._powerUpConfig.timeFreeze.durationMs;
-            case EffectType.SLOW_GROWTH: return this._powerUpConfig.slowGrowth.durationMs;
+            case EffectType.SCORE_MULTIPLIER: return getPowerUpConfig().scoreMultiplier.durationMs;
+            case EffectType.TIME_FREEZE: return getPowerUpConfig().timeFreeze.durationMs;
+            case EffectType.SLOW_GROWTH: return getPowerUpConfig().slowGrowth.durationMs;
         }
     }
 
@@ -579,11 +568,11 @@ export class GameController extends Component {
             // SLOW_GROWTH: spawn-time config copy with extended cycleDurationMs (D-13, D-14)
             if (this.powerUpState.isActive(nowMs) &&
                 this.powerUpState.activeEffect === EffectType.SLOW_GROWTH) {
-                effectiveConfig = applySlowGrowthConfig(effectiveConfig, this._powerUpConfig.slowGrowth.factor);
+                effectiveConfig = applySlowGrowthConfig(effectiveConfig, getPowerUpConfig().slowGrowth.factor);
             }
 
             // Special flower decision (D-18)
-            const isSpecial = Math.random() < this._powerUpConfig.specialChance;
+            const isSpecial = Math.random() < getPowerUpConfig().specialChance;
             if (isSpecial) {
                 const effects = [EffectType.SCORE_MULTIPLIER, EffectType.TIME_FREEZE, EffectType.SLOW_GROWTH];
                 emptyCell.isSpecial = true;
