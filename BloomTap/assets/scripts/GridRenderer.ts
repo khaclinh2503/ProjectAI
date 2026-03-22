@@ -126,6 +126,7 @@ export class GridRenderer extends Component {
         for (const typeId of Object.values(FlowerTypeId)) {
             const name = FLOWER_RESOURCE_NAMES[typeId];
             this._loadAsSpriteFrame(`flowers/${name}`, sf => {
+                console.log(`[GridRenderer] Loaded sprite: ${name}`);
                 this._spriteFrames[typeId] = sf;
                 // Invalidate all cells of this type so they repaint with the new sprite
                 for (let i = 0; i < 64; i++) {
@@ -137,13 +138,18 @@ export class GridRenderer extends Component {
         }
     }
 
-    /** Load a PNG from resources as a SpriteFrame via Texture2D. */
+    /** Load a PNG from resources as a SpriteFrame. */
     private _loadAsSpriteFrame(path: string, onLoaded: (sf: SpriteFrame) => void): void {
-        resources.load(path, Texture2D, (err, tex) => {
-            if (err) { console.warn(`Sprite not found: ${path}`); return; }
-            const sf = new SpriteFrame();
-            sf.texture = tex;
-            onLoaded(sf);
+        // Try SpriteFrame sub-asset first (Cocos Creator 3.x standard)
+        resources.load(`${path}/spriteFrame`, SpriteFrame, (err, sf) => {
+            if (!err) { onLoaded(sf); return; }
+            // Fallback: load Texture2D and wrap in SpriteFrame
+            resources.load(path, Texture2D, (err2, tex) => {
+                if (err2) { console.warn(`Sprite not found: ${path}`); return; }
+                const fallbackSf = new SpriteFrame();
+                fallbackSf.texture = tex;
+                onLoaded(fallbackSf);
+            });
         });
     }
 
