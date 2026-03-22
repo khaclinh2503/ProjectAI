@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Graphics, Color, UITransform, tween, Tween, Vec3, Vec2, Label, UIOpacity, Sprite, SpriteFrame, resources } from 'cc';
+import { _decorator, Component, Node, Graphics, Color, UITransform, tween, Tween, Vec3, Vec2, Label, UIOpacity, Sprite, SpriteFrame, Texture2D, resources } from 'cc';
 import { Grid, Cell } from './logic/Grid';
 import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
@@ -116,9 +116,7 @@ export class GridRenderer extends Component {
 
     private _loadSprites(): void {
         // Background tile
-        resources.load('flowers/cell_empty', SpriteFrame, (err, sf) => {
-            if (err) { console.warn('cell_empty sprite not found'); return; }
-            this._emptySpriteLoaded = true;
+        this._loadAsSpriteFrame('flowers/cell_empty', sf => {
             for (const view of this._cellViews) {
                 view.bgSprite.spriteFrame = sf;
             }
@@ -127,8 +125,7 @@ export class GridRenderer extends Component {
         // Flower sprites
         for (const typeId of Object.values(FlowerTypeId)) {
             const name = FLOWER_RESOURCE_NAMES[typeId];
-            resources.load(`flowers/${name}`, SpriteFrame, (err, sf) => {
-                if (err) { console.warn(`Flower sprite not found: flowers/${name}`); return; }
+            this._loadAsSpriteFrame(`flowers/${name}`, sf => {
                 this._spriteFrames[typeId] = sf;
                 // Invalidate all cells of this type so they repaint with the new sprite
                 for (let i = 0; i < 64; i++) {
@@ -138,6 +135,16 @@ export class GridRenderer extends Component {
                 }
             });
         }
+    }
+
+    /** Load a PNG from resources as a SpriteFrame via Texture2D. */
+    private _loadAsSpriteFrame(path: string, onLoaded: (sf: SpriteFrame) => void): void {
+        resources.load(path, Texture2D, (err, tex) => {
+            if (err) { console.warn(`Sprite not found: ${path}`); return; }
+            const sf = new SpriteFrame();
+            sf.texture = tex;
+            onLoaded(sf);
+        });
     }
 
     // -----------------------------------------------------------------------
