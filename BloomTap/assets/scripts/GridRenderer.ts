@@ -4,6 +4,7 @@ import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
 import { WRONG_FLASH_COLOR } from './FlowerColors';
 import { getFloatLabelString, getFloatFontSize, getFloatDuration } from './logic/JuiceHelpers';
+import { EffectType } from './logic/PowerUpState';
 
 import type { GameController } from './GameController';
 
@@ -90,6 +91,9 @@ export class GridRenderer extends Component {
     // Dirty tracking — only repaint on state change
     private _lastState: (FlowerState | null)[] = new Array(64).fill(null);
     private _dirty: boolean[] = new Array(64).fill(false);
+    private _cellSpriteFrames: Partial<Record<EffectType, SpriteFrame>> = {};
+    private _defaultCellFrame: SpriteFrame | null = null;
+    private _lastIsSpecial: boolean[] = new Array(64).fill(false);
 
     init(grid: Grid, controller: GameController): void {
         this._grid = grid;
@@ -117,6 +121,7 @@ export class GridRenderer extends Component {
     private _loadSprites(): void {
         // Background tile
         this._loadAsSpriteFrame('flowers/cell_empty', sf => {
+            this._defaultCellFrame = sf;
             for (const view of this._cellViews) {
                 view.bgSprite.spriteFrame = sf;
             }
@@ -136,6 +141,17 @@ export class GridRenderer extends Component {
                 }
             });
         }
+
+        // Special cell background sprites (D-01, D-02)
+        this._loadAsSpriteFrame('flowers/cell_fire', sf => {
+            this._cellSpriteFrames[EffectType.SCORE_MULTIPLIER] = sf;
+        });
+        this._loadAsSpriteFrame('flowers/cell_freeze', sf => {
+            this._cellSpriteFrames[EffectType.TIME_FREEZE] = sf;
+        });
+        this._loadAsSpriteFrame('flowers/cell_grass', sf => {
+            this._cellSpriteFrames[EffectType.SLOW_GROWTH] = sf;
+        });
     }
 
     /** Load a PNG from resources as a SpriteFrame. */
@@ -295,6 +311,10 @@ export class GridRenderer extends Component {
         this._cellViews[row * GRID_COLS + col].typeId = typeId;
     }
 
+    public markCellDirty(row: number, col: number): void {
+        this._dirty[row * GRID_COLS + col] = true;
+    }
+
     getCellView(row: number, col: number): CellView {
         return this._cellViews[row * GRID_COLS + col];
     }
@@ -403,6 +423,7 @@ export class GridRenderer extends Component {
             this._grid!.clearCell(cell);
             view.typeId = null;
             view.isFlashing = false;
+            this._lastIsSpecial[row * GRID_COLS + col] = false;
             this._dirty[row * GRID_COLS + col] = true;
         }, durationS);
     }
@@ -433,6 +454,7 @@ export class GridRenderer extends Component {
                     this._lastState[i] = null;
                     this._dirty[i] = false;
                 }
+                this._refreshCellBg(view, cell, i);
             } else {
                 const state = cell.flower.getState(nowMs);
                 if (state === FlowerState.COLLECTED) continue;
@@ -442,12 +464,17 @@ export class GridRenderer extends Component {
                     this._paintEmpty(view);
                     this._lastState[i] = null;
                     this._dirty[i] = false;
+                    this._lastIsSpecial[i] = false;
+                    if (this._defaultCellFrame && view.bgSprite.spriteFrame !== this._defaultCellFrame) {
+                        view.bgSprite.spriteFrame = this._defaultCellFrame;
+                    }
                     continue;
                 }
                 if (this._dirty[i] || state !== this._lastState[i]) {
                     this._paintState(view, state);
                     this._lastState[i] = state;
                     this._dirty[i] = false;
+                    this._refreshCellBg(view, cell, i);
                 }
             }
         }
@@ -456,6 +483,18 @@ export class GridRenderer extends Component {
     // -----------------------------------------------------------------------
     // Painting helpers
     // -----------------------------------------------------------------------
+
+    private _refreshCellBg(view: CellView, cell: Cell, index: number): void {
+        const shouldBeSpecial = cell.isSpecial && cell.specialEffect !== null;
+        if (shouldBeSpecial === this._lastIsSpecial[index]) return; // no change
+        this._lastIsSpecial[index] = shouldBeSpecial;
+        const targetSf = shouldBeSpecial
+            ? (this._cellSpriteFrames[cell.specialEffect!] ?? this._defaultCellFrame)
+            : this._defaultCellFrame;
+        if (targetSf && view.bgSprite.spriteFrame !== targetSf) {
+            view.bgSprite.spriteFrame = targetSf;
+        }
+    }
 
     private _paintEmpty(view: CellView): void {
         Tween.stopAllByTarget(view.flowerNode);
