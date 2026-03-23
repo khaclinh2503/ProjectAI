@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-03-23T16:07:56.879Z"
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-03-23T16:27:38.546Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State: Bloom Tap
@@ -79,6 +79,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 10-special-flowers]: BootController passes powerUps config only when present in JSON — falls back to hardcoded defaults in GameController
 - [Phase 11-bug-fixes-and-refactors]: [11-01] applySlowGrowthConfig modifies budMs/tapWindowMs/bloomingMs/fullBloomMs — the fields FlowerFSM.getState() reads
 - [Phase 11-bug-fixes-and-refactors]: [11-01] getMilestoneLabel mutates triggered Set; _checkMilestone passes tapCount directly to _playMilestoneCelebration since tapCount IS the threshold when label is returned
+- [Phase 11]: Score float count-up tween targets plain JS object {value} — Cocos tween supports any object with numeric properties; runs parallel to position/opacity tweens with no conflict
+- [Phase 11]: Score float ×N suffix replaced with count-up animation (base → final over 0.4s cubicOut) after human verification — more satisfying visual of real-time multiplication
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -97,8 +99,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-23T16:07:56.875Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-03-23T16:27:38.542Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
 
 ---

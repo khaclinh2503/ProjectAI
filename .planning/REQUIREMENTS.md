@@ -28,8 +28,8 @@
 
 ### Bug Fixes & Refactors
 
-- [ ] **FIX-01**: comboLabel hiển thị `x1.0` từ đầu ván và tăng dần theo multiplier (không hiện tapCount)
-- [ ] **FIX-02**: Màn hình rung khi tap sai
+- [x] **FIX-01**: comboLabel hiển thị `x1.0` từ đầu ván và tăng dần theo multiplier (không hiện tapCount)
+- [x] **FIX-02**: Màn hình rung khi tap sai
 - [x] **FIX-03**: GameController sử dụng JuiceHelpers exports thay vì inline logic trùng lặp
 
 ### Art Refresh
@@ -78,8 +78,8 @@
 | SPECIAL-02 | Phase 10 | Complete |
 | SPECIAL-03 | Phase 10 | Complete |
 | SPECIAL-04 | Phase 10 | Complete |
-| FIX-01 | Phase 11 | Pending |
-| FIX-02 | Phase 11 | Pending |
+| FIX-01 | Phase 11 | Complete |
+| FIX-02 | Phase 11 | Complete |
 | FIX-03 | Phase 11 | Complete |
 | ART-01 | Phase 12 | Pending |
 | ART-02 | Phase 12 | Pending |
