@@ -202,6 +202,12 @@ export class GameController extends Component {
             this.powerUpHUD.tick(this.powerUpState, nowMs);
         }
 
+        // Grid border glow (D-21 to D-24)
+        if (this.gridRenderer) {
+            const activeEffects = this.powerUpState.getActiveEffects(nowMs);
+            this.gridRenderer.drawBorderGlow(activeEffects.length > 0 ? activeEffects[0] : null);
+        }
+
         // HUD update
         this._updateHUD(elapsedMs);
     }
@@ -535,6 +541,7 @@ export class GameController extends Component {
         this.comboSystem.onWrongTap(); // resets multiplier=1, tapCount=0
         this.powerUpState.reset();
         if (this.powerUpHUD) this.powerUpHUD.node.active = false;
+        if (this.gridRenderer) this.gridRenderer.drawBorderGlow(null);
 
         // Reset spawn timer to now so first batch spawns immediately on first update frame.
         this._nextSpawnMs = performance.now();

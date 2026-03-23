@@ -12,6 +12,13 @@ const { ccclass } = _decorator;
 
 const WRONG_TAP_DISPLAY_PENALTY = -10;
 
+// Border glow colors per active effect type (D-21 to D-24)
+const BORDER_GLOW_COLORS: Record<EffectType, Color> = {
+    [EffectType.SCORE_MULTIPLIER]: new Color(255, 100,  30, 180),  // red-orange
+    [EffectType.TIME_FREEZE]:      new Color( 50, 200, 255, 180),  // cyan-blue
+    [EffectType.SLOW_GROWTH]:      new Color( 80, 220,  80, 180),  // green
+};
+
 // ---------------------------------------------------------------------------
 // Grid layout constants
 // ---------------------------------------------------------------------------
@@ -94,6 +101,9 @@ export class GridRenderer extends Component {
     private _cellSpriteFrames: Partial<Record<EffectType, SpriteFrame>> = {};
     private _defaultCellFrame: SpriteFrame | null = null;
     private _lastIsSpecial: boolean[] = new Array(64).fill(false);
+    private _borderGlowNode: Node | null = null;
+    private _borderGlowGraphics: Graphics | null = null;
+    private _lastBorderEffect: EffectType | null | undefined = undefined; // undefined = not yet drawn
 
     init(grid: Grid, controller: GameController): void {
         this._grid = grid;
@@ -112,6 +122,7 @@ export class GridRenderer extends Component {
         this._buildCellViews();
         this._buildFloatPool();
         this._loadSprites();
+        this._buildBorderGlow();
     }
 
     // -----------------------------------------------------------------------
@@ -335,6 +346,53 @@ export class GridRenderer extends Component {
         }
     }
 
+    /** Screen shake on wrong tap (FIX-02 D-07, D-08, D-10): 8px displacement, ~200ms total. */
+    public shakeGrid(): void {
+        const gridNode = this.node;
+        Tween.stopAllByTarget(gridNode);
+        const intensity = 8;
+        tween(gridNode)
+            .to(0.05, { position: new Vec3( intensity,           0, 0) })
+            .to(0.05, { position: new Vec3(-intensity,           0, 0) })
+            .to(0.05, { position: new Vec3( intensity * 0.5,    0, 0) })
+            .to(0.05, { position: new Vec3( 0,                  0, 0) })
+            .start();
+    }
+
+    /** Builds the border glow Graphics child node (D-21 to D-24). */
+    private _buildBorderGlow(): void {
+        const glowNode = new Node('borderGlow');
+        glowNode.layer = this.node.layer;
+        glowNode.addComponent(UITransform).setContentSize(576 + 16, 576 + 16);
+        const g = glowNode.addComponent(Graphics);
+        g.lineWidth = 4;
+        this.node.addChild(glowNode);
+        glowNode.active = false;
+        this._borderGlowNode = glowNode;
+        this._borderGlowGraphics = g;
+    }
+
+    /** Shows or hides the colored border glow around the grid (D-21 to D-24). */
+    public drawBorderGlow(effect: EffectType | null): void {
+        if (effect === this._lastBorderEffect) return; // skip redundant redraws
+        this._lastBorderEffect = effect;
+
+        if (!effect || !this._borderGlowNode || !this._borderGlowGraphics) {
+            if (this._borderGlowNode) this._borderGlowNode.active = false;
+            return;
+        }
+
+        const g = this._borderGlowGraphics;
+        const color = BORDER_GLOW_COLORS[effect];
+        const half = (576 + 16) / 2;
+        g.clear();
+        g.strokeColor = color;
+        g.lineWidth = 4;
+        g.roundRect(-half, -half, half * 2, half * 2, 8);
+        g.stroke();
+        this._borderGlowNode.active = true;
+    }
+
     private _rippleNeighbors(row: number, col: number): void {
         const neighbors: [number, number][] = [
             [row - 1, col], [row + 1, col],
@@ -351,7 +409,7 @@ export class GridRenderer extends Component {
         }
     }
 
-    public spawnScoreFloat(row: number, col: number, amount: number, multiplier: number): void {
+    public spawnScoreFloat(row: number, col: number, amount: number, multiplier: number, powerUpMultiplier: number = 1): void {
         const slot = this._floatPool.find(s => !s.inUse);
         if (!slot) return;
 
@@ -368,6 +426,10 @@ export class GridRenderer extends Component {
         slot.opacity.opacity = 255;
 
         slot.label.string = getFloatLabelString(amount);
+        // Append power-up multiplier suffix (D-18, D-20): e.g. "+240 ×3"
+        if (powerUpMultiplier > 1) {
+            slot.label.string += ` \u00D7${powerUpMultiplier}`;
+        }
         const isWrong = amount < 0;
         slot.label.color = isWrong
             ? new Color(220, 60, 60, 255)
