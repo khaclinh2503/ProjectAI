@@ -426,9 +426,19 @@ export class GridRenderer extends Component {
         slot.opacity.opacity = 255;
 
         slot.label.string = getFloatLabelString(amount);
-        // Append power-up multiplier suffix (D-18, D-20): e.g. "+240 ×3"
+        // Count-up animation: when a power-up multiplier is active, animate the label
+        // from the base score up to the final multiplied score over 0.4s (D-18, D-20).
         if (powerUpMultiplier > 1) {
-            slot.label.string += ` \u00D7${powerUpMultiplier}`;
+            const finalAmount = Math.round(amount * powerUpMultiplier);
+            const counter = { value: amount };
+            tween(counter)
+                .to(0.4, { value: finalAmount }, {
+                    easing: 'cubicOut',
+                    onUpdate: () => {
+                        slot.label.string = `+${Math.round(counter.value)}`;
+                    },
+                })
+                .start();
         }
         const isWrong = amount < 0;
         slot.label.color = isWrong
