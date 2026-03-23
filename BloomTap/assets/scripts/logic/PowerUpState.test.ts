@@ -205,31 +205,62 @@ describe('applySlowGrowthConfig()', () => {
         scoreFull: 120,
     };
 
-    it('returns new object with cycleDurationMs doubled (factor=2.0)', () => {
-        const result = applySlowGrowthConfig(baseConfig, 2.0);
-        expect(result.cycleDurationMs).toBe(6000);
-    });
-
     it('does NOT mutate the original config object', () => {
         applySlowGrowthConfig(baseConfig, 2.0);
         expect(baseConfig.cycleDurationMs).toBe(3000);
-    });
-
-    it('preserves all other fields', () => {
-        const result = applySlowGrowthConfig(baseConfig, 2.0);
-        expect(result.id).toBe(FlowerTypeId.CHERRY);
-        expect(result.budMs).toBe(1350);
-        expect(result.scoreBloom).toBe(80);
-        expect(result.scoreFull).toBe(120);
-    });
-
-    it('applies Math.round to cycleDurationMs (non-integer factor)', () => {
-        const result = applySlowGrowthConfig(baseConfig, 1.5);
-        expect(result.cycleDurationMs).toBe(4500);
+        expect(baseConfig.budMs).toBe(1350);
     });
 
     it('returns a different object reference (not a mutation)', () => {
         const result = applySlowGrowthConfig(baseConfig, 2.0);
         expect(result).not.toBe(baseConfig);
+    });
+
+    it('halves budMs (factor=2.0 → budMs × 0.5 = 675)', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.budMs).toBe(675);
+    });
+
+    it('doubles tapWindowMs (factor=2.0 → tapWindowMs × 2.0 = 1800)', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.tapWindowMs).toBe(1800);
+    });
+
+    it('doubles bloomingMs (factor=2.0 → bloomingMs × 2.0 = 1200)', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.bloomingMs).toBe(1200);
+    });
+
+    it('doubles fullBloomMs (factor=2.0 → fullBloomMs × 2.0 = 600)', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.fullBloomMs).toBe(600);
+    });
+
+    it('leaves wiltingMs unchanged (still 450)', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.wiltingMs).toBe(450);
+    });
+
+    it('leaves deadMs unchanged (still 300)', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.deadMs).toBe(300);
+    });
+
+    it('recalculates cycleDurationMs as budMs + tapWindowMs + wiltingMs + deadMs = 3225', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.cycleDurationMs).toBe(3225); // 675 + 1800 + 450 + 300
+    });
+
+    it('preserves id, scoreBloom, and scoreFull unchanged', () => {
+        const result = applySlowGrowthConfig(baseConfig, 2.0);
+        expect(result.id).toBe(FlowerTypeId.CHERRY);
+        expect(result.scoreBloom).toBe(80);
+        expect(result.scoreFull).toBe(120);
+    });
+
+    it('applies Math.round to budMs with non-integer factor', () => {
+        // factor=1.5: budMs = round(1350 * (1/1.5)) = round(900) = 900
+        const result = applySlowGrowthConfig(baseConfig, 1.5);
+        expect(result.budMs).toBe(900);
     });
 });

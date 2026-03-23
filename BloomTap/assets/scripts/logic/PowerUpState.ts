@@ -81,10 +81,27 @@ export class PowerUpState {
 }
 
 /**
- * Returns a new FlowerTypeConfig with cycleDurationMs scaled by factor.
+ * Returns a new FlowerTypeConfig with fields adjusted by factor for SLOW_GROWTH power-up.
+ * - budMs: halved (× 1/factor) — shorter bud wait time
+ * - tapWindowMs: multiplied by factor — wider tap window
+ * - bloomingMs: multiplied by factor — blooming lasts longer
+ * - fullBloomMs: multiplied by factor — full bloom lasts longer
+ * - wiltingMs, deadMs: unchanged
+ * - cycleDurationMs: recalculated as budMs + tapWindowMs + wiltingMs + deadMs
  * Uses Math.round to preserve integer ms values.
  * Does NOT mutate the original config.
  */
 export function applySlowGrowthConfig(config: FlowerTypeConfig, factor: number): FlowerTypeConfig {
-    return { ...config, cycleDurationMs: Math.round(config.cycleDurationMs * factor) };
+    const budMs = Math.round(config.budMs * (1 / factor));      // shorter bud = less waiting
+    const tapWindowMs = Math.round(config.tapWindowMs * factor); // wider tap window
+    const bloomingMs = Math.round(config.bloomingMs * factor);   // blooming lasts longer
+    const fullBloomMs = Math.round(config.fullBloomMs * factor); // full bloom lasts longer
+    return {
+        ...config,
+        budMs,
+        tapWindowMs,
+        bloomingMs,
+        fullBloomMs,
+        cycleDurationMs: budMs + tapWindowMs + config.wiltingMs + config.deadMs,
+    };
 }
