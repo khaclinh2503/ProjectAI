@@ -4,7 +4,7 @@ slug: special-flowers
 status: draft
 nyquist_compliant: false
 wave_0_complete: false
-created: 2026-03-21
+created: 2026-03-22
 ---
 
 # Phase 10 — Validation Strategy
@@ -17,8 +17,8 @@ created: 2026-03-21
 
 | Property | Value |
 |----------|-------|
-| **Framework** | Vitest (existing) |
-| **Config file** | `vitest.config.ts` — covers `BloomTap/assets/scripts/logic/**/*.test.ts` |
+| **Framework** | Vitest |
+| **Config file** | `vitest.config.ts` |
 | **Quick run command** | `npx vitest run` |
 | **Full suite command** | `npx vitest run` |
 | **Estimated runtime** | ~5 seconds |
@@ -29,8 +29,8 @@ created: 2026-03-21
 
 - **After every task commit:** Run `npx vitest run`
 - **After every plan wave:** Run `npx vitest run`
-- **Before `/gsd:verify-work`:** Full suite must be green (186 + new tests)
-- **Max feedback latency:** ~5 seconds
+- **Before `/gsd:verify-work`:** Full suite must be green
+- **Max feedback latency:** 10 seconds
 
 ---
 
@@ -38,12 +38,14 @@ created: 2026-03-21
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 10-W0-01 | W0 | 0 | SPECIAL-01 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 10-W0-02 | W0 | 0 | SPECIAL-01 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 10-W0-03 | W0 | 0 | SPECIAL-02 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 10-W0-04 | W0 | 0 | SPECIAL-03 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 10-W0-05 | W0 | 0 | SPECIAL-04 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 10-W0-06 | W0 | 0 | POLISH-03 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
+| 10-01-01 | 01 | 0 | SPECIAL-01 | unit | `npx vitest run` | Wave 0 | ⬜ pending |
+| 10-01-02 | 01 | 1 | SPECIAL-01 | unit | `npx vitest run` | existing | ⬜ pending |
+| 10-01-03 | 01 | 1 | SPECIAL-01 | unit | `npx vitest run` | existing | ⬜ pending |
+| 10-01-04 | 01 | 1 | SPECIAL-02 | unit | `npx vitest run` | existing | ⬜ pending |
+| 10-02-01 | 02 | 2 | SPECIAL-01 | unit | `npx vitest run` | existing | ⬜ pending |
+| 10-02-02 | 02 | 2 | SPECIAL-03 | manual | Cocos Editor play | N/A | ⬜ pending |
+| 10-02-03 | 02 | 2 | SPECIAL-04 | unit | `npx vitest run` | Wave 0 | ⬜ pending |
+| 10-03-01 | 03 | 3 | SPECIAL-02/03/04 | manual | Cocos Editor play | N/A | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,10 +53,10 @@ created: 2026-03-21
 
 ## Wave 0 Requirements
 
-- [ ] `BloomTap/assets/scripts/logic/PowerUpState.test.ts` — new file covering all PowerUpState unit tests (SPECIAL-01 through SPECIAL-04, POLISH-03)
-- [ ] Extend `BloomTap/assets/scripts/logic/Grid.test.ts` — new cases for `isSpecial`/`specialEffect` reset in `clearCell` and `clearAll`
-- [ ] Extend `BloomTap/assets/scripts/logic/GameState.test.ts` — new cases for `applyCorrectTap` with `powerUpMultiplier` parameter
-- [ ] Extend `BloomTap/assets/scripts/logic/GameConfig.test.ts` — new cases for `powerUps` section parsing and validation
+- [ ] `BloomTap/assets/scripts/logic/PowerUpState.test.ts` — unit tests for PowerUpState (activate, tick, shiftExpiry, isActive)
+- [ ] `BloomTap/assets/scripts/logic/PowerUpState.ts` — stub class with correct signatures
+
+*Existing infrastructure (Vitest, vitest.config.ts) covers all other phase requirements.*
 
 ---
 
@@ -62,12 +64,11 @@ created: 2026-03-21
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| HUD row hidden when no effects active, shown when any effect active | SPECIAL-01 | Cocos node visibility — no DOM/unit test | Run game, observe HUD before/after tapping special flower |
-| Each effect activates and expires with correct HUD animation | SPECIAL-02, SPECIAL-03, SPECIAL-04 | Cocos Graphics rendering — visual check only | Tap each special flower type, watch arc timer drain to 0 |
-| Special flower visually distinct from regular flowers (color overlay per effect type) | SPECIAL-01 | Visual rendering — Cocos Graphics | Run game, confirm gold/blue/green overlay visible from BUD state |
-| TIME_FREEZE: countdown timer visibly stops, flowers continue cycling | SPECIAL-03 | Real-time visual behavior | Tap TIME_FREEZE special, confirm countdown freezes ~5s, resumes from same value |
-| SLOW_GROWTH: newly spawned flowers cycle more slowly during effect | SPECIAL-04 | Visual timing observation | Tap SLOW_GROWTH special, confirm new flowers bloom slower than baseline |
-| Pause during active effects → effects resume with remaining duration | SPECIAL-01 | Pause/resume game state integration | Tap special, immediately pause mid-effect, resume, confirm remaining duration continues |
+| Cell sprite swap visible at BUD state | SPECIAL-01 | Requires Cocos Editor scene rendering | Play game, verify special cell shows correct sprite from spawn |
+| HUD shows active effect + hides on expire | SPECIAL-02/03/04 | Requires Cocos Editor UI rendering | Tap special flower, verify HUD appears; wait for expiry, verify HUD hides |
+| TIME_FREEZE stops countdown timer | SPECIAL-03 | Requires visual timer observation | Tap freeze flower, verify countdown pauses for ~5s |
+| Replacement semantics: new effect replaces old | SPECIAL-01/D-05 | Runtime behavior | Activate one effect, tap different special flower, verify first effect replaced |
+| SLOW_GROWTH widens bloom window | SPECIAL-04 | Requires observation of flower cycle speed | Activate slow growth, verify newly spawned flowers cycle noticeably slower |
 
 ---
 

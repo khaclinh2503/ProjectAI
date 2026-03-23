@@ -47,10 +47,17 @@ export class PowerUpHUDRenderer extends Component {
         this.node.active = anyActive;
         if (!anyActive) return;
 
+        const activeSlots = this._slots.filter(s => powerUpState.isEffectActive(s.effect, nowMs));
+        const count   = activeSlots.length;
+        const startX  = count > 1 ? -((count - 1) * SLOT_GAP) / 2 : 0;
+
         for (const slot of this._slots) {
-            const active = powerUpState.isEffectActive(slot.effect, nowMs);
+            const idx = activeSlots.indexOf(slot);
+            const active = idx !== -1;
             slot.node.active = active;
             if (!active) continue;
+
+            slot.node.setPosition(startX + idx * SLOT_GAP, 0, 0);
 
             // Update icon sprite
             const sf = this._cellSpriteFrames[slot.effect];
