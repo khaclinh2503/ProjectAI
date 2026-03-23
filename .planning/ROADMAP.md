@@ -127,7 +127,7 @@ Plans:
 | 8. Spawn Fix | v1.1 | 1/1 | Complete | 2026-03-21 |
 | 9. Pause System | v1.1 | 2/2 | Complete | 2026-03-21 |
 | 10. Special Flowers | v1.1 | 3/3 | Complete   | 2026-03-22 |
-| 11. Bug Fixes and Refactors | v1.1 | 2/2 | Complete   | 2026-03-23 |
+| 11. Bug Fixes and Refactors | v1.1 | 2/2 | Complete    | 2026-03-23 |
 | 12. Art Refresh | v1.1 | 0/? | Not started | - |
 
 ---
