@@ -286,11 +286,11 @@ export class GridRenderer extends Component {
         const state = cell.flower.getState(nowMs);
 
         if (state === FlowerState.BLOOMING || state === FlowerState.FULL_BLOOM) {
-            const { flashColor, rawScore, multiplier, isFullBloom } =
+            const { flashColor, rawScore, multiplier, isFullBloom, powerUpMultiplier } =
                 this._controller.handleCorrectTap(cell, cell.flower, nowMs);
             this.paintFlashAndClear(view.row, view.col, flashColor, cell, 0.30);
             this.playTapPulse(view.row, view.col, isFullBloom);
-            this.spawnScoreFloat(view.row, view.col, rawScore, multiplier);
+            this.spawnScoreFloat(view.row, view.col, rawScore, multiplier, powerUpMultiplier);
         } else if (
             state === FlowerState.BUD     ||
             state === FlowerState.WILTING ||

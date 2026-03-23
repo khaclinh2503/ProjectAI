@@ -264,7 +264,7 @@ export class GameController extends Component {
         const multiplier = this.comboSystem.multiplier;
 
         // JUICE-03: combo label pulse + milestone check
-        this._pulseComboLabel();
+        this._pulseComboLabel(this.comboSystem.tapCount);
         this._checkMilestone(this.comboSystem.tapCount);
 
         return { flashColor, rawScore: Math.round(rawScore), multiplier, isFullBloom, powerUpMultiplier };
@@ -279,6 +279,10 @@ export class GameController extends Component {
         // JUICE-03: full-screen red flash + combo label blink
         this._playRedFlash();
         this._playComboBreak();
+        // FIX-02 (D-07): screen shake on wrong tap
+        if (this.gridRenderer) {
+            this.gridRenderer.shakeGrid();
+        }
     }
 
     private _getDurationForEffect(effect: EffectType): number {
@@ -336,7 +340,7 @@ export class GameController extends Component {
     }
 
     /** Combo label scale pulse on correct tap (JUICE-03). */
-    private _pulseComboLabel(): void {
+    private _pulseComboLabel(streak?: number): void {
         if (!this.comboLabel) return;
         const labelNode = this.comboLabel.node;
         // Ensure anchor is centered so scale pulse expands evenly from the label's center.
@@ -345,9 +349,14 @@ export class GameController extends Component {
         if (uiT) { uiT.anchorX = 0.5; uiT.anchorY = 0.5; }
         Tween.stopAllByTarget(labelNode);
         labelNode.setScale(1, 1, 1); // reset before pulse in case previous was interrupted
+
+        // Milestone streaks (x10, x20, x30, x40...) get stronger visual (D-05)
+        const isMilestoneStreak = streak !== undefined && streak >= 10 && streak % 10 === 0;
+        const peakScale = isMilestoneStreak ? 1.6 : 1.25;
+
         tween(labelNode)
-            .to(0.08, { scale: new Vec3(1.25, 1.25, 1) }, { easing: 'cubicOut' })
-            .to(0.10, { scale: new Vec3(1.0,  1.0,  1) }, { easing: 'cubicIn' })
+            .to(0.08, { scale: new Vec3(peakScale, peakScale, 1) }, { easing: 'backOut' })
+            .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
             .start();
     }
 
@@ -753,10 +762,16 @@ export class GameController extends Component {
         if (this.scoreLabel) {
             this.scoreLabel.string = `${Math.floor(this.gameState.score)}`;
         }
-        // Combo: only show when streak > 1
+        // Combo: only show when streak >= 2 (FIX-01)
         if (this.comboLabel) {
             const streak = this.comboSystem.tapCount;
-            this.comboLabel.string = streak > 1 ? `Combo x${streak}` : '';
+            if (streak >= 2) {
+                this.comboLabel.string = `x${streak}`;
+                this.comboLabel.node.active = true;
+            } else {
+                this.comboLabel.string = '';
+                this.comboLabel.node.active = false;
+            }
         }
         // Timer: throttled — only write string when second boundary crosses
         const remainingSecs = Math.max(0, Math.floor((SESSION_DURATION_MS - elapsedMs) / 1000));
