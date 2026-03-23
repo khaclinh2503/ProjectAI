@@ -12,6 +12,7 @@ import { StorageService } from './logic/StorageService';
 import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
 import { getPowerUpConfig } from './logic/GameConfig';
 import { PowerUpHUDRenderer } from './PowerUpHUDRenderer';
+import { getUrgencyStage, getMilestoneLabel, MILESTONE_THRESHOLDS } from './logic/JuiceHelpers';
 
 const { ccclass, property } = _decorator;
 
@@ -238,7 +239,7 @@ export class GameController extends Component {
         cell: Cell,
         flower: FlowerFSM,
         nowMs: number,
-    ): { flashColor: Color; rawScore: number; multiplier: number; isFullBloom: boolean } {
+    ): { flashColor: Color; rawScore: number; multiplier: number; isFullBloom: boolean; powerUpMultiplier: number } {
         const state    = flower.getState(nowMs);          // 1. Read state before collect()
         const rawScore = flower.getScore(nowMs) ?? 0;     // 2. Read score before collect()
         flower.collect();                                  // 3. Mark collected
@@ -266,7 +267,7 @@ export class GameController extends Component {
         this._pulseComboLabel();
         this._checkMilestone(this.comboSystem.tapCount);
 
-        return { flashColor, rawScore: Math.round(rawScore), multiplier, isFullBloom };
+        return { flashColor, rawScore: Math.round(rawScore), multiplier, isFullBloom, powerUpMultiplier };
     }
 
     /**
@@ -352,13 +353,9 @@ export class GameController extends Component {
 
     /** Check if tapCount crossed a milestone threshold — triggers celebration exactly once per session. */
     private _checkMilestone(tapCount: number): void {
-        // Only x10, x25, x50 — each triggers exactly once per session (CONTEXT.md decision)
-        for (const m of [10, 25, 50]) {
-            if (tapCount >= m && !this._triggeredMilestones.has(m)) {
-                this._triggeredMilestones.add(m);
-                this._playMilestoneCelebration(m);
-                break; // one milestone per tap maximum
-            }
+        const label = getMilestoneLabel(tapCount, this._triggeredMilestones);
+        if (label) {
+            this._playMilestoneCelebration(tapCount);
         }
     }
 
@@ -402,14 +399,8 @@ export class GameController extends Component {
      * Instant transitions (no color tween) per CONTEXT.md.
      */
     private _updateTimerUrgency(remainingSecs: number): void {
-        let newStage: number;
-        if      (remainingSecs > 60) newStage = 0;
-        else if (remainingSecs > 30) newStage = 1;
-        else if (remainingSecs > 10) newStage = 2;
-        else                          newStage = 3;
-
-        if (newStage === this._urgencyStage) return; // no change — skip all work
-
+        const newStage = getUrgencyStage(remainingSecs);
+        if (newStage === this._urgencyStage) return;
         this._urgencyStage = newStage;
         this._applyUrgencyStage(newStage);
     }
