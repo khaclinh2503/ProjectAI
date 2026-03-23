@@ -21,16 +21,16 @@
 
 ### Special Flowers
 
-- [ ] **SPECIAL-01**: Hoa đặc biệt xuất hiện ngẫu nhiên trên bàn với visual riêng biệt, tần suất configurable từ JSON
-- [ ] **SPECIAL-02**: Người chơi tap hoa đặc biệt để kích hoạt score multiplier (x2–x5) cho tất cả hoa trong khoảng thời gian configurable (~6 giây)
-- [ ] **SPECIAL-03**: Người chơi tap hoa đặc biệt để freeze đồng hồ đếm ngược trong khoảng thời gian configurable (~5 giây)
-- [ ] **SPECIAL-04**: Người chơi tap hoa đặc biệt để làm chậm tốc độ phát triển của hoa mới trong khoảng thời gian configurable (~8 giây) — window tap rộng hơn
+- [x] **SPECIAL-01**: Hoa đặc biệt xuất hiện ngẫu nhiên trên bàn với visual riêng biệt, tần suất configurable từ JSON
+- [x] **SPECIAL-02**: Người chơi tap hoa đặc biệt để kích hoạt score multiplier (x2–x5) cho tất cả hoa trong khoảng thời gian configurable (~6 giây)
+- [x] **SPECIAL-03**: Người chơi tap hoa đặc biệt để freeze đồng hồ đếm ngược trong khoảng thời gian configurable (~5 giây)
+- [x] **SPECIAL-04**: Người chơi tap hoa đặc biệt để làm chậm tốc độ phát triển của hoa mới trong khoảng thời gian configurable (~8 giây) — window tap rộng hơn
 
 ### Bug Fixes & Refactors
 
 - [ ] **FIX-01**: comboLabel hiển thị `x1.0` từ đầu ván và tăng dần theo multiplier (không hiện tapCount)
 - [ ] **FIX-02**: Màn hình rung khi tap sai
-- [ ] **FIX-03**: GameController sử dụng JuiceHelpers exports thay vì inline logic trùng lặp
+- [x] **FIX-03**: GameController sử dụng JuiceHelpers exports thay vì inline logic trùng lặp
 
 ### Art Refresh
 
@@ -74,13 +74,13 @@
 | CFG-03 | Phase 7 | Complete |
 | SPAWN-01 | Phase 8 | Complete |
 | PAUSE-01 | Phase 9 | Complete |
-| SPECIAL-01 | Phase 10 | Pending |
-| SPECIAL-02 | Phase 10 | Pending |
-| SPECIAL-03 | Phase 10 | Pending |
-| SPECIAL-04 | Phase 10 | Pending |
+| SPECIAL-01 | Phase 10 | Complete |
+| SPECIAL-02 | Phase 10 | Complete |
+| SPECIAL-03 | Phase 10 | Complete |
+| SPECIAL-04 | Phase 10 | Complete |
 | FIX-01 | Phase 11 | Pending |
 | FIX-02 | Phase 11 | Pending |
-| FIX-03 | Phase 11 | Pending |
+| FIX-03 | Phase 11 | Complete |
 | ART-01 | Phase 12 | Pending |
 | ART-02 | Phase 12 | Pending |
 | ART-03 | Phase 12 | Pending |

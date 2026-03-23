@@ -97,7 +97,10 @@ Plans:
   1. The combo label shows "x1.0" from the very first frame of a session and increments to "x1.5", "x2.0" etc. as the multiplier rises — it never shows a raw tap count
   2. Tapping an empty cell or a dead/wilted flower triggers a visible screen shake effect on the board
   3. GameController no longer contains inline copies of getUrgencyStage() or getMilestoneLabel() — it calls the JuiceHelpers exports directly
-**Plans**: TBD
+**Plans:** 1/2 plans executed
+Plans:
+- [x] 11-01-PLAN.md — Fix applySlowGrowthConfig + JuiceHelpers refactor + handleCorrectTap return powerUpMultiplier
+- [ ] 11-02-PLAN.md — Combo label fix + screen shake + score float multiplier + grid border glow + human verify
 
 ### Phase 12: Art Refresh
 **Goal**: All placeholder color-coded Graphics cells are replaced with real sprite assets — flowers, board background, and UI elements all have polished visuals
@@ -124,9 +127,9 @@ Plans:
 | 8. Spawn Fix | v1.1 | 1/1 | Complete | 2026-03-21 |
 | 9. Pause System | v1.1 | 2/2 | Complete | 2026-03-21 |
 | 10. Special Flowers | v1.1 | 3/3 | Complete   | 2026-03-22 |
-| 11. Bug Fixes and Refactors | v1.1 | 0/? | Not started | - |
+| 11. Bug Fixes and Refactors | v1.1 | 1/2 | In Progress|  |
 | 12. Art Refresh | v1.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-03-22 — Phase 10 re-planned (3 plans, prior attempt reverted)*
+*Last updated: 2026-03-23 — Phase 11 planned (2 plans)*

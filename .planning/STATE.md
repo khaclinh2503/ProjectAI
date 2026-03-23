@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
 status: unknown
-stopped_at: Completed 10-03-PLAN.md Task 1 — awaiting human-verify checkpoint Task 2
-last_updated: "2026-03-22T11:38:36.878Z"
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-03-23T16:07:56.879Z"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State: Bloom Tap
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 10 — special-flowers
+**Current focus:** Phase 11 — bug-fixes-and-refactors
 
 ---
 
 ## Current Position
 
-Phase: 10 (special-flowers) — EXECUTING
-Plan: 3 of 3
+Phase: 11 (bug-fixes-and-refactors) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -77,6 +77,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 10-special-flowers]: GridRenderer._refreshCellBg uses _lastIsSpecial dirty check — avoids redundant spriteFrame writes each frame
 - [Phase 10-special-flowers]: PowerUpHUDRenderer hides immediately on effect expiry (node.active=false, D-16) — no animation
 - [Phase 10-special-flowers]: BootController passes powerUps config only when present in JSON — falls back to hardcoded defaults in GameController
+- [Phase 11-bug-fixes-and-refactors]: [11-01] applySlowGrowthConfig modifies budMs/tapWindowMs/bloomingMs/fullBloomMs — the fields FlowerFSM.getState() reads
+- [Phase 11-bug-fixes-and-refactors]: [11-01] getMilestoneLabel mutates triggered Set; _checkMilestone passes tapCount directly to _playMilestoneCelebration since tapCount IS the threshold when label is returned
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -95,8 +97,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-22T11:38:36.874Z
-Stopped at: Completed 10-03-PLAN.md Task 1 — awaiting human-verify checkpoint Task 2
+Last session: 2026-03-23T16:07:56.875Z
+Stopped at: Completed 11-01-PLAN.md
 Resume file: None
 
 ---
