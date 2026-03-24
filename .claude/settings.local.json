@@ -59,7 +59,12 @@
       "Bash(npm test:*)",
       "Bash(head -10 grep -rn \"wrong.*tap\\\\|DEAD.*clear\\\\|clear.*dead\" E:/workspace/ProjectAI/.planning/phases/03-renderer*/*.md E:/workspace/ProjectAI/.planning/phases/04-session*/*.md)",
       "Bash(python3:*)",
-      "Bash(npx --prefix BloomTap vitest run)"
+      "Bash(npx --prefix BloomTap vitest run)",
+      "Bash(node_modules/.bin/vitest run:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Skill(gsd:audit-milestone)",
+      "Skill(gsd:complete-milestone)"
     ]
   }
 }
