@@ -1,10 +1,11 @@
 ---
 phase: 5
 slug: juice-and-polish
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-15
+approved: 2026-03-15
 ---
 
 # Phase 5 — Validation Strategy
@@ -85,3 +86,16 @@ After Plan 02 completes, verify in Cocos Creator preview:
 11. **JUICE-04:** At 30s remaining → timer text turns orange, larger still
 12. **JUICE-04:** At 10s remaining → timer text turns red + blinks + HUD shows urgency state
 13. **JUICE-04:** Restart → timer returns to normal white/non-blinking
+
+---
+
+## Validation Sign-Off
+
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
+
+**Approval:** retroactively approved 2026-03-15 — phase completed and verified (05-VERIFICATION.md, 10/10 must-haves passed)
