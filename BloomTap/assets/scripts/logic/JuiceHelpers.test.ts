@@ -7,6 +7,8 @@ import {
     getUrgencyStage,
     getMilestoneLabel,
     MILESTONE_THRESHOLDS,
+    getScoreFlashColor,
+    getComboStartScale,
 } from './JuiceHelpers';
 
 describe('getFloatLabelString', () => {
@@ -125,5 +127,47 @@ describe('getMilestoneLabel', () => {
 describe('MILESTONE_THRESHOLDS', () => {
     it('contains exactly [10, 25, 50]', () => {
         expect(MILESTONE_THRESHOLDS).toEqual([10, 25, 50]);
+    });
+});
+
+describe('getScoreFlashColor', () => {
+    it('returns white {r:255,g:255,b:255} for delta 0 (no score)', () => {
+        expect(getScoreFlashColor(0)).toEqual({ r: 255, g: 255, b: 255 });
+    });
+    it('returns white for delta 30 (below 50 threshold)', () => {
+        expect(getScoreFlashColor(30)).toEqual({ r: 255, g: 255, b: 255 });
+    });
+    it('returns yellow {r:255,g:220,b:60} for delta 50 (at 50 threshold)', () => {
+        expect(getScoreFlashColor(50)).toEqual({ r: 255, g: 220, b: 60 });
+    });
+    it('returns yellow for delta 75 (50-99 range)', () => {
+        expect(getScoreFlashColor(75)).toEqual({ r: 255, g: 220, b: 60 });
+    });
+    it('returns orange {r:255,g:160,b:0} for delta 100 (at 100 threshold)', () => {
+        expect(getScoreFlashColor(100)).toEqual({ r: 255, g: 160, b: 0 });
+    });
+    it('returns orange for delta 250 (above 100)', () => {
+        expect(getScoreFlashColor(250)).toEqual({ r: 255, g: 160, b: 0 });
+    });
+});
+
+describe('getComboStartScale', () => {
+    it('returns 1.0 for streak 0 (no punch-in)', () => {
+        expect(getComboStartScale(0)).toBe(1.0);
+    });
+    it('returns 1.0 for streak 1 (no punch-in)', () => {
+        expect(getComboStartScale(1)).toBe(1.0);
+    });
+    it('returns 1.5 for streak 2 (minimum punch-in scale)', () => {
+        expect(getComboStartScale(2)).toBe(1.5);
+    });
+    it('returns approximately 2.0625 for streak 5', () => {
+        expect(getComboStartScale(5)).toBeCloseTo(2.0625, 4);
+    });
+    it('returns 3.0 for streak 10 (max before clamp)', () => {
+        expect(getComboStartScale(10)).toBeCloseTo(3.0, 4);
+    });
+    it('returns 3.0 for streak 15 (clamped at max)', () => {
+        expect(getComboStartScale(15)).toBe(3.0);
     });
 });
