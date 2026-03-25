@@ -54,3 +54,23 @@ export function getMilestoneLabel(tapCount: number, triggered: Set<number>): str
     triggered.add(tapCount);
     return `COMBO x${tapCount}!`;
 }
+
+/**
+ * Returns RGB color data for score HUD flash based on score delta.
+ * Plain object (no 'cc' import) — caller constructs Color.
+ * Thresholds: <50 white, 50-99 yellow, >=100 orange (per D-02).
+ */
+export function getScoreFlashColor(scoreDelta: number): { r: number; g: number; b: number } {
+    if (scoreDelta >= 100) return { r: 255, g: 160, b: 0 };
+    if (scoreDelta >= 50) return { r: 255, g: 220, b: 60 };
+    return { r: 255, g: 255, b: 255 };
+}
+
+/**
+ * Returns the starting scale for combo punch-in animation (per D-04).
+ * streak < 2 → 1.0 (no punch-in), streak=2 → 1.5, streak=10+ → 3.0 (clamped).
+ */
+export function getComboStartScale(streak: number): number {
+    if (streak < 2) return 1.0;
+    return Math.min(1.5 + (streak - 2) * 0.1875, 3.0);
+}
