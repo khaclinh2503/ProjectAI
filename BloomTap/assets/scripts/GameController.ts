@@ -12,7 +12,7 @@ import { StorageService } from './logic/StorageService';
 import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
 import { getPowerUpConfig } from './logic/GameConfig';
 import { PowerUpHUDRenderer } from './PowerUpHUDRenderer';
-import { getUrgencyStage, getMilestoneLabel, MILESTONE_THRESHOLDS, getScoreFlashColor } from './logic/JuiceHelpers';
+import { getUrgencyStage, getMilestoneLabel, MILESTONE_THRESHOLDS, getScoreFlashColor, getComboStartScale } from './logic/JuiceHelpers';
 
 const { ccclass, property } = _decorator;
 
@@ -283,10 +283,15 @@ export class GameController extends Component {
      * Deducts WRONG_TAP_PENALTY from score and resets combo streak.
      */
     public handleWrongTap(): void {
+        const streakBeforeReset = this.comboSystem.tapCount;
         this.gameState.applyWrongTap(this.comboSystem);
-        // JUICE-03: full-screen red flash + combo label blink
-        this._playRedFlash();
-        this._playComboBreak();
+        if (streakBeforeReset >= 2) {
+            // Combo break: stronger flash (D-05) — supersedes normal red flash
+            this._playComboBreak();
+        } else {
+            // No combo to break: normal softer red flash
+            this._playRedFlash();
+        }
         // FIX-02 (D-07): screen shake on wrong tap
         if (this.gridRenderer) {
             this.gridRenderer.shakeGrid();
@@ -328,43 +333,81 @@ export class GameController extends Component {
             .start();
     }
 
-    /** Combo label blink + fade on wrong tap (JUICE-03). */
+    /** Combo break: label blink + scale punch + stronger red flash (JUICE-03, D-05). */
     private _playComboBreak(): void {
         if (!this.comboLabel) return;
-        const uiOp = this.comboLabel.node.getComponent(UIOpacity);
-        if (!uiOp) return;
-        uiOp.opacity = 255;
-        Tween.stopAllByTarget(uiOp);
-        tween(uiOp)
-            .to(0.05, { opacity: 0 })
-            .to(0.05, { opacity: 255 })
-            .repeat(3)                   // 3 blink cycles
-            .to(0.15, { opacity: 0 })    // final fade
-            .call(() => {
-                // Restore opacity — _updateHUD() will update the label string to "Combo x0"
-                uiOp.opacity = 255;
-            })
+        const labelNode = this.comboLabel.node;
+
+        // Scale punch: large burst then shrink (stronger than normal pulse)
+        Tween.stopAllByTarget(labelNode);
+        labelNode.setScale(1, 1, 1);
+        tween(labelNode)
+            .to(0.05, { scale: new Vec3(1.8, 1.8, 1) }, { easing: 'cubicOut' })
+            .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
             .start();
+
+        // Opacity blink (keep existing pattern)
+        const uiOp = labelNode.getComponent(UIOpacity);
+        if (uiOp) {
+            uiOp.opacity = 255;
+            Tween.stopAllByTarget(uiOp);
+            tween(uiOp)
+                .to(0.05, { opacity: 0 })
+                .to(0.05, { opacity: 255 })
+                .repeat(3)
+                .to(0.15, { opacity: 0 })
+                .call(() => { uiOp.opacity = 255; })
+                .start();
+        }
+
+        // Stronger red flash: opacity 89/255 (~35%) vs normal 51/255 (~20%)
+        if (this.redFlashOverlay) {
+            const flashOp = this.redFlashOverlay.getComponent(UIOpacity);
+            if (flashOp) {
+                flashOp.opacity = 0;
+                this.redFlashOverlay.active = true;
+                Tween.stopAllByTarget(flashOp);
+                tween(flashOp)
+                    .to(0.04, { opacity: 89 })
+                    .to(0.12, { opacity: 0 })
+                    .call(() => { if (this.redFlashOverlay) this.redFlashOverlay.active = false; })
+                    .start();
+            }
+        }
     }
 
-    /** Combo label scale pulse on correct tap (JUICE-03). */
+    /** Combo label punch-in on streak increase (JUICE-03, D-03, D-04). */
     private _pulseComboLabel(streak?: number): void {
         if (!this.comboLabel) return;
         const labelNode = this.comboLabel.node;
-        // Ensure anchor is centered so scale pulse expands evenly from the label's center.
-        // Set here (not just onLoad) to be safe regardless of inspector wiring order.
         const uiT = labelNode.getComponent(UITransform);
         if (uiT) { uiT.anchorX = 0.5; uiT.anchorY = 0.5; }
-        Tween.stopAllByTarget(labelNode);
-        labelNode.setScale(1, 1, 1); // reset before pulse in case previous was interrupted
 
-        // Milestone streaks (x10, x20, x30, x40...) get stronger visual (D-05)
-        const isMilestoneStreak = streak !== undefined && streak >= 10 && streak % 10 === 0;
-        const peakScale = isMilestoneStreak ? 1.6 : 1.25;
+        Tween.stopAllByTarget(labelNode);
+
+        const effectiveStreak = streak ?? 0;
+        const startScale = getComboStartScale(effectiveStreak);
+
+        if (startScale <= 1.0) {
+            // streak < 2: no punch-in, just reset scale
+            labelNode.setScale(1, 1, 1);
+            return;
+        }
+
+        // D-03: punch-IN — start large + transparent, shrink to normal + opaque
+        labelNode.setScale(startScale, startScale, 1);
+
+        const uiOp = labelNode.getComponent(UIOpacity);
+        if (uiOp) {
+            Tween.stopAllByTarget(uiOp);
+            uiOp.opacity = 0;
+            tween(uiOp)
+                .to(0.10, { opacity: 255 }, { easing: 'cubicOut' })
+                .start();
+        }
 
         tween(labelNode)
-            .to(0.08, { scale: new Vec3(peakScale, peakScale, 1) }, { easing: 'backOut' })
-            .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
+            .to(0.12, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicOut' })
             .start();
     }
 
