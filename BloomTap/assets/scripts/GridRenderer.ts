@@ -2,7 +2,7 @@ import { _decorator, Component, Node, Graphics, Color, UITransform, tween, Tween
 import { Grid, Cell } from './logic/Grid';
 import { FlowerState } from './logic/FlowerState';
 import { FlowerTypeId } from './logic/FlowerTypes';
-import { WRONG_FLASH_COLOR } from './FlowerColors';
+import { WRONG_FLASH_COLOR, FLOAT_COLOR_MULTIPLIER } from './FlowerColors';
 import { getFloatLabelString, getFloatFontSize, getFloatDuration } from './logic/JuiceHelpers';
 import { EffectType } from './logic/PowerUpState';
 
@@ -441,29 +441,74 @@ export class GridRenderer extends Component {
                 .start();
         }
         const isWrong = amount < 0;
-        slot.label.color = isWrong
-            ? new Color(220, 60, 60, 255)
-            : new Color(255, 255, 255, 255);
+        if (isWrong) {
+            slot.label.color = new Color(220, 60, 60, 255);
+        } else if (powerUpMultiplier > 1) {
+            slot.label.color = FLOAT_COLOR_MULTIPLIER; // gold (D-06)
+        } else {
+            slot.label.color = new Color(255, 255, 255, 255);
+        }
         slot.label.fontSize = getFloatFontSize(Math.max(amount, 0));
 
         const duration = getFloatDuration(multiplier);
         const riseY = 80 + multiplier * 10;
-        const wobbleX = 14;
 
-        tween(slot.node)
-            .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) }, { easing: 'sineOut' })
-            .by(duration / 3, { position: new Vec3(-wobbleX * 2, riseY / 3, 0) })
-            .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) })
-            .start();
+        if (powerUpMultiplier > 1) {
+            // D-07 punch-in: start large + transparent, shrink to normal + opaque
+            slot.node.setScale(1.5, 1.5, 1);
+            slot.opacity.opacity = 0;
+            tween(slot.node)
+                .to(0.08, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicOut' })
+                .start();
+            tween(slot.opacity)
+                .to(0.08, { opacity: 255 })
+                .start();
 
-        tween(slot.opacity)
-            .delay(duration * 0.5)
-            .to(duration * 0.5, { opacity: 0 })
-            .call(() => {
-                slot.node.active = false;
-                slot.inUse = false;
-            })
-            .start();
+            // D-08 zigzag: random bounce per segment, 5 segments, 28px displacement
+            const ZIGZAG_SEGMENTS = 5;
+            const ZIGZAG_X = 28;
+            const zigzagDuration = duration * 1.3; // longer hang time for multiplier floats
+            const segDuration = zigzagDuration / ZIGZAG_SEGMENTS;
+            const segRiseY = riseY / ZIGZAG_SEGMENTS;
+
+            let positionTween = tween(slot.node);
+            // Small delay to let punch-in settle before zigzag starts
+            positionTween = positionTween.delay(0.06);
+            for (let i = 0; i < ZIGZAG_SEGMENTS; i++) {
+                const sign = Math.random() < 0.5 ? 1 : -1;
+                positionTween = positionTween.by(segDuration,
+                    { position: new Vec3(sign * ZIGZAG_X, segRiseY, 0) },
+                    { easing: 'sineOut' });
+            }
+            positionTween.start();
+
+            // Opacity fade: adjusted for longer zigzag duration
+            tween(slot.opacity)
+                .delay(0.08 + zigzagDuration * 0.5) // after punch-in + half zigzag
+                .to(zigzagDuration * 0.5, { opacity: 0 })
+                .call(() => {
+                    slot.node.active = false;
+                    slot.inUse = false;
+                })
+                .start();
+        } else {
+            // D-09: Normal float — keep existing wobble behavior unchanged
+            const wobbleX = 14;
+            tween(slot.node)
+                .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) }, { easing: 'sineOut' })
+                .by(duration / 3, { position: new Vec3(-wobbleX * 2, riseY / 3, 0) })
+                .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) })
+                .start();
+
+            tween(slot.opacity)
+                .delay(duration * 0.5)
+                .to(duration * 0.5, { opacity: 0 })
+                .call(() => {
+                    slot.node.active = false;
+                    slot.inUse = false;
+                })
+                .start();
+        }
     }
 
     public stopAllFloatAnimations(): void {
