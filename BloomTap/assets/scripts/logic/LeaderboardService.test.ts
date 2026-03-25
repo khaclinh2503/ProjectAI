@@ -82,7 +82,10 @@ describe('saveEntry (LB-02)', () => {
         LeaderboardService.saveEntry('New', 55);
         expect(LeaderboardService.getEntries().length).toBe(10);
         const entries = LeaderboardService.getEntries();
-        expect(entries[entries.length - 1].score).toBeGreaterThanOrEqual(55);
+        // Score 55 displaces 10th entry (score 10); 'New' should be in the board
+        expect(entries.some((e: LeaderboardEntry) => e.name === 'New')).toBe(true);
+        // The lowest score on the capped board should be > 10 (old 10th was dropped)
+        expect(entries[entries.length - 1].score).toBeGreaterThan(10);
     });
 
     it('rejects score strictly below 10th', () => {
