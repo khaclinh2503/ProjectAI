@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
-status: unknown
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-03-24T09:24:32.314Z"
+status: in-progress
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-03-25T10:33:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State: Bloom Tap
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 12
-Plan: Not started
+Plan: 02
 
 ## Performance Metrics
 
@@ -81,6 +81,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 11-bug-fixes-and-refactors]: [11-01] getMilestoneLabel mutates triggered Set; _checkMilestone passes tapCount directly to _playMilestoneCelebration since tapCount IS the threshold when label is returned
 - [Phase 11]: Score float count-up tween targets plain JS object {value} — Cocos tween supports any object with numeric properties; runs parallel to position/opacity tweens with no conflict
 - [Phase 11]: Score float ×N suffix replaced with count-up animation (base → final over 0.4s cubicOut) after human verification — more satisfying visual of real-time multiplication
+- [Phase 12-01]: getScoreFlashColor returns plain {r,g,b} object (no cc import) — caller constructs Color; maintains pure logic tier
+- [Phase 12-01]: handleWrongTap separates streak>=2 (combo break, strong flash 89/255) from streak<2 (soft red flash 51/255) — no double-fire overlap
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -99,8 +101,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-24
-Stopped at: Phase 12 context gathered — ready to plan
+Last session: 2026-03-25
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None
 
 ---
