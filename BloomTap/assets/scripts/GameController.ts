@@ -7,7 +7,7 @@ import { FLOWER_CONFIGS } from './logic/FlowerTypes';
 import { FlowerFSM } from './logic/FlowerFSM';
 import { FlowerState } from './logic/FlowerState';
 import { GridRenderer } from './GridRenderer';
-import { CORRECT_FLASH_YELLOW, CORRECT_FLASH_WHITE } from './FlowerColors';
+import { CORRECT_FLASH_GREEN } from './FlowerColors';
 import { StorageService } from './logic/StorageService';
 import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
 import { getPowerUpConfig } from './logic/GameConfig';
@@ -266,7 +266,7 @@ export class GameController extends Component {
 
         this.gameState.applyCorrectTap(rawScore, this.comboSystem, powerUpMultiplier);
         const isFullBloom = state === FlowerState.FULL_BLOOM;
-        const flashColor = isFullBloom ? CORRECT_FLASH_WHITE : CORRECT_FLASH_YELLOW;
+        const flashColor = CORRECT_FLASH_GREEN;
         const multiplier = this.comboSystem.multiplier;
 
         // JUICE-03: combo label pulse + milestone check

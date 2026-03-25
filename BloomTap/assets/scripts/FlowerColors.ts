@@ -9,5 +9,6 @@ import { Color } from 'cc';
  */
 export const CORRECT_FLASH_YELLOW   = new Color(255, 220,  60, 255);
 export const CORRECT_FLASH_WHITE    = new Color(255, 255, 255, 255);
+export const CORRECT_FLASH_GREEN    = new Color( 80, 220,  80, 255);
 export const WRONG_FLASH_COLOR      = new Color(220,  50,  50, 255);
 export const FLOAT_COLOR_MULTIPLIER = new Color(255, 200,  50, 255);
