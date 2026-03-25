@@ -422,7 +422,10 @@ export class GridRenderer extends Component {
         Tween.stopAllByTarget(slot.node);
         Tween.stopAllByTarget(slot.opacity);
 
-        slot.node.setWorldPosition(worldPos.x, worldPos.y, 0);
+        // Offset float 1 cell left or right based on which side of the grid the cell is
+        const cellStep = CELL_SIZE + CELL_GAP; // 72px
+        const floatOffsetX = col < GRID_COLS / 2 ? cellStep : -cellStep;
+        slot.node.setWorldPosition(worldPos.x + floatOffsetX, worldPos.y, 0);
         slot.opacity.opacity = 255;
 
         slot.label.string = getFloatLabelString(amount);
@@ -454,16 +457,22 @@ export class GridRenderer extends Component {
         const duration = getFloatDuration(multiplier);
         const riseY = 80 + multiplier * 10;
 
-        // Punch-in: all floats start large + semi-transparent, slam to normal + fully opaque
-        // Opacity starts at 160 (visible but "mờ") so the large state is seen before shrinking
-        slot.node.setScale(5.0, 5.0, 1);
-        slot.opacity.opacity = 51;
-        tween(slot.node)
-            .to(0.14, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'backOut' })
-            .start();
-        tween(slot.opacity)
-            .to(0.14, { opacity: 255 })
-            .start();
+        // Punch-in scale based on score value: <10 no punch, <100 scale=5, >=100 scale=10
+        const absAmount = Math.abs(amount);
+        const punchScale = absAmount >= 100 ? 10 : absAmount >= 10 ? 5 : 0;
+
+        if (punchScale > 0) {
+            slot.node.setScale(punchScale, punchScale, 1);
+            slot.opacity.opacity = 51; // ~20% opacity — "mờ" before slam
+            tween(slot.node)
+                .to(0.14, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'backOut' })
+                .start();
+            tween(slot.opacity)
+                .to(0.14, { opacity: 255 })
+                .start();
+        } else {
+            slot.node.setScale(1, 1, 1);
+        }
 
         // Zigzag path upward: starts after punch-in, multiplier gets wider zigzag
         const ZIGZAG_SEGMENTS = 5;
