@@ -119,4 +119,4 @@ Key additions:
 | JuiceHelpers helpers inlined in GameController | Phase 5 execution inlined instead of importing | ⚠ Revisit — logic duplication, candidate for v1.1 refactor |
 
 ---
-*Last updated: 2026-03-25 — v1.2 milestone started*
+*Last updated: 2026-03-25 — Phase 13 complete: LeaderboardService (pure-logic tier, TDD, 18 tests green)*
