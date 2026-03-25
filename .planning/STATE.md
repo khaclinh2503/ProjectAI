@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Power-ups
-status: in-progress
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-03-25T10:33:00.000Z"
+status: unknown
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-03-25T07:38:50.231Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State: Bloom Tap
@@ -83,6 +83,8 @@ Recent decisions affecting v1.1 work:
 - [Phase 11]: Score float ×N suffix replaced with count-up animation (base → final over 0.4s cubicOut) after human verification — more satisfying visual of real-time multiplication
 - [Phase 12-01]: getScoreFlashColor returns plain {r,g,b} object (no cc import) — caller constructs Color; maintains pure logic tier
 - [Phase 12-01]: handleWrongTap separates streak>=2 (combo break, strong flash 89/255) from streak<2 (soft red flash 51/255) — no double-fire overlap
+- [Phase 12]: [12-02 D-01] All score floats use punch-in + zigzag (not multiplier-only) — human feedback: universal effect feels better; multiplier still gets wider displacement + gold color
+- [Phase 12]: [12-02 D-03] Punch-in scale by score: <10 no punch, <100 scale=5, >=100 scale=10 — proportional feedback based on score magnitude
 
 ### Tech Debt Carried Forward (from v1.0)
 
@@ -101,8 +103,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-25
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-03-25T07:38:50.222Z
+Stopped at: Completed 12-02-PLAN.md
 Resume file: None
 
 ---
