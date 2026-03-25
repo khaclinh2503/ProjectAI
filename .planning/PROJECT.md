@@ -42,16 +42,28 @@ Key additions:
 
 [Full archive](milestones/v1.1-ROADMAP.md)
 
-## Next Milestone: v1.2
+## Current Milestone: v1.2 Lobby & Leaderboard
 
-*To be defined. Run `/gsd:new-milestone` to start planning.*
+**Goal:** Thêm màn hình lobby làm điểm trung tâm điều hướng và bảng xếp hạng offline top 10 — nền tảng cho meta-game loop sau này.
 
-**Known backlog for v1.2:**
-- ART-01/02/03: Sprite art refresh (hoa, board, UI) — blocked on assets
-- AUDIO-01–05: Sound effects (tap, wrong, combo, power-up, phase transition)
-- POLISH-01: Phase transition visual cue (40s, 80s marks)
-- POLISH-02: Results screen score count-up animation
-- POLISH-03: Pity mechanic — ít nhất 1 special flower mỗi 30s
+**Target features:**
+- Lobby screen: Chơi Ngay, Vườn Hoa (placeholder), Túi Đồ (placeholder), BXH, Setting (placeholder)
+- Flow: Boot → Lobby → Game → Results → Lobby
+- Nhập tên người chơi (lần đầu, lưu localStorage)
+- Bảng xếp hạng offline top 10 (tên + điểm, localStorage)
+
+### Active (v1.2)
+
+- [ ] **LOBBY-01:** Màn hình lobby với 5 nút điều hướng
+- [ ] **LOBBY-02:** Flow Boot → Lobby → Game → Results → Lobby (thay Results → restart trực tiếp)
+- [ ] **PLAYER-01:** Nhập tên người chơi lần đầu chạy app, lưu localStorage
+- [ ] **LB-01:** Bảng xếp hạng offline top 10: hiển thị tên + điểm, lưu persist
+- [ ] **LB-02:** Sau mỗi ván: tự động lưu score vào leaderboard nếu vào top 10
+
+**Deferred to v1.3+:**
+- Vườn hoa, túi đồ, thu hoạch hoa (meta-loop)
+- Âm thanh, art (chờ assets)
+- BXH online (v2+)
 
 ### Out of Scope
 
@@ -107,4 +119,4 @@ Key additions:
 | JuiceHelpers helpers inlined in GameController | Phase 5 execution inlined instead of importing | ⚠ Revisit — logic duplication, candidate for v1.1 refactor |
 
 ---
-*Last updated: 2026-03-25 — v1.1 archived, v1.2 planning pending*
+*Last updated: 2026-03-25 — v1.2 milestone started*

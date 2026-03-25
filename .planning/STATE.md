@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Polish & Power-ups
-status: unknown
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-03-25T07:44:51.198Z"
+milestone: v1.2
+milestone_name: Lobby & Leaderboard
+status: planning
+stopped_at: Roadmap defined — ready for Phase 13 planning
+last_updated: "2026-03-25T00:00:00Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
+  total_phases: 3
+  completed_phases: 0
   total_plans: 12
   completed_plans: 12
 ---
 
 # Project State: Bloom Tap
 
-**Last updated:** 2026-03-21
-**Session:** Phase 7 Plan 02 complete — BootController wired + init functions added, 171/171 tests passing; human-verify checkpoint approved (all 6 steps passed in Cocos Editor)
+**Last updated:** 2026-03-25
+**Session:** v1.2 roadmap created — Phases 13–15 defined; ready to plan Phase 13
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-17)
+See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 12 — score-combo-effects
+**Current focus:** v1.2 — Lobby & Leaderboard (Phase 13 next)
 
 ---
 
 ## Current Position
 
-Phase: 12
+Phase: 13 (not started)
 Plan: Not started
 
 ## Performance Metrics
@@ -86,6 +86,14 @@ Recent decisions affecting v1.1 work:
 - [Phase 12]: [12-02 D-01] All score floats use punch-in + zigzag (not multiplier-only) — human feedback: universal effect feels better; multiplier still gets wider displacement + gold color
 - [Phase 12]: [12-02 D-03] Punch-in scale by score: <10 no punch, <100 scale=5, >=100 scale=10 — proportional feedback based on score magnitude
 
+### v1.2 Architecture Notes
+
+- LeaderboardService must have 0 cc imports — pure logic tier, testable with Vitest
+- StorageService already uses bloomtap_ prefix and silent-fail — reuse for bloomtap_playerName and bloomtap_leaderboard keys
+- LobbyScene is a new Cocos scene — BootController routes to it before GameScene
+- ResultsScreen (existing, inside GameScene) needs rank display added — no new scene required for results
+- Name input: use Cocos EditBox component in a modal-style node overlay on LobbyScene
+
 ### Tech Debt Carried Forward (from v1.0)
 
 1. JuiceHelpers.getUrgencyStage() / getMilestoneLabel() unused — addressed by FIX-03 in Phase 11
@@ -103,11 +111,11 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-25T07:38:50.222Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-03-25T00:00:00Z
+Stopped at: v1.2 roadmap created
 Resume file: None
 
 ---
 
 *State initialized: 2026-03-13*
-*Last updated: 2026-03-21 after 07-01 plan execution*
+*Last updated: 2026-03-25 — v1.2 roadmap defined; total_phases set to 3*
