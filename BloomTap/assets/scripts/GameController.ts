@@ -12,7 +12,7 @@ import { StorageService } from './logic/StorageService';
 import { PowerUpState, EffectType, applySlowGrowthConfig } from './logic/PowerUpState';
 import { getPowerUpConfig } from './logic/GameConfig';
 import { PowerUpHUDRenderer } from './PowerUpHUDRenderer';
-import { getUrgencyStage, getMilestoneLabel, MILESTONE_THRESHOLDS } from './logic/JuiceHelpers';
+import { getUrgencyStage, getMilestoneLabel, MILESTONE_THRESHOLDS, getScoreFlashColor } from './logic/JuiceHelpers';
 
 const { ccclass, property } = _decorator;
 
@@ -272,6 +272,8 @@ export class GameController extends Component {
         // JUICE-03: combo label pulse + milestone check
         this._pulseComboLabel(this.comboSystem.tapCount);
         this._checkMilestone(this.comboSystem.tapCount);
+        // JUICE-02: score label punch + color flash
+        this._punchScoreLabel(Math.round(rawScore));
 
         return { flashColor, rawScore: Math.round(rawScore), multiplier, isFullBloom, powerUpMultiplier };
     }
@@ -364,6 +366,25 @@ export class GameController extends Component {
             .to(0.08, { scale: new Vec3(peakScale, peakScale, 1) }, { easing: 'backOut' })
             .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
             .start();
+    }
+
+    /** Score label punch scale + color flash on score increase (JUICE-02, D-01). */
+    private _punchScoreLabel(scoreDelta: number): void {
+        if (!this.scoreLabel) return;
+        const labelNode = this.scoreLabel.node;
+        Tween.stopAllByTarget(labelNode);
+        labelNode.setScale(1, 1, 1);
+        tween(labelNode)
+            .to(0.06, { scale: new Vec3(1.2, 1.2, 1) }, { easing: 'backOut' })
+            .to(0.08, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicIn' })
+            .start();
+
+        // Color flash: set flash color, schedule reset to white (per D-02, paintFlash pattern)
+        const rgb = getScoreFlashColor(scoreDelta);
+        this.scoreLabel.color = new Color(rgb.r, rgb.g, rgb.b, 255);
+        this.scheduleOnce(() => {
+            if (this.scoreLabel) this.scoreLabel.color = new Color(255, 255, 255, 255);
+        }, 0.15);
     }
 
     /** Check if tapCount crossed a milestone threshold — triggers celebration exactly once per session. */
@@ -488,6 +509,11 @@ export class GameController extends Component {
             this.timerLabel.node.active = true;
             this.timerLabel.color = new Color(255, 255, 255, 255);
             this.timerLabel.node.setScale(1, 1, 1);
+        }
+        if (this.scoreLabel) {
+            Tween.stopAllByTarget(this.scoreLabel.node);
+            this.scoreLabel.node.setScale(1, 1, 1);
+            this.scoreLabel.color = new Color(255, 255, 255, 255);
         }
         if (this.gridRenderer) this.gridRenderer.stopAllFloatAnimations();
     }
