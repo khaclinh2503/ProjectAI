@@ -456,8 +456,8 @@ export class GridRenderer extends Component {
 
         // Punch-in: all floats start large + semi-transparent, slam to normal + fully opaque
         // Opacity starts at 160 (visible but "mờ") so the large state is seen before shrinking
-        slot.node.setScale(1.8, 1.8, 1);
-        slot.opacity.opacity = 160;
+        slot.node.setScale(5.0, 5.0, 1);
+        slot.opacity.opacity = 51;
         tween(slot.node)
             .to(0.14, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'backOut' })
             .start();
