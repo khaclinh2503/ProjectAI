@@ -26,7 +26,9 @@
   3. Submitting a score below the 10th entry does not alter the leaderboard
   4. LeaderboardService.getRank(score) returns the rank a score would achieve before insertion (used by results screen)
   5. All logic has Vitest unit tests; 0 cc imports in LeaderboardService
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 13-01-PLAN.md — TDD: LeaderboardService (player name + leaderboard data model + save/rank logic)
 
 ### Phase 14: Lobby & Leaderboard UI
 **Goal**: Players see a lobby on boot, can enter their name on first run, and can view the top-10 leaderboard
@@ -59,10 +61,10 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. LeaderboardService | 0/? | Not started | - |
+| 13. LeaderboardService | 0/1 | Planning complete | - |
 | 14. Lobby & Leaderboard UI | 0/? | Not started | - |
 | 15. Scene Flow Wiring | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-03-25 — v1.2 roadmap defined (Phases 13–15)*
+*Last updated: 2026-03-25 — Phase 13 planned (1 TDD plan)*
