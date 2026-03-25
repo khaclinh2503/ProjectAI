@@ -1,10 +1,11 @@
 ---
 phase: 8
 slug: spawn-fix
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-21
+approved: 2026-03-25
 ---
 
 # Phase 8 — Validation Strategy
@@ -67,11 +68,11 @@ Existing infrastructure covers all phase requirements — no Wave 0 setup needed
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (no new test files needed)
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** 2026-03-25 — Phase 8 complete. VERIFICATION.md passed 5/5. 186 tests passing at close. Retroactive sign-off.

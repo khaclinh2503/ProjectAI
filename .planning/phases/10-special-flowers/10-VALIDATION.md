@@ -1,10 +1,11 @@
 ---
 phase: 10
 slug: special-flowers
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-22
+approved: 2026-03-25
 ---
 
 # Phase 10 — Validation Strategy
@@ -74,11 +75,11 @@ created: 2026-03-22
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (PowerUpState.test.ts created)
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** 2026-03-25 — Phase 10 complete. PowerUpState.test.ts (Wave 0) fulfilled. 220 tests passing at close. Integration checker verified all 4 SPECIAL-* requirements wired end-to-end. Retroactive sign-off.
