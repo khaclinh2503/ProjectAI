@@ -8,7 +8,7 @@
 
 ## Phases
 
-- [ ] **Phase 13: LeaderboardService** - Pure logic tier: player name storage, leaderboard data model, auto-save entry on game end
+- [x] **Phase 13: LeaderboardService** - Pure logic tier: player name storage, leaderboard data model, auto-save entry on game end (completed 2026-03-25)
 - [ ] **Phase 14: Lobby & Leaderboard UI** - LobbyScene with 5 navigation buttons, name-input prompt on first run, LeaderboardScene top-10 display
 - [ ] **Phase 15: Scene Flow Wiring** - Boot → Lobby → Game → Results → Lobby navigation; results screen shows achieved rank
 
@@ -26,7 +26,7 @@
   3. Submitting a score below the 10th entry does not alter the leaderboard
   4. LeaderboardService.getRank(score) returns the rank a score would achieve before insertion (used by results screen)
   5. All logic has Vitest unit tests; 0 cc imports in LeaderboardService
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 13-01-PLAN.md — TDD: LeaderboardService (player name + leaderboard data model + save/rank logic)
 
@@ -61,7 +61,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. LeaderboardService | 0/1 | Planning complete | - |
+| 13. LeaderboardService | 0/1 | Complete    | 2026-03-25 |
 | 14. Lobby & Leaderboard UI | 0/? | Not started | - |
 | 15. Scene Flow Wiring | 0/? | Not started | - |
 

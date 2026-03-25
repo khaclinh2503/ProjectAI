@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Lobby & Leaderboard
-status: planning
-stopped_at: Roadmap defined — ready for Phase 13 planning
-last_updated: "2026-03-25T00:00:00Z"
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+stopped_at: Completed 13-leaderboardservice-01-PLAN.md
+last_updated: "2026-03-25T09:41:23.388Z"
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 12
-  completed_plans: 12
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
 ---
 
 # Project State: Bloom Tap
@@ -24,13 +24,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** v1.2 — Lobby & Leaderboard (Phase 13 next)
+**Current focus:** Phase 13 — leaderboardservice
 
 ---
 
 ## Current Position
 
-Phase: 13 (not started)
+Phase: 14
 Plan: Not started
 
 ## Performance Metrics
@@ -85,6 +85,7 @@ Recent decisions affecting v1.1 work:
 - [Phase 12-01]: handleWrongTap separates streak>=2 (combo break, strong flash 89/255) from streak<2 (soft red flash 51/255) — no double-fire overlap
 - [Phase 12]: [12-02 D-01] All score floats use punch-in + zigzag (not multiplier-only) — human feedback: universal effect feels better; multiplier still gets wider displacement + gold color
 - [Phase 12]: [12-02 D-03] Punch-in scale by score: <10 no punch, <100 scale=5, >=100 scale=10 — proportional feedback based on score magnitude
+- [Phase 13-leaderboardservice]: getRank uses filter-count approach — avoids timestamp identity fragility; _wouldQualify uses >= for equal-score boundary (D-08); sort: b.score-a.score || b.timestamp-a.timestamp for D-06 tiebreak
 
 ### v1.2 Architecture Notes
 
@@ -111,8 +112,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-25T00:00:00Z
-Stopped at: v1.2 roadmap created
+Last session: 2026-03-25T09:38:05.201Z
+Stopped at: Completed 13-leaderboardservice-01-PLAN.md
 Resume file: None
 
 ---
