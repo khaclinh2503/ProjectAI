@@ -30,7 +30,7 @@ Full phase archive: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 9: Pause System** — Player can pause and resume with full state preservation (completed 2026-03-21)
 - [x] **Phase 10: Special Flowers** — Power-up flowers spawn with distinct visuals and three effect types (re-planned 2026-03-22) (completed 2026-03-22)
 - [x] **Phase 11: Bug Fixes and Refactors** — Combo display fix, screen shake, JuiceHelpers decoupling (completed 2026-03-23)
-- [ ] **Phase 12: Art Refresh** — Sprite flowers, background/board, and UI element visuals
+- [ ] **Phase 12: Score & Combo Effects** — Score HUD punch+flash, combo punch-in per streak, score float zigzag + multiplier color
 
 ## Phase Details
 
@@ -102,16 +102,19 @@ Plans:
 - [x] 11-01-PLAN.md — Fix applySlowGrowthConfig + JuiceHelpers refactor + handleCorrectTap return powerUpMultiplier
 - [x] 11-02-PLAN.md — Combo label fix + screen shake + score float multiplier + grid border glow + human verify
 
-### Phase 12: Art Refresh
-**Goal**: All placeholder color-coded Graphics cells are replaced with real sprite assets — flowers, board background, and UI elements all have polished visuals
+### Phase 12: Score & Combo Effects
+**Goal**: Score display và combo system có visual impact — punch-in combo labels theo streak level, score HUD punch+color flash, score float với zigzag path và màu khi multiplier active
 **Depends on**: Phase 11
-**Requirements**: ART-01, ART-02, ART-03
+**Requirements**: JUICE-02, JUICE-03, JUICE-04
 **Success Criteria** (what must be TRUE):
-  1. Each of the 5 flower types renders a distinct sprite image at each of the 5 growth stages — no colored rectangles remain for regular flowers
-  2. Special flowers have a visually distinct sprite variant (e.g., gold glow overlay) that makes them identifiable at a glance
-  3. The game board background and grid lines have an improved visual that looks like a designed game, not a developer placeholder
-  4. Buttons, HUD elements, and the results screen use styled sprite assets rather than default Cocos Creator UI primitives
-**Plans**: TBD
+  1. Score label punches (scale up → back) với color flash mỗi khi điểm tăng
+  2. Combo label punch-in mỗi lần streak tăng — scale bắt đầu to hơn theo streak cao (x5 to hơn x2); combo break có flash mạnh
+  3. Score float khi multiplier active: đổi màu + punch-in to→rõ → count-up → zigzag random bounce khi bay lên
+  4. Normal float (không multiplier) giữ nguyên behavior hiện tại — không regression
+**Plans:** 2 plans
+Plans:
+- [ ] 12-01-PLAN.md — TDD JuiceHelpers + score HUD punch/flash + combo punch-in + combo break upgrade
+- [ ] 12-02-PLAN.md — Score float zigzag/gold when multiplier active + human verify all effects
 
 ## Progress
 
@@ -128,8 +131,8 @@ Plans:
 | 9. Pause System | v1.1 | 2/2 | Complete | 2026-03-21 |
 | 10. Special Flowers | v1.1 | 3/3 | Complete   | 2026-03-22 |
 | 11. Bug Fixes and Refactors | v1.1 | 2/2 | Complete    | 2026-03-23 |
-| 12. Art Refresh | v1.1 | 0/? | Not started | - |
+| 12. Score & Combo Effects | v1.1 | 0/2 | Not started | - |
 
 ---
 
-*Last updated: 2026-03-23 — Phase 11 planned (2 plans)*
+*Last updated: 2026-03-25 — Phase 12 plans created*
