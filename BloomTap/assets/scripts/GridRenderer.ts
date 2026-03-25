@@ -449,66 +449,46 @@ export class GridRenderer extends Component {
             slot.label.color = new Color(255, 255, 255, 255);
         }
         slot.label.fontSize = getFloatFontSize(Math.max(amount, 0));
+        slot.label.isBold = true;
 
         const duration = getFloatDuration(multiplier);
         const riseY = 80 + multiplier * 10;
 
-        if (powerUpMultiplier > 1) {
-            // D-07 punch-in: start large + transparent, shrink to normal + opaque
-            slot.node.setScale(1.5, 1.5, 1);
-            slot.opacity.opacity = 0;
-            tween(slot.node)
-                .to(0.08, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'cubicOut' })
-                .start();
-            tween(slot.opacity)
-                .to(0.08, { opacity: 255 })
-                .start();
+        // Punch-in: all floats start large + transparent, slam to normal + opaque
+        slot.node.setScale(1.6, 1.6, 1);
+        slot.opacity.opacity = 0;
+        tween(slot.node)
+            .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'backOut' })
+            .start();
+        tween(slot.opacity)
+            .to(0.10, { opacity: 255 })
+            .start();
 
-            // D-08 zigzag: random bounce per segment, 5 segments, 28px displacement
-            const ZIGZAG_SEGMENTS = 5;
-            const ZIGZAG_X = 28;
-            const zigzagDuration = duration * 1.3; // longer hang time for multiplier floats
-            const segDuration = zigzagDuration / ZIGZAG_SEGMENTS;
-            const segRiseY = riseY / ZIGZAG_SEGMENTS;
+        // Zigzag path upward: all floats; multiplier gets wider zigzag
+        const ZIGZAG_SEGMENTS = 5;
+        const zigzagX = powerUpMultiplier > 1 ? 28 : 16;
+        const totalDuration = powerUpMultiplier > 1 ? duration * 1.3 : duration;
+        const segDuration = totalDuration / ZIGZAG_SEGMENTS;
+        const segRiseY = riseY / ZIGZAG_SEGMENTS;
 
-            let positionTween = tween(slot.node);
-            // Small delay to let punch-in settle before zigzag starts
-            positionTween = positionTween.delay(0.06);
-            for (let i = 0; i < ZIGZAG_SEGMENTS; i++) {
-                const sign = Math.random() < 0.5 ? 1 : -1;
-                positionTween = positionTween.by(segDuration,
-                    { position: new Vec3(sign * ZIGZAG_X, segRiseY, 0) },
-                    { easing: 'sineOut' });
-            }
-            positionTween.start();
-
-            // Opacity fade: adjusted for longer zigzag duration
-            tween(slot.opacity)
-                .delay(0.08 + zigzagDuration * 0.5) // after punch-in + half zigzag
-                .to(zigzagDuration * 0.5, { opacity: 0 })
-                .call(() => {
-                    slot.node.active = false;
-                    slot.inUse = false;
-                })
-                .start();
-        } else {
-            // D-09: Normal float — keep existing wobble behavior unchanged
-            const wobbleX = 14;
-            tween(slot.node)
-                .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) }, { easing: 'sineOut' })
-                .by(duration / 3, { position: new Vec3(-wobbleX * 2, riseY / 3, 0) })
-                .by(duration / 3, { position: new Vec3( wobbleX,  riseY / 3, 0) })
-                .start();
-
-            tween(slot.opacity)
-                .delay(duration * 0.5)
-                .to(duration * 0.5, { opacity: 0 })
-                .call(() => {
-                    slot.node.active = false;
-                    slot.inUse = false;
-                })
-                .start();
+        let positionTween = tween(slot.node).delay(0.08);
+        for (let i = 0; i < ZIGZAG_SEGMENTS; i++) {
+            const sign = Math.random() < 0.5 ? 1 : -1;
+            positionTween = positionTween.by(segDuration,
+                { position: new Vec3(sign * zigzagX, segRiseY, 0) },
+                { easing: 'sineOut' });
         }
+        positionTween.start();
+
+        // Fade out after half the zigzag duration
+        tween(slot.opacity)
+            .delay(0.10 + totalDuration * 0.5)
+            .to(totalDuration * 0.5, { opacity: 0 })
+            .call(() => {
+                slot.node.active = false;
+                slot.inUse = false;
+            })
+            .start();
     }
 
     public stopAllFloatAnimations(): void {
