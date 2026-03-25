@@ -24,7 +24,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 11 — bug-fixes-and-refactors
+**Current focus:** Phase 12 — score-combo-effects
 
 ---
 
@@ -99,8 +99,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-23T16:27:38.542Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-03-24
+Stopped at: Phase 12 context gathered — ready to plan
 Resume file: None
 
 ---
