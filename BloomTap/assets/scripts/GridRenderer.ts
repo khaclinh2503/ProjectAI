@@ -454,24 +454,25 @@ export class GridRenderer extends Component {
         const duration = getFloatDuration(multiplier);
         const riseY = 80 + multiplier * 10;
 
-        // Punch-in: all floats start large + transparent, slam to normal + opaque
-        slot.node.setScale(1.6, 1.6, 1);
-        slot.opacity.opacity = 0;
+        // Punch-in: all floats start large + semi-transparent, slam to normal + fully opaque
+        // Opacity starts at 160 (visible but "mờ") so the large state is seen before shrinking
+        slot.node.setScale(1.8, 1.8, 1);
+        slot.opacity.opacity = 160;
         tween(slot.node)
-            .to(0.10, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'backOut' })
+            .to(0.14, { scale: new Vec3(1.0, 1.0, 1) }, { easing: 'backOut' })
             .start();
         tween(slot.opacity)
-            .to(0.10, { opacity: 255 })
+            .to(0.14, { opacity: 255 })
             .start();
 
-        // Zigzag path upward: all floats; multiplier gets wider zigzag
+        // Zigzag path upward: starts after punch-in, multiplier gets wider zigzag
         const ZIGZAG_SEGMENTS = 5;
         const zigzagX = powerUpMultiplier > 1 ? 28 : 16;
         const totalDuration = powerUpMultiplier > 1 ? duration * 1.3 : duration;
         const segDuration = totalDuration / ZIGZAG_SEGMENTS;
         const segRiseY = riseY / ZIGZAG_SEGMENTS;
 
-        let positionTween = tween(slot.node).delay(0.08);
+        let positionTween = tween(slot.node).delay(0.12);
         for (let i = 0; i < ZIGZAG_SEGMENTS; i++) {
             const sign = Math.random() < 0.5 ? 1 : -1;
             positionTween = positionTween.by(segDuration,
@@ -482,7 +483,7 @@ export class GridRenderer extends Component {
 
         // Fade out after half the zigzag duration
         tween(slot.opacity)
-            .delay(0.10 + totalDuration * 0.5)
+            .delay(0.14 + totalDuration * 0.5)
             .to(totalDuration * 0.5, { opacity: 0 })
             .call(() => {
                 slot.node.active = false;
