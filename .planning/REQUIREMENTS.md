@@ -7,17 +7,17 @@
 
 ### Lobby
 
-- [ ] **LOBBY-01**: Người chơi thấy màn hình lobby sau boot với 5 nút: Chơi Ngay, Vườn Hoa, Túi Đồ, BXH, Setting — Vườn Hoa/Túi Đồ/Setting hiển thị "Sắp ra mắt" khi nhấn
+- [x] **LOBBY-01**: Người chơi thấy màn hình lobby sau boot với 5 nút: Chơi Ngay, Vườn Hoa, Túi Đồ, BXH, Setting — Vườn Hoa/Túi Đồ/Setting hiển thị "Sắp ra mắt" khi nhấn
 - [ ] **LOBBY-02**: Nhấn Chơi Ngay từ lobby → vào game; kết thúc ván → về lobby (không về trực tiếp màn chơi lại)
 
 ### Player Identity
 
-- [ ] **PLAYER-01**: Lần đầu chạy app, người chơi được yêu cầu nhập tên (tối đa 12 ký tự); tên lưu vào localStorage và hiển thị trên lobby
+- [x] **PLAYER-01**: Lần đầu chạy app, người chơi được yêu cầu nhập tên (tối đa 12 ký tự); tên lưu vào localStorage và hiển thị trên lobby
 
 ### Leaderboard
 
-- [ ] **LB-01**: Người chơi xem bảng xếp hạng offline top 10: hiển thị thứ hạng, tên, điểm số — persist qua localStorage
-- [ ] **LB-02**: Sau mỗi ván kết thúc, điểm tự động được lưu vào leaderboard nếu vào top 10; màn kết quả hiển thị thứ hạng đạt được
+- [x] **LB-01**: Người chơi xem bảng xếp hạng offline top 10: hiển thị thứ hạng, tên, điểm số — persist qua localStorage
+- [x] **LB-02**: Sau mỗi ván kết thúc, điểm tự động được lưu vào leaderboard nếu vào top 10; màn kết quả hiển thị thứ hạng đạt được
 
 ## Future Requirements
 
@@ -53,11 +53,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LOBBY-01 | Phase 14 | Pending |
+| LOBBY-01 | Phase 14 | Complete |
 | LOBBY-02 | Phase 15 | Pending |
-| PLAYER-01 | Phase 13 + Phase 14 | Pending |
-| LB-01 | Phase 13 + Phase 14 | Pending |
-| LB-02 | Phase 13 + Phase 15 | Pending |
+| PLAYER-01 | Phase 13 + Phase 14 | Complete |
+| LB-01 | Phase 13 + Phase 14 | Complete |
+| LB-02 | Phase 13 + Phase 15 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 5 total

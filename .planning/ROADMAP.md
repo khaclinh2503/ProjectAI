@@ -40,9 +40,9 @@ Plans:
   3. On first app run (no stored name), a name-input prompt appears before the lobby; entered name persists across reloads
   4. Player name is visible on the lobby screen after being set
   5. Tapping BXH opens a LeaderboardScene showing rank, name, and score for up to 10 entries (empty state handled gracefully)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 14-01-PLAN.md — Write LobbyController.ts and LeaderboardController.ts (TypeScript controllers)
+- [x] 14-01-PLAN.md — Write LobbyController.ts and LeaderboardController.ts (TypeScript controllers)
 - [ ] 14-02-PLAN.md — Create scenes in Cocos Editor, wire @property bindings, verify UI
 **UI hint**: yes
 
@@ -65,7 +65,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 13. LeaderboardService | 0/1 | Complete    | 2026-03-25 |
-| 14. Lobby & Leaderboard UI | 0/2 | Planned | - |
+| 14. Lobby & Leaderboard UI | 1/2 | In Progress|  |
 | 15. Scene Flow Wiring | 0/? | Not started | - |
 
 ---

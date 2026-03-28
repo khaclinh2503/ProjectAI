@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 13-leaderboardservice-01-PLAN.md
-last_updated: "2026-03-25T09:41:23.388Z"
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-03-28T05:32:55.513Z"
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 3
+  completed_plans: 2
 ---
 
 # Project State: Bloom Tap
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Cảm giác satisfying khi tap đúng thời điểm hoa nở rực rỡ — sự kết hợp giữa phản xạ nhanh và chiến thuật chọn hoa đúng lúc.
-**Current focus:** Phase 13 — leaderboardservice
+**Current focus:** Phase 14 — lobby-leaderboard-ui
 
 ---
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
+Phase: 14 (lobby-leaderboard-ui) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -86,6 +86,9 @@ Recent decisions affecting v1.1 work:
 - [Phase 12]: [12-02 D-01] All score floats use punch-in + zigzag (not multiplier-only) — human feedback: universal effect feels better; multiplier still gets wider displacement + gold color
 - [Phase 12]: [12-02 D-03] Punch-in scale by score: <10 no punch, <100 scale=5, >=100 scale=10 — proportional feedback based on score magnitude
 - [Phase 13-leaderboardservice]: getRank uses filter-count approach — avoids timestamp identity fragility; _wouldQualify uses >= for equal-score boundary (D-08); sort: b.score-a.score || b.timestamp-a.timestamp for D-06 tiebreak
+- [Phase 14-lobby-leaderboard-ui]: LobbyController checks getPlayerName() in onLoad (not start) to avoid one-frame overlay flicker
+- [Phase 14-lobby-leaderboard-ui]: Toast uses Tween.stopAllByTarget for interrupt-and-restart behavior on shared Label node
+- [Phase 14-lobby-leaderboard-ui]: LeaderboardController uses @property([Node]) rows array with getChildByName for fixed 10-row display
 
 ### v1.2 Architecture Notes
 
@@ -112,8 +115,8 @@ Recent decisions affecting v1.1 work:
 
 ## Session Continuity
 
-Last session: 2026-03-25T09:38:05.201Z
-Stopped at: Completed 13-leaderboardservice-01-PLAN.md
+Last session: 2026-03-28T05:32:55.508Z
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
 
 ---
