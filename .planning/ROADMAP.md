@@ -9,7 +9,7 @@
 ## Phases
 
 - [x] **Phase 13: LeaderboardService** - Pure logic tier: player name storage, leaderboard data model, auto-save entry on game end (completed 2026-03-25)
-- [ ] **Phase 14: Lobby & Leaderboard UI** - LobbyScene with 5 navigation buttons, name-input prompt on first run, LeaderboardScene top-10 display
+- [x] **Phase 14: Lobby & Leaderboard UI** - LobbyScene with 5 navigation buttons, name-input prompt on first run, LeaderboardScene top-10 display (completed 2026-04-02)
 - [ ] **Phase 15: Scene Flow Wiring** - Boot → Lobby → Game → Results → Lobby navigation; results screen shows achieved rank
 
 ---
@@ -40,10 +40,10 @@ Plans:
   3. On first app run (no stored name), a name-input prompt appears before the lobby; entered name persists across reloads
   4. Player name is visible on the lobby screen after being set
   5. Tapping BXH opens a LeaderboardScene showing rank, name, and score for up to 10 entries (empty state handled gracefully)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 14-01-PLAN.md — Write LobbyController.ts and LeaderboardController.ts (TypeScript controllers)
-- [ ] 14-02-PLAN.md — Create scenes in Cocos Editor, wire @property bindings, verify UI
+- [x] 14-02-PLAN.md — Create scenes in Cocos Editor, wire @property bindings, verify UI
 **UI hint**: yes
 
 ### Phase 15: Scene Flow Wiring
@@ -65,7 +65,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 13. LeaderboardService | 0/1 | Complete    | 2026-03-25 |
-| 14. Lobby & Leaderboard UI | 1/2 | In Progress|  |
+| 14. Lobby & Leaderboard UI | 2/2 | Complete   | 2026-04-02 |
 | 15. Scene Flow Wiring | 0/? | Not started | - |
 
 ---
