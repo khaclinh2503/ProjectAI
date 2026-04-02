@@ -35,7 +35,7 @@ export class BootController extends Component {
                     if (cfg.powerUps) {
                         initPowerUpConfig(cfg.powerUps);
                     }
-                    director.loadScene('GameScene');
+                    director.loadScene('LobbyScene');
                 } catch (_e) {
                     this._showError();
                 }
