@@ -65,7 +65,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 13. LeaderboardService | 0/1 | Complete    | 2026-03-25 |
-| 14. Lobby & Leaderboard UI | 2/2 | Complete   | 2026-04-02 |
+| 14. Lobby & Leaderboard UI | 2/2 | Complete    | 2026-04-02 |
 | 15. Scene Flow Wiring | 0/? | Not started | - |
 
 ---
