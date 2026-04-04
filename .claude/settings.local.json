@@ -64,7 +64,11 @@
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Skill(gsd:audit-milestone)",
-      "Skill(gsd:complete-milestone)"
+      "Skill(gsd:complete-milestone)",
+      "Bash(for p:*)",
+      "Read(//e/workspace/ProjectAI/.planning/phases/*$p*/**)",
+      "Skill(gsd:new-milestone)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

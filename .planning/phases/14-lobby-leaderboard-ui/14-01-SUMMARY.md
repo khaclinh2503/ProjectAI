@@ -107,6 +107,14 @@ None - no external service configuration required.
 - @property Inspector wiring is Plan 02 scope (human checkpoint)
 - Boot→Lobby→Game routing is Phase 15 scope
 
+## Self-Check: PASSED
+
+- FOUND: BloomTap/assets/scripts/LobbyController.ts
+- FOUND: BloomTap/assets/scripts/LeaderboardController.ts
+- FOUND: .planning/phases/14-lobby-leaderboard-ui/14-01-SUMMARY.md
+- FOUND commit: c67f557 (Task 1 — LobbyController)
+- FOUND commit: 36d873c (Task 2 — LeaderboardController)
+
 ---
 *Phase: 14-lobby-leaderboard-ui*
 *Completed: 2026-03-28*
